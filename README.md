@@ -34,15 +34,30 @@ Jev may help classify the semantic importance of a change, but deterministic cod
 
 ## Timeline
 
+These are internal team milestones leading up to the organizer's official
+submission deadline:
+
 - 3 October 2026 — team check-in
 - 10 October 2026 — research finalized
 - 11–13 October 2026 — implementation
 - 14–15 October 2026 — video demo and submission preparation
 - 16 October 2026 — submission deadline
 
+The official handbook also lists finalist announcements on 23 October 2026 and
+the Singapore Hackathon Demo Day on 3 November 2026 (TBC).
+
+## Official requirements
+
+The submission must use CodeBuddy or WorkBuddy and include proof of that usage.
+For the FinTech track, the solution must demonstrate unified querying, bounded
+data freshness, negative permission enforcement, live permission revocation,
+and audit reconstruction. See the [hackathon requirements](docs/HACKATHON_REQUIREMENTS.md)
+for the verified checklist, judging rubric, and organizer timeline.
+
 ## Project documents
 
 - [Project brief](docs/PROJECT_BRIEF.md)
+- [Hackathon requirements](docs/HACKATHON_REQUIREMENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Data model](docs/DATA_MODEL.md)
 - [API contract](docs/API_CONTRACT.md)
