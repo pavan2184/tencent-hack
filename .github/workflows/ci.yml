@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest ruff pre-commit
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
+      - name: Run tests
+        run: |
+          if [ -d tests ]; then pytest; else echo "No tests directory found"; fi
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; fi
+          if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile; fi
+
+      - name: Run frontend checks
+        run: |
+          if [ -f package.json ]; then npm run lint --if-present; fi
+          if [ -f package.json ]; then npm run typecheck --if-present; fi
+          if [ -f package.json ]; then npm test --if-present; fi
+
