@@ -104,4 +104,22 @@ describe('contract-only freshness baseline', () => {
       expect(() => validateFreshnessContractDocs(file, `${current}\nThe contract_only baseline is green and behaviorally passing.\n`)).toThrow(/green|passing/);
     }
   });
+
+  test.each([
+    'The contract_only baseline is **green**.',
+    'The contract_only baseline is *passing*.',
+    'The contract_only baseline is `green`.',
+    'The contract_only baseline is [green](https://example.com/status).',
+    'The contract_only baseline passes all behavioral tests.',
+  ])('rejects affirmative documentation claim: %s', sentence => {
+    expect(() => validateFreshnessContractDocs('README.md', sentence)).toThrow(/green|passing/);
+  });
+
+  test.each([
+    'The contract_only baseline is not behaviorally green.',
+    'The contract_only baseline does not pass behavioral tests.',
+    'The contract_only baseline cannot be promoted to behavioral green by document checks.',
+  ])('accepts cautionary documentation: %s', sentence => {
+    expect(() => validateFreshnessContractDocs('README.md', sentence)).not.toThrow();
+  });
 });

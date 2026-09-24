@@ -119,6 +119,21 @@ export function validateFreshnessContractBaseline(
 
 /** Guard the two published contract descriptions against accidental pass claims. */
 export function validateFreshnessContractDocs(file: string, contents: string): void {
-  const positiveClaim = /(?:contract_only|contract[- ]only baseline)[^\n.]{0,90}\b(?:is|counts as|proves|certifies)\s+(?:a\s+)?(?:behaviorally\s+)?(?:green|passing|pass)\b/i;
-  if (positiveClaim.test(contents)) fail(file, 'documentation', 'contract_only cannot claim green or behaviorally passing');
+  const subject = /\b(?:contract_only(?:\s+baseline)?|contract[- ]only\s+baseline)\b/gi;
+  const affirmative = /\b(?:is|was|counts as|proves|certifies)\s+(?:a\s+)?(?:behavioral(?:ly)?\s+)?(?:green|passing|pass)\b|\b(?:passes|has passed)\s+(?:(?:all|the)\s+)?behavioral\s+tests\b/i;
+  for (const paragraph of contents.split(/\n\s*\n/)) {
+    const plain = paragraph
+      .replace(/\[([^\]]+)\]\([^\n)]+\)/g, '$1')
+      .replace(/\*|`+/g, '')
+      .replace(/(?<!\w)_{1,2}(?=\w)|(?<=\w)_{1,2}(?!\w)/g, '')
+      .replace(/\s+/g, ' ');
+    for (const sentence of plain.split(/(?<=[.!?])\s+/)) {
+      subject.lastIndex = 0;
+      for (const match of sentence.matchAll(subject)) {
+        if (affirmative.test(sentence.slice(match.index + match[0].length, match.index + match[0].length + 120))) {
+          fail(file, 'documentation', 'contract_only cannot claim green or behaviorally passing');
+        }
+      }
+    }
+  }
 }
