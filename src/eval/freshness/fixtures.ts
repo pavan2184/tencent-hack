@@ -148,8 +148,10 @@ export function validateFreshnessFixture(file: string, raw: unknown): FreshnessF
         string(file, `${at}.provider_version`, step.provider_version); break;
       case 'delta_poll':
         nullableString(file, `${at}.cursor_in`, step.cursor_in); string(file, `${at}.cursor_out`, step.cursor_out);
-        stringArray(file, `${at}.object_ids`, step.object_ids, true);
-        stringArray(file, `${at}.event_ids`, step.event_ids, true); break;
+        const objectIds = stringArray(file, `${at}.object_ids`, step.object_ids, true);
+        const eventIds = stringArray(file, `${at}.event_ids`, step.event_ids, true);
+        if (eventIds.length !== objectIds.length) fail(file, `${at}.event_ids`, 'must pair one event_id with each object_id');
+        break;
       case 'reconcile': stringArray(file, `${at}.object_ids`, step.object_ids, true); break;
       case 'verify':
         string(file, `${at}.object_id`, step.object_id);
@@ -177,13 +179,22 @@ function validateCheckpointSemantics(file: string, at: string, checkpoint: Recor
   const objectById = new Map(objects.map(obj => [obj.object_id, obj]));
   const newest = new Map<string, number>();
   const failedIndex = new Set<string>();
-  for (const obj of fixture.initial_objects) if (!obj.deleted && obj.version_order !== null) newest.set(obj.object_id, obj.version_order);
+  const deletedObjects = new Set<string>();
+  for (const obj of fixture.initial_objects) {
+    if (obj.deleted) deletedObjects.add(obj.object_id);
+    else if (obj.version_order !== null) newest.set(obj.object_id, obj.version_order);
+  }
   const deltas: Array<Extract<FreshnessStep, { kind: 'delta_poll' }>> = [];
   const parked = new Map<string, string>();
   for (const step of fixture.steps.slice(0, stepIndex + 1)) {
     if (step.kind === 'provider_mutation') {
-      if (step.object.deleted) newest.delete(step.object.object_id);
-      else if (step.object.version_order !== null) newest.set(step.object.object_id, Math.max(newest.get(step.object.object_id) ?? -1, step.object.version_order));
+      if (step.object.deleted) {
+        newest.delete(step.object.object_id);
+        deletedObjects.add(step.object.object_id);
+      } else {
+        deletedObjects.delete(step.object.object_id);
+        if (step.object.version_order !== null) newest.set(step.object.object_id, Math.max(newest.get(step.object.object_id) ?? -1, step.object.version_order));
+      }
     } else if (step.kind === 'index_outcome') {
       if (!step.searchable || !step.embedded || !step.content_written) failedIndex.add(step.object_id);
       else failedIndex.delete(step.object_id);
@@ -193,6 +204,12 @@ function validateCheckpointSemantics(file: string, at: string, checkpoint: Recor
   for (const [objectId, high] of newest) {
     const obj = objectById.get(objectId);
     if (obj && obj.version_order !== null && obj.version_order < high) fail(file, `${at}.expected_objects`, `${objectId} version_order is lower than accepted mutation`);
+  }
+  for (const objectId of deletedObjects) {
+    const obj = objectById.get(objectId);
+    if (!obj || !obj.deleted || obj.searchable || obj.freshness_status !== 'deleted') {
+      fail(file, `${at}.expected_objects`, `${objectId} requires a deleted, non-searchable tombstone`);
+    }
   }
   for (const objectId of failedIndex) {
     if (objectById.get(objectId)?.freshness_status === 'fresh') fail(file, `${at}.expected_objects`, `${objectId} cannot be fresh after failed index_outcome`);
@@ -204,14 +221,21 @@ function validateCheckpointSemantics(file: string, at: string, checkpoint: Recor
   const accounted = new Set(checkpoint.expected_accounted_event_ids as string[]);
   const expectedParked = new Set(checkpoint.expected_parked_event_ids as string[]);
   for (const delta of deltas.slice(0, reached + 1)) {
-    for (const eventId of delta.event_ids) {
+    for (const [i, eventId] of delta.event_ids.entries()) {
+      const affectedObject = delta.object_ids[i];
       if (!accounted.has(eventId) && !expectedParked.has(eventId)) fail(file, `${at}.expected_cursor`, `cannot advance past unaccounted event ${eventId}`);
       const parkedObject = parked.get(eventId);
+      if (parkedObject && parkedObject !== affectedObject) {
+        fail(file, `${at}.expected_cursor`, `parked retry ${eventId} names ${parkedObject}, expected affected object ${affectedObject}`);
+      }
+      if (expectedParked.has(eventId) && !parkedObject) {
+        fail(file, `${at}.expected_parked_event_ids`, `event ${eventId} has no preceding parked retry`);
+      }
       if (parkedObject) {
         if (!expectedParked.has(eventId)) fail(file, `${at}.expected_parked_event_ids`, `parked event ${eventId} must be recorded`);
-        const status = objectById.get(parkedObject)?.freshness_status;
+        const status = objectById.get(affectedObject)?.freshness_status;
         if (status !== 'unknown' && status !== 'stale' && status !== 'not_searchable') {
-          fail(file, `${at}.expected_objects`, `parked event ${eventId} requires a non-current freshness_status for ${parkedObject}`);
+          fail(file, `${at}.expected_objects`, `parked event ${eventId} requires a non-current freshness_status for ${affectedObject}`);
         }
       }
     }

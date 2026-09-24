@@ -180,6 +180,30 @@ describe('sealed gold and review focus', () => {
     rejectGold(g, /unhandled-event|accounted/, validateFreshnessFixture('sample.fixture.json', f));
   });
 
+  test('review focus 2: listed parked event without a parked retry cannot advance the cursor', () => {
+    const f = fixture(); f.steps.push({ step_id: 'delta-page', at_seconds: 2, kind: 'delta_poll', cursor_in: null, cursor_out: 'c1', object_ids: ['obj-1'], event_ids: ['poison-event'] });
+    const g = gold(); g.checkpoints[0].after_step = 'delta-page'; g.checkpoints[0].expected_cursor = 'c1';
+    g.checkpoints[0].expected_parked_event_ids = ['poison-event'];
+    rejectGold(g, /poison-event|parked retry/, validateFreshnessFixture('sample.fixture.json', f));
+  });
+
+  test('review focus 2: parked retry must name the delta event affected object', () => {
+    const f = fixture(); f.initial_objects.push({ ...OBJECT, object_id: 'obj-2', provider_version: 'v1', version_order: 1 });
+    f.steps.push(
+      { step_id: 'delta-page', at_seconds: 2, kind: 'delta_poll', cursor_in: null, cursor_out: 'c1', object_ids: ['obj-1'], event_ids: ['poison-event'] },
+      { step_id: 'park-event', at_seconds: 3, kind: 'retry', event_id: 'poison-event', object_id: 'obj-2', attempt: 1, outcome: 'parked' },
+    );
+    const g = gold(); g.checkpoints[0].after_step = 'park-event'; g.checkpoints[0].expected_cursor = 'c1';
+    g.checkpoints[0].expected_parked_event_ids = ['poison-event'];
+    g.checkpoints[0].expected_objects.push({ ...OBJECT, object_id: 'obj-2', provider_version: 'v1', version_order: 1, freshness_status: 'unknown' });
+    rejectGold(g, /poison-event|obj-1|obj-2/, validateFreshnessFixture('sample.fixture.json', f));
+  });
+
+  test('delta event and affected object arrays must have equal lengths', () => {
+    const f = fixture(); f.steps.push({ step_id: 'delta-page', at_seconds: 2, kind: 'delta_poll', cursor_in: null, cursor_out: 'c1', object_ids: ['obj-1'], event_ids: ['event-a', 'event-b'] });
+    rejectFixture(f, /event_ids|object_ids/);
+  });
+
   test('review focus 3: failed embedding or searchability cannot be expected fresh', () => {
     for (const failure of [{ searchable: false, embedded: true }, { searchable: true, embedded: false }]) {
       const f = fixture(); f.steps.push({ step_id: 'index-result', at_seconds: 2, kind: 'index_outcome', object_id: 'obj-1', content_written: true, ...failure });
@@ -210,6 +234,22 @@ describe('sealed gold and review focus', () => {
     rejectGold(g, /searchable/);
     g.checkpoints[0].expected_objects[0].searchable = false;
     expect(validateFreshnessGold('sample.gold.json', g, validFixture()).checkpoints[0].expected_objects[0].deleted).toBe(true);
+  });
+
+  test('review focus 4: provider deletion must remain a tombstone in every later checkpoint until superseded', () => {
+    const f = fixture(); f.steps.push({ step_id: 'delete-object', at_seconds: 2, kind: 'provider_mutation', object: { ...OBJECT, provider_version: 'v3', version_order: 3, deleted: true, searchable: false, content_hash: '' } });
+    const g = gold(); g.checkpoints[0].after_step = 'delete-object';
+    rejectGold(g, /tombstone|deleted|searchable/, validateFreshnessFixture('sample.fixture.json', f));
+  });
+
+  test('a later live provider mutation supersedes the tombstone requirement', () => {
+    const f = fixture(); f.steps.push(
+      { step_id: 'delete-object', at_seconds: 2, kind: 'provider_mutation', object: { ...OBJECT, provider_version: 'v3', version_order: 3, deleted: true, searchable: false, content_hash: '' } },
+      { step_id: 'restore-object', at_seconds: 3, kind: 'provider_mutation', object: { ...OBJECT, provider_version: 'v4', version_order: 4 } },
+    );
+    const g = gold(); g.checkpoints[0].after_step = 'restore-object';
+    g.checkpoints[0].expected_objects[0].provider_version = 'v4'; g.checkpoints[0].expected_objects[0].version_order = 4;
+    expect(validateFreshnessGold('sample.gold.json', g, validateFreshnessFixture('sample.fixture.json', f)).checkpoints[0].expected_objects[0].freshness_status).toBe('fresh');
   });
 
   test('review focus 5: fixture sanitizer exposes no sealed gold or smuggled nested fields', () => {

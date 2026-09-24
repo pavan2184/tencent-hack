@@ -9,7 +9,7 @@ Last updated: 2026-09-24
 - Tencent freshness docs complete: baseline, requirements mapping, architecture, future data and operation contracts, eval specification, and dated decisions.
 - Receipt contract review resolved: persisted requests have a globally unique key and atomic request-hash replay/conflict rule; ephemeral snapshots carry no cross-call or restart idempotency promise.
 - Structural documentation contract test added and observed red before the docs were completed, then green after completion.
-- Strict synthetic freshness fixture and sealed-gold types, validator, public sanitizer, and complete gate/holdout/gold corpus loader are implemented. The contract tests observed a missing-module RED and then passed all 21 cases; the loader hash covers exact bytes in all three directories.
+- Strict synthetic freshness fixture and sealed-gold types, validator, public sanitizer, and complete gate/holdout/gold corpus loader are implemented. The contract tests observed a missing-module RED and then passed all 26 cases; the loader hash covers exact bytes in all three directories. Review fixes require a real parked retry for advanced cursors, bind each delta event to its affected object, and preserve deletion tombstones in later checkpoints until a live provider mutation supersedes them.
 
 ## In progress
 
@@ -35,4 +35,4 @@ The targeted documentation contract and generated structural inventory checks pa
 
 An additional `bun run typecheck` attempt aborted when Node 24.2.0 reached its roughly 2 GiB heap limit, before reporting TypeScript diagnostics. Typecheck therefore has no pass result for this task.
 
-For the freshness loader task, `bun test test/freshness-eval-contract.test.ts` passed (21 tests). Default-heap typecheck again aborted at roughly 2 GiB; `NODE_OPTIONS=--max-old-space-size=6144 bun run typecheck` passed. The first full `bun run test` attempt could not find `bun` in child-shell `PATH`; it was rerun with `/Users/pavan/.bun/bin` on `PATH`. That run reproduced the inherited `test/skillpack-scaffold-harness.test.ts` failure and was interrupted before the 1,916-file shard completed, so it has no full-suite pass result. No local server is running.
+For the freshness loader task, `bun test test/freshness-eval-contract.test.ts` passed (26 tests). Default-heap typecheck again aborted at roughly 2 GiB; `NODE_OPTIONS=--max-old-space-size=6144 bun run typecheck` passed. The first full `bun run test` attempt could not find `bun` in child-shell `PATH`; it was rerun with `/Users/pavan/.bun/bin` on `PATH`. That run reproduced the inherited `test/skillpack-scaffold-harness.test.ts` failure and was interrupted before the 1,916-file shard completed, so it has no full-suite pass result. No local server is running.
