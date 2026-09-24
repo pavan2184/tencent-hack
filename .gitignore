@@ -67,6 +67,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.next/
-dist/
-build/
+/.next/
+/dist/
+/build/
