@@ -1,45 +1,34 @@
-# Project Status
+# Tencent Freshness Project Status
 
 Last updated: 2026-09-24
 
-## Current phase
-
-Pinned GBrain integration and contract-first freshness planning.
-
 ## Completed
 
-- Selected the Tencent hackathon FinTech track.
-- Chosen GBrain as the base repository to extend.
-- Assigned groundedness, data freshness, and access-control research owners.
-- Established the layered freshness-mesh direction.
-- Created the project repository and planning workspace.
-- Reviewed the official hackathon handbook and captured the FinTech challenge,
-  submission requirements, judging rubric, organizer timeline, and relevant
-  terms in `docs/tencent/HACKATHON_REQUIREMENTS.md`.
-- Rehomed Tencent-specific planning documents under `docs/tencent/`.
-- Integrated the GBrain `v0.54.1.0` source history at commit
-  `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, retaining its MIT license,
-  upstream documentation, source code, and tests.
+- Approved design for the contract-first freshness extension.
+- Pinned upstream GBrain `v0.54.1.0` at `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29` integrated with both histories and MIT license retained.
+- Tencent freshness docs complete: baseline, requirements mapping, architecture, future data and operation contracts, eval specification, and dated decisions.
+- Structural documentation contract test added and observed red before the docs were completed, then green after completion.
 
-## Next
+## In progress
 
-- Choose CodeBuddy or WorkBuddy for documented development use and start
-  preserving the mandatory usage evidence.
-- Finalize data-freshness research and connector strategy.
-- Replace the Tencent freshness placeholders with complete versioned contracts,
-  a pinned upstream baseline, and hermetic synthetic evaluation design.
-- Select live-demo connectors and controlled simulations.
-- Write and approve the system design before implementation.
-- Define freshness, authorization, and groundedness test fixtures.
-- Map each of the five required FinTech scenarios to a worked demo fixture.
-- Draft the architecture and trust-boundary diagram before submission week.
+- Freshness eval contract/corpus: synthetic fixtures, sealed gold, schemas, deterministic validation, and a `contract_only` baseline. This is the next implementation task.
+- Team submission coordination: CodeBuddy or WorkBuddy usage evidence and combined demo artifacts.
 
-## Known risks
+## Not started
 
-- The implementation window is three days.
-- Live enterprise APIs may require app review, scopes, or administrator access.
-- GBrain's current access model may need finer-grained source-object permissions.
-- Missing CodeBuddy/WorkBuddy usage evidence would make the project ineligible
-  for scoring.
-- The submission package also needs a cover image, project description,
-  measurable impact, live demo walkthrough, and architecture diagram.
+- Production freshness state machine, database migrations, and PGLite/Postgres methods.
+- Live Confluence and Slack connectors and webhook routes; Jira and Google Drive remain planned simulations.
+- Behavioral baseline, logical-time scoring, and manual provider latency evidence.
+
+## Out of scope here
+
+- Access control, identity/permission decisions, and permission evaluations (Chai's workstream).
+- Groundedness, claim entailment, and answer-level scoring (Raphael's workstream).
+
+## Verification and risk record
+
+The documentation contract is structural only; it validates published markers, not behavioral freshness. The approved 60/300/3600-second targets have no measured result yet. Live API scopes and controlled provider spaces may take setup time. Missing CodeBuddy/WorkBuddy usage evidence would affect challenge eligibility. The combined submission still needs its demo walkthrough, architecture diagram, description, cover image, and worked examples.
+
+The targeted documentation contract and generated structural inventory checks pass. An attempted full upstream unit run encountered a failure in `test/skillpack-scaffold-harness.test.ts`: its CLI init returned “A content-root component is not a real directory.” The same failure reproduced in an isolated run (21 pass, 1 fail). The full suite was stopped after that failure and is not reported as passing; this issue was not changed by the documentation task.
+
+An additional `bun run typecheck` attempt aborted when Node 24.2.0 reached its roughly 2 GiB heap limit, before reporting TypeScript diagnostics. Typecheck therefore has no pass result for this task.

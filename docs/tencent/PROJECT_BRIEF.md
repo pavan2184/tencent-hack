@@ -1,87 +1,34 @@
-# Project Brief
+# Tencent FinTech Freshness Project Brief
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
-## One-Line Description
+## Purpose and selected challenge
 
-A permission-aware enterprise knowledge system that proves the freshness, authorization, and provenance of every answer.
+Build a proof-oriented data-freshness extension on the pinned [GBrain baseline](UPSTREAM_BASELINE.md) for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026 FinTech track. Aspire's Internal Brain challenge spans Confluence, Jira, Slack, and Google Drive. The full challenge also asks for permission-aware retrieval, answer quality, and auditability; this workstream supplies only source-scoped freshness facts and safe-use signals to those later integrations. The [requirements mapping](HACKATHON_REQUIREMENTS.md) keeps team and organizer scope distinct.
 
-## Hackathon Context
+Employees need current operational knowledge without old policy or runbook versions being silently presented as current. The freshness layer will observe provider changes, recover missed changes, prove deletion handling, verify critical evidence at query time, and emit versioned receipts. Downstream consumers can omit or abstain when a critical item is stale or unknown.
 
-- Track: FinTech.
-- Industry challenge contributor: Aspire.
-- Official challenge: **The Internal Brain - Building a Context-Aware
-  Enterprise Knowledge System with RBAC, Security Logging & Audit Trail**.
-- Required source platforms: Confluence, Jira, Slack, and Google Drive.
-- Full organizer requirements: [Hackathon Requirements](HACKATHON_REQUIREMENTS.md).
+## Ownership and providers
 
-## Problem
+Pavan owns data freshness. Chai owns access control; Raphael owns answer groundedness. Access control and groundedness are out of scope for this freshness workstream. Jev may prioritize semantically important changes but does not own deterministic freshness state, provider truth, or fallback decisions.
 
-Enterprise knowledge is fragmented across Slack, Jira, Confluence, and Google Drive. A conventional RAG system can silently return stale information, expose content after permissions change, or provide citations without enough evidence for an audit.
+One normalized contract covers Confluence, Slack, Jira, and Google Drive. Confluence and Slack are live MVP targets using controlled test spaces. Jira and Google Drive are deterministic simulations in the current phase. This is a full derived copy of GBrain, preserving its source history, MIT attribution, source-scoped page identity, operation registry, PGLite/Postgres parity, and test discipline.
 
-## Target Users
+## User-visible freshness journey
 
-- Primary user: employees searching internal operational and policy knowledge.
-- Secondary user: security, compliance, and audit teams reconstructing knowledge access and generated answers.
-- Non-users: people without source-system authorization for the underlying evidence.
+1. A provider update arrives by webhook or is recovered by delta polling or slim reconciliation. Durable acceptance is recorded before acknowledgement; indexing becomes current only when searchable state matches the provider version.
+2. A critical selected item is checked against the provider when policy requires live verification. It becomes `fresh`, `stale`, `unknown`, or `not_required`; stale/unknown critical evidence is omitted or causes abstention before exposure.
+3. A versioned receipt states which source-scoped objects and versions were selected, when they were accepted/indexed/verified, their age and budget, and the safe-use result. A tombstone remains visible as a deletion fact.
 
-## User Journeys
+## Targets and phase boundary
 
-1. An employee asks a cross-source question and receives a grounded answer with citations and a freshness receipt.
-2. An administrator revokes source access; subsequent retrieval immediately excludes the affected evidence.
-3. An auditor reconstructs who asked, what was retrieved, which authorization decisions were made, and what answer was produced.
+- Webhook propagation: `<=60` logical seconds from durable acceptance to searchability.
+- Delta recovery: `<=300` logical seconds from provider change to searchability.
+- Slim reconciliation: `<=3600` logical seconds from provider change to convergence.
+- Hard future eval gates: zero stale critical exposures, accepted event loss, unsafe cursor advances, and duplicate mutations; exact tombstone, receipt, fallback, and convergence rates of `1.0`.
 
-## MVP Scope
+These are approved design targets, not measured performance. The current phase delivers contracts and a hermetic synthetic eval corpus plan with `contract_only` baseline status. Production tables, state machine, live connectors, webhook routes, and behavioral scoring follow later. The docs and structural test are not proof that any provider already meets the targets.
 
-- Extend GBrain rather than rebuild the knowledge system from scratch.
-- Demonstrate ingestion or live retrieval across the required enterprise-source categories.
-- Preserve source-specific permission semantics instead of flattening them into
-  one lossy access model.
-- Resolve the asker's identity and permissions at query time and enforce
-  authorization before evidence is exposed to the model.
-- Maintain freshness through events, delta polling, reconciliation, and query-time verification.
-- Attach claim-level citations and an answer audit receipt.
-- Record a tamper-evident, complete, queryable audit trail containing the query,
-  retrieved document IDs, answer, timestamp, and per-document authorization
-  decisions.
-- Demonstrate all five official scenarios with worked examples: unified query,
-  bounded freshness, negative permission enforcement without an existence leak,
-  live permission revocation, and audit inquiry.
+## Delivery dependencies and risks
 
-## Non-MVP Scope
-
-- Production-scale connector coverage for every source feature.
-- Full enterprise identity-governance lifecycle management.
-- Formal regulatory certification.
-- Perfect semantic conflict resolution across all document types.
-
-## Success Metrics
-
-- No critical stale answer escapes in the demo test set.
-- Permission revocation is reflected before the next protected answer.
-- Fresh content becomes answerable within five minutes in the demonstrated fast path.
-- Every answer exposes source version, freshness state, and claim-level provenance.
-- Audit records allow deterministic reconstruction of the demo queries.
-- Restricted evidence is filtered before model invocation, and negative cases do
-  not reveal that inaccessible content exists.
-- Every official FinTech scenario has a reproducible worked example.
-- Submission evidence includes at least three CodeBuddy or WorkBuddy usage
-  screenshots or an accepted screen recording.
-
-## Key Risks
-
-- Product risk: the proof layer may be too technical unless it is visible in the demo.
-- Technical risk: source webhooks can be delayed, duplicated, reordered, or missed.
-- Data risk: deletions and permission-only changes may not include document content.
-- Security/privacy risk: authorization metadata or stale cached evidence could leak restricted information.
-- Delivery risk: four production-grade connectors are too broad for the implementation window.
-- Eligibility risk: missing CodeBuddy/WorkBuddy usage proof prevents the project
-  from proceeding to scoring.
-- Submission risk: the required live walkthrough, architecture/trust-boundary
-  diagram, cover image, and worked examples may be left too late.
-
-## Open Questions
-
-- Which two connectors will be implemented against live APIs for the demo?
-- Which identity provider and role model will drive the permission-change scenario?
-- What freshness SLA will the team claim for each source and evidence class?
+The team's combined submission must demonstrate the official five scenarios and preserve CodeBuddy or WorkBuddy usage evidence, a live walkthrough, architecture diagram, repository, description, and cover image. Freshness contributes directly to the bounded-freshness scenario and neutral evidence/receipt signals for the combined demo. Duplicate, reordered, missed, and poisoned events; partial embedding; provider outages; and deletion/search mismatches are the main freshness failure modes. Controlled live provider access remains a delivery dependency. See [architecture](FRESHNESS_ARCHITECTURE.md), [data model](FRESHNESS_DATA_MODEL.md), [operations](FRESHNESS_API_CONTRACT.md), and [evals](FRESHNESS_EVALS.md).

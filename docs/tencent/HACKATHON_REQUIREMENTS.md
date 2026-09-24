@@ -1,12 +1,18 @@
 # Hackathon Requirements
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Source and Scope
 
 This document summarizes the requirements relevant to this repository from the
 Tencent Cloud AI CAN DO IT Hackathon Singapore 2026 handbook. It is a planning
 aid, not a replacement for the official handbook or submission form.
+
+The challenge-wide requirements below are retained for the combined team. Pavan's
+current deliverable is data freshness only. Access control (Chai) and answer
+groundedness (Raphael) are out of scope for this freshness workstream; their
+requirements are recorded here as organizer context, not as claims that the
+freshness extension implements them.
 
 Primary handbook references:
 
@@ -133,8 +139,23 @@ a worked example for each in the submission.
    what was retrieved, the authorization decisions, and the answer, with
    timestamps.
 
-The team's five-minute freshness goal in `PROJECT_BRIEF.md` is deliberately
-stricter than the handbook's baseline.
+The team's delta-recovery target of five logical minutes in `PROJECT_BRIEF.md`
+is deliberately stricter than the handbook's baseline; the webhook target is
+one logical minute, and reconciliation is bounded to one logical hour.
+
+## Freshness workstream mapping
+
+| Organizer or team need | Freshness contribution | Phase evidence and limit |
+| --- | --- | --- |
+| Confluence, Jira, Slack, Google Drive source coverage | One source-scoped normalized change, cursor, reconciliation, verification, and receipt contract for all four. | Confluence and Slack are live MVP targets; Jira and Google Drive use deterministic simulations. No live connector is implemented in this phase. |
+| Bounded, predictable data freshness | Webhook `<=60s`, delta `<=300s`, and slim reconciliation `<=3600s` logical-time targets with durable acceptance and retry accounting. | [Architecture](FRESHNESS_ARCHITECTURE.md) and [eval formulas](FRESHNESS_EVALS.md) define intended behavior; `contract_only` is not measured performance. |
+| Avoid silently presenting stale source content | Critical evidence is live-verified as `fresh`, `stale`, `unknown`, or `not_required`; stale/unknown critical items produce safe omission or abstention. | [Operations](FRESHNESS_API_CONTRACT.md) specify safe-use output. No production verification exists yet. |
+| Source provenance for the combined demo | A versioned freshness receipt records source/object/page identity, provider version/hash, timing, policy budget, and status. | Receipt is a freshness fact record, not an authorization decision, answer audit, or claim-groundedness score. |
+| Five worked demonstration scenarios | Freshness owns the bounded-freshness case and supplies neutral status to the unified-query and audit demonstrations. | Negative permission enforcement, live permission change, and answer grounding belong to the other team workstreams. |
+
+The full challenge's permission and audit text below is preserved as a team
+requirements record. Its presence does not expand the freshness implementation
+scope or its test claims.
 
 ## FinTech Deliverables
 
