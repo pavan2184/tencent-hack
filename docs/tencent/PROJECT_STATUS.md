@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Current phase
 
-Research and project setup.
+Pinned GBrain integration and contract-first freshness planning.
 
 ## Completed
 
@@ -15,13 +15,19 @@ Research and project setup.
 - Created the project repository and planning workspace.
 - Reviewed the official hackathon handbook and captured the FinTech challenge,
   submission requirements, judging rubric, organizer timeline, and relevant
-  terms in `docs/HACKATHON_REQUIREMENTS.md`.
+  terms in `docs/tencent/HACKATHON_REQUIREMENTS.md`.
+- Rehomed Tencent-specific planning documents under `docs/tencent/`.
+- Integrated the GBrain `v0.54.1.0` source history at commit
+  `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, retaining its MIT license,
+  upstream documentation, source code, and tests.
 
 ## Next
 
 - Choose CodeBuddy or WorkBuddy for documented development use and start
   preserving the mandatory usage evidence.
 - Finalize data-freshness research and connector strategy.
+- Replace the Tencent freshness placeholders with complete versioned contracts,
+  a pinned upstream baseline, and hermetic synthetic evaluation design.
 - Select live-demo connectors and controlled simulations.
 - Write and approve the system design before implementation.
 - Define freshness, authorization, and groundedness test fixtures.
