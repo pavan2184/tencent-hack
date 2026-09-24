@@ -114,6 +114,12 @@ describe('contract-only freshness baseline', () => {
     'The contract_only baseline, while still contract-only, is green.',
     'The contract_only baseline — despite no runner evidence — is green.',
     'The contract_only baseline (still unmeasured; no runner evidence) is passing.',
+    'Context (the contract_only baseline is green) remains.',
+    'Context — the contract_only baseline is **passing** — remains.',
+    'Context, while the contract_only baseline passes all behavioral tests, remains.',
+    'Context (the contract_only baseline — despite no runner evidence — is green) remains.',
+    'Context — the contract_only baseline (still unmeasured; no runner evidence) is passing — remains.',
+    'Context (note (the contract_only baseline is green)) remains.',
   ])('rejects affirmative documentation claim: %s', sentence => {
     expect(() => validateFreshnessContractDocs('README.md', sentence)).toThrow(/green|passing/);
   });
@@ -126,6 +132,12 @@ describe('contract-only freshness baseline', () => {
     'The contract_only baseline is not green, while the measured runner is passing.',
     'The contract_only baseline is not green — the measured runner is passing.',
     'The contract_only baseline is not green whereas the measured runner is passing.',
+    'Context (the contract_only baseline is not green; the measured runner is passing) remains.',
+    'Context — the contract_only baseline is not green, while the measured runner is passing — remains.',
+    'Context, while the contract_only baseline is not green whereas the measured runner is passing, remains.',
+    'The contract_only baseline (the measured runner is green) is not passing.',
+    'The contract_only baseline — the measured runner is passing — is not green.',
+    'The contract_only baseline, while the measured runner is green, is not passing.',
   ])('accepts cautionary documentation: %s', sentence => {
     expect(() => validateFreshnessContractDocs('README.md', sentence)).not.toThrow();
   });

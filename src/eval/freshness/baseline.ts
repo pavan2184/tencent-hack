@@ -127,15 +127,26 @@ export function validateFreshnessContractDocs(file: string, contents: string): v
       .replace(/\*|`+/g, '')
       .replace(/(?<!\w)_{1,2}(?=\w)|(?<=\w)_{1,2}(?!\w)/g, '')
       .replace(/\s+/g, ' ');
-    const withoutInterruptions = plain
-      .replace(/\([^()]*\)/g, ' ')
-      .replace(/,\s*(?:while|although|though|despite|which|even though|even if)\b[^,;.!?—]*,\s*/gi, ' ')
-      .replace(/—[^—]*—/g, ' ');
-    for (const clause of withoutInterruptions.split(/(?<=[.!?])\s+|\s*[;—]\s*|,\s*(?:but|while)\b\s*|\bwhereas\b\s*/i)) {
-      subject.lastIndex = 0;
-      for (const match of clause.matchAll(subject)) {
-        if (affirmative.test(clause.slice(match.index + match[0].length, match.index + match[0].length + 120))) {
-          fail(file, 'documentation', 'contract_only cannot claim green or behaviorally passing');
+    const pending = [plain];
+    while (pending.length > 0) {
+      const segment = pending.pop()!;
+      const interruption = /\(([^()]*)\)|,\s*((?:while|although|though|despite|which|even though|even if)\b[^,;.!?—]*),\s*|—([^—]*)—/i.exec(segment);
+      if (interruption) {
+        // Inspect the contents before the rejoined surrounding clause. Each
+        // split consumes a delimiter pair, so even nested prose is bounded by
+        // its input length without recursive calls or discarded claim text.
+        pending.push(
+          segment.slice(0, interruption.index) + ' ' + segment.slice(interruption.index + interruption[0].length),
+          interruption[1] ?? interruption[2] ?? interruption[3]!,
+        );
+        continue;
+      }
+      for (const clause of segment.split(/(?<=[.!?])\s+|\s*[;—]\s*|,\s*(?:but|while)\b\s*|\bwhereas\b\s*/i)) {
+        subject.lastIndex = 0;
+        for (const match of clause.matchAll(subject)) {
+          if (affirmative.test(clause.slice(match.index + match[0].length, match.index + match[0].length + 120))) {
+            fail(file, 'documentation', 'contract_only cannot claim green or behaviorally passing');
+          }
         }
       }
     }

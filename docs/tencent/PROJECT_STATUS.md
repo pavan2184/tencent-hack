@@ -71,3 +71,11 @@ after roughly four of 1,917 files in over two minutes, so it has no full-suite
 pass result. The isolated inherited `test/skillpack-scaffold-harness.test.ts`
 failure reproduced (21 pass, 1 fail): CLI init returned “A content-root
 component is not a real directory.” No local server is running.
+
+Contract-baseline review fix round 4 checks affirmative claims inside balanced
+interruptions before checking the rejoined surrounding clause. Six new positive
+regressions first failed; after the fix, all 61 baseline tests and all 94 combined
+freshness tests passed, including cautionary comparisons and prior Markdown
+regressions. The contract check, 6 GiB typecheck, and diff whitespace check passed.
+The full suite was not rerun for this focused review fix. This remains a bounded
+prose guard, with no behavioral runner or natural-language parser added.
