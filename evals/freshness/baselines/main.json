@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "baseline_id": "main",
+  "status": "contract_only",
+  "fixtures_hash": "2a6c2245b4e0645274a04263c1a72b563ab80e163f80da52597b29a358f3a3ec",
+  "config": {
+    "clock": "logical",
+    "network": "disabled",
+    "llm": "disabled",
+    "providers": ["confluence", "slack", "jira", "google-drive"],
+    "suites": ["fast-path", "delta-recovery", "reconciliation", "critical-verification", "receipt-integrity", "failure-recovery", "cross-platform-contract"]
+  },
+  "thresholds": {
+    "stale_critical_exposures": 0,
+    "accepted_event_loss": 0,
+    "cursor_advanced_past_unaccounted_work": 0,
+    "duplicate_mutations": 0,
+    "tombstone_accuracy": 1,
+    "receipt_field_accuracy": 1,
+    "safe_fallback_rate": 1,
+    "eventual_convergence_rate": 1,
+    "webhook_max_propagation_seconds": 60,
+    "delta_max_recovery_seconds": 300,
+    "reconciliation_max_convergence_seconds": 3600
+  },
+  "counts": { "fixtures": 12, "gate": 10, "holdout": 2, "providers": 4, "suites": 7 }
+}

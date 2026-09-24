@@ -102,6 +102,7 @@
     "check:fixture-privacy": "bash scripts/check-fixture-privacy.sh",
     "check:conversation-parser": "bun src/cli.ts eval conversation-parser test/fixtures/conversation-formats/all.jsonl --no-llm",
     "check:eval-chronicle": "bun src/cli.ts eval chronicle",
+    "check:freshness-evals": "bun run scripts/check-freshness-evals.ts",
     "check:eval-canary": "bun run scripts/run-eval-canary.ts",
     "check:pagetype-exhaustive": "bash scripts/check-pagetype-exhaustive.sh",
     "check:pg-url-redaction": "bash scripts/check-pg-url-redaction.sh",

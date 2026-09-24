@@ -12,10 +12,11 @@ Last updated: 2026-09-24
 - Strict synthetic freshness fixture and sealed-gold types, validator, public sanitizer, and complete gate/holdout/gold corpus loader are implemented. The contract tests observed a missing-module RED and then passed all 26 cases; the loader hash covers exact bytes in all three directories. Review fixes require a real parked retry for advanced cursors, bind each delta event to its affected object, and preserve deletion tombstones in later checkpoints until a live provider mutation supersedes them.
 - Published the draft 2020-12 freshness JSON Schemas and a deterministic synthetic corpus: ten gate fixtures, two holdouts, and twelve paired sealed gold files. The new committed-corpus tests observed an absent-directory RED before the files were added.
 - Hardened sealed gold after review: every ratio with an empty fixture-specific denominator is declared explicitly and fixed at 1.0; live-verification receipts require a matching public verify step and result. The embedding-failure case now includes its unknown verification step.
+- Added the committed `contract_only` baseline, strict hash/config/coverage/threshold validator, and hermetic `check:freshness-evals` verify gate. Its output is a contract summary, not a behavioral result.
 
 ## In progress
 
-- Freshness eval runner and committed `contract_only` baseline remain to be built. The loader, schemas, and initial corpus are complete.
+- Freshness behavioral eval runner remains to be built. The contract baseline, loader, schemas, and initial corpus are complete.
 - Team submission coordination: CodeBuddy or WorkBuddy usage evidence and combined demo artifacts.
 
 ## Not started
@@ -59,3 +60,14 @@ and missing provenance rule, then passed all 33 cases. All four JSON Schemas
 compiled; Ajv validated all 24 fixture and gold documents. Both privacy
 guards and the 6 GiB typecheck passed. The inherited full suite was not
 rerun.
+
+For the contract baseline task, the new test first failed on absent
+`src/eval/freshness/baseline.ts`, then the combined corpus and baseline tests
+passed all 66 cases. `bun run check:freshness-evals`, the generated structural
+inventory check, baseline JSON Schema validation, and the 6 GiB typecheck
+passed. The full `bun run test` attempt memory-adapted to one shard and one
+file at a time with about 2 GiB available; it was interrupted with exit 130
+after roughly four of 1,917 files in over two minutes, so it has no full-suite
+pass result. The isolated inherited `test/skillpack-scaffold-harness.test.ts`
+failure reproduced (21 pass, 1 fail): CLI init returned “A content-root
+component is not a real directory.” No local server is running.

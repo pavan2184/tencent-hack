@@ -13,6 +13,8 @@ the current status is `contract_only`.
 - `gold/`: twelve paired sealed expectations, joined by `fixture_id`.
 - `schema/`: draft 2020-12 interchange schemas for fixture, gold, future
   result, and contract-only baseline documents.
+- `baselines/main.json`: the approved `contract_only` thresholds, hermetic
+  configuration, exact coverage counts, and complete-corpus hash.
 
 Holdout gold is committed for deterministic CI integrity and corpus hashing,
 but must never be passed to candidate implementations. The loader returns each
@@ -53,6 +55,7 @@ Run the contract and privacy checks from the repository root:
 
 ```bash
 bun test test/freshness-eval-contract.test.ts
+bun run check:freshness-evals
 bun run check:fixture-privacy
 bun run check:synthetic-corpus-privacy
 NODE_OPTIONS=--max-old-space-size=6144 bun run typecheck
@@ -61,3 +64,9 @@ NODE_OPTIONS=--max-old-space-size=6144 bun run typecheck
 The ten gate cases span all seven suites and all four providers. The holdouts
 test a Jira second-page cursor failure and a Google Drive metadata-only update.
 No runner result or measured behavioral baseline is committed in this phase.
+
+Replacing `contract_only` requires a separate reviewed production-runner plan,
+result schema validation, full suite execution, comparison against a protected
+baseline with the same corpus hash, and an explicit baseline-bless command.
+That graduation is not implemented in this phase; the current check validates
+contracts only and reports no behavioral score or pass result.

@@ -1,0 +1,107 @@
+import { beforeAll, describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import {
+  validateFreshnessContractBaseline, validateFreshnessContractDocs,
+  type FreshnessContractBaseline,
+} from '../src/eval/freshness/baseline.ts';
+import { loadFreshnessCorpus } from '../src/eval/freshness/fixtures.ts';
+import { FRESHNESS_PROVIDERS, FRESHNESS_SUITES, type LoadedFreshnessCorpus } from '../src/eval/freshness/types.ts';
+
+const FILE = 'evals/freshness/baselines/main.json';
+let corpus: LoadedFreshnessCorpus;
+
+beforeAll(async () => { corpus = await loadFreshnessCorpus(); });
+
+function baseline(): Record<string, any> {
+  return {
+    schema_version: 1,
+    baseline_id: 'main',
+    status: 'contract_only',
+    fixtures_hash: corpus.fixtures_hash,
+    config: {
+      clock: 'logical', network: 'disabled', llm: 'disabled',
+      providers: [...FRESHNESS_PROVIDERS], suites: [...FRESHNESS_SUITES],
+    },
+    thresholds: {
+      stale_critical_exposures: 0,
+      accepted_event_loss: 0,
+      cursor_advanced_past_unaccounted_work: 0,
+      duplicate_mutations: 0,
+      tombstone_accuracy: 1,
+      receipt_field_accuracy: 1,
+      safe_fallback_rate: 1,
+      eventual_convergence_rate: 1,
+      webhook_max_propagation_seconds: 60,
+      delta_max_recovery_seconds: 300,
+      reconciliation_max_convergence_seconds: 3600,
+    },
+    counts: { fixtures: 12, gate: 10, holdout: 2, providers: 4, suites: 7 },
+  };
+}
+
+const rejects = (raw: unknown, path: RegExp) =>
+  expect(() => validateFreshnessContractBaseline(FILE, raw, corpus)).toThrow(path);
+
+describe('contract-only freshness baseline', () => {
+  test('committed main binds the complete corpus and exact canonical contract', () => {
+    const committed = JSON.parse(readFileSync(FILE, 'utf8'));
+    expect(validateFreshnessContractBaseline(FILE, committed, corpus)).toEqual(baseline() as unknown as FreshnessContractBaseline);
+  });
+
+  test.each(['measured', 'passing', 'green', null])('rejects non-contract status %p', status => {
+    const raw = baseline(); raw.status = status;
+    rejects(raw, /status/);
+  });
+
+  test.each(['score', 'passed', 'measured_metrics', 'results'])('rejects result field %s', key => {
+    const raw = baseline(); raw[key] = key === 'passed' ? true : {};
+    rejects(raw, new RegExp(key));
+  });
+
+  test('rejects a foreign fixture hash and malformed hash', () => {
+    const raw = baseline(); raw.fixtures_hash = 'a'.repeat(64);
+    rejects(raw, /fixtures_hash/);
+    raw.fixtures_hash = 'not-a-hash';
+    rejects(raw, /fixtures_hash/);
+  });
+
+  test.each(['fixtures', 'gate', 'holdout', 'providers', 'suites'])('rejects wrong %s count', key => {
+    const raw = baseline(); raw.counts[key] += 1;
+    rejects(raw, new RegExp(key));
+  });
+
+  test.each(['providers', 'suites'])('rejects missing and reordered %s coverage', key => {
+    const raw = baseline(); raw.config[key].pop();
+    rejects(raw, new RegExp(key));
+    raw.config[key] = [...baseline().config[key]].reverse();
+    rejects(raw, new RegExp(key));
+  });
+
+  test.each([
+    ['stale_critical_exposures', 1], ['accepted_event_loss', 1],
+    ['cursor_advanced_past_unaccounted_work', 1], ['duplicate_mutations', 1],
+    ['tombstone_accuracy', 0.99], ['receipt_field_accuracy', 0.99],
+    ['safe_fallback_rate', 0.99], ['eventual_convergence_rate', 0.99],
+    ['webhook_max_propagation_seconds', 61], ['delta_max_recovery_seconds', 301],
+    ['reconciliation_max_convergence_seconds', 3601],
+    ['webhook_max_propagation_seconds', null],
+  ] as const)('rejects weakened threshold %s', (key, value) => {
+    const raw = baseline(); raw.thresholds[key] = value;
+    rejects(raw, new RegExp(key));
+  });
+
+  test.each([
+    ['clock', 'wall'], ['network', 'enabled'], ['llm', 'enabled'],
+  ])('rejects non-hermetic %s setting', (key, value) => {
+    const raw = baseline(); raw.config[key] = value;
+    rejects(raw, new RegExp(key));
+  });
+
+  test('rejects documentation that describes this contract as behaviorally green', () => {
+    for (const file of ['evals/freshness/README.md', 'docs/tencent/FRESHNESS_EVALS.md']) {
+      const current = readFileSync(file, 'utf8');
+      expect(() => validateFreshnessContractDocs(file, current)).not.toThrow();
+      expect(() => validateFreshnessContractDocs(file, `${current}\nThe contract_only baseline is green and behaviorally passing.\n`)).toThrow(/green|passing/);
+    }
+  });
+});
