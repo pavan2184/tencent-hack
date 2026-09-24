@@ -52,6 +52,22 @@ describe('Tencent freshness documentation contract', () => {
     }
   });
 
+  test('scopes receipt replay to persisted requests', () => {
+    const model = doc('FRESHNESS_DATA_MODEL.md');
+    const receipts = model.split('## `freshness_receipts`')[1]?.split('\n## ')[0] ?? '';
+    expect(receipts).toMatch(/request_key[^\n]*globally unique/i);
+    expect(receipts).toMatch(/request_payload_hash[^\n]*SHA-256[^\n]*required/i);
+    expect(receipts).toMatch(/atomic[^\n]*(?:reserv|insert)/i);
+
+    const api = doc('FRESHNESS_API_CONTRACT.md');
+    const receiptOperation = api.split('## `freshness_receipt`')[1]?.split('\n## ')[0] ?? '';
+    expect(receiptOperation).toMatch(/persist:\s*true[^\n]*request_payload_hash/i);
+    const ephemeral = receiptOperation.split('\n').find((line) => line.includes('persist: false')) ?? '';
+    expect(ephemeral).toMatch(/ephemeral/i);
+    expect(ephemeral).toMatch(/no cross-call[^\n]*restart[^\n]*(?:replay|conflict)/i);
+    expect(ephemeral).not.toMatch(/(?:guaranteed|guarantees) (?:cross-call|replay|conflict)/i);
+  });
+
   test('publishes the required metrics and hard thresholds', () => {
     const evals = doc('FRESHNESS_EVALS.md');
     for (const metric of [

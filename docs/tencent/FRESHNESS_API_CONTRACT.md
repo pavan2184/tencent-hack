@@ -40,11 +40,16 @@ Errors: `invalid_source`, `object_not_found`, `policy_not_found`, `provider_unav
 
 Purpose: produce a stable, versioned snapshot for the exact selected evidence set.
 
-Input: required ordered `evidence` array of `(source_id, external_object_id, gbrain_page_slug?)`, `policy_id`/version, and `request_key`; optional `persist` flag. Every item must be checked in its own GBrain source. A zero-item set is valid only when the caller explicitly records that no evidence was selected.
+Input: required ordered `evidence` array of `(source_id, external_object_id, gbrain_page_slug?)`, `policy_id`/version, and `request_key`; optional `persist` flag (default `true`). Every item must be checked in its own GBrain source. A zero-item set is valid only when the caller explicitly records that no evidence was selected.
 
 Output: `schema_version`, `receipt_id`, `created_at`, policy revision, ordered `evidence_items`, `oldest_evidence_age_seconds`, `overall_status`, and `receipt_hash`. Each item includes source/connector/object/page identity, provider version and content hash, provider modification/observation/acceptance/index/search/live-verification times, verification result, sync path, computed age, budget, tombstone state, freshness status, and safe-use/fallback signal. Unknown, stale, deleted, or mismatched evidence remains in the receipt instead of disappearing from the input set.
 
-Errors: `invalid_evidence`, `invalid_source`, `policy_not_found`, `receipt_conflict`, `storage_unavailable`. The same `request_key` and evidence/policy snapshot returns the same hash and receipt; conflicting reuse fails. On failure no partial receipt is presented as fresh. If persistence is requested and fails, the operation errors rather than returning an unauditable success. This operation reads scoped evidence and may write an immutable receipt, so its registry scope is statically `write` even when a caller chooses `persist: false`.
+Persistence modes:
+
+- `persist: true`: `request_key` is globally unique across persisted receipts. The service computes `request_payload_hash` from the canonical contract version, ordered source-scoped evidence identifiers, policy ID/version, and explicit empty-set declaration. Atomic reservation and receipt commit ensure the same key plus the same hash returns the existing immutable receipt, while the same key plus a different hash returns `receipt_conflict`. A concurrent in-progress reservation is waited on or returned as retryable; no partial receipt is published.
+- `persist: false`: returns an ephemeral snapshot with no persisted receipt or key reservation. `request_key` is for correlation and deterministic behavior within that request only; there is no cross-call or restart replay or conflict guarantee. A later call may observe changed freshness state and return a different snapshot.
+
+Errors: `invalid_evidence`, `invalid_source`, `policy_not_found`, and `evidence_unavailable` apply to either mode. `receipt_conflict` and `storage_unavailable` apply only when persistence was requested. On failure no partial receipt is presented as fresh. A persisted receipt write that fails returns `storage_unavailable`, never an unauditable success. This operation reads scoped evidence and may write an immutable receipt, so its registry scope is statically `write` even when a caller chooses `persist: false`.
 
 ## Provider webhook transport
 

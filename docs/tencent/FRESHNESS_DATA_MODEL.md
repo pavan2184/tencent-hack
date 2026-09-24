@@ -108,12 +108,13 @@ Policy publication goes `draft -> active -> retired` as metadata; revisions crea
 
 ## `freshness_receipts`
 
-Immutable snapshots for selected evidence, especially demo and audit reconstruction. Primary key: `receipt_id` (UUID); `receipt_hash` is unique for the canonical receipt payload and schema version. A repeat idempotency key returns the same receipt.
+Immutable persisted snapshots for selected evidence, especially demo and audit reconstruction. Primary key: `receipt_id` (UUID). `request_key` is globally unique across all persisted `freshness_receipts`, including requests whose evidence spans sources; it is never scoped to one source or connector. `receipt_hash` is an integrity fingerprint of the canonical receipt payload and schema version, not the idempotency key.
 
 | Field | Type / nullability | Meaning |
 | --- | --- | --- |
 | `receipt_id`, `schema_version` | UUID/integer, required | Snapshot identity and version. |
-| `request_key` | text, required | Idempotent evidence-set request identity. |
+| `request_key` | text, required | Globally unique persisted request identity, independent of source scope. |
+| `request_payload_hash` | SHA-256 hex, required | Canonical request hash for replay/conflict comparison. |
 | `created_at` | timestamp, required | Snapshot creation. |
 | `policy_id`, `policy_schema_version` | text/integer, required | Exact policy revision used. |
 | `evidence_items` | structured array, required | Every requested `(source_id, external_object_id, gbrain_page_slug?)`, connector kind, provider version/hash, provider modification/observation/acceptance/index/search/verification times, verification result, sync path, age, budget, status, and tombstone marker. |
@@ -121,7 +122,9 @@ Immutable snapshots for selected evidence, especially demo and audit reconstruct
 | `overall_status` | enum, required | `fresh`, `stale`, `unknown`, `not_required`, or `mixed`. |
 | `receipt_hash` | SHA-256 hex, required | Canonical snapshot integrity hash. |
 
-Receipts are append-only. A later provider update or deletion does not rewrite old proof; a new receipt reflects the new status. Unknown/deleted/mismatched items remain in `evidence_items`, preserving input order and source scope. Receipt creation failure returns an explicit error, not a falsely fresh receipt. Retry uses the request key; there is no receipt parking state because no partial receipt is published. Ordinary query storage is optional, but demo and audit reconstruction require persistence.
+For `persist: true`, compute `request_payload_hash` from contract version, ordered source-scoped evidence identifiers, policy ID/version, and the explicit empty-set declaration before reading mutable freshness state. Atomically reserve the globally unique `request_key` and commit its hash with the complete immutable receipt in one transaction. On a key collision, the same key plus the same canonical request hash returns the existing receipt, even if provider state changed later; the same key plus a different hash returns `receipt_conflict`. Concurrent attempts wait for the winner's committed result or receive a retryable in-progress outcome, never a second receipt. A failed transaction rolls back its reservation and receipt together.
+
+Receipts are append-only. A later provider update or deletion does not rewrite old proof; a new request key produces a new receipt reflecting the new status. Unknown/deleted/mismatched items remain in `evidence_items`, preserving input order and source scope. There is no receipt parking state because no partial receipt is published. `persist: false` produces an ephemeral snapshot and no table row or durable idempotency reservation. Ordinary query storage is optional, but demo and audit reconstruction require persistence.
 
 ## Integrity and implementation boundary
 

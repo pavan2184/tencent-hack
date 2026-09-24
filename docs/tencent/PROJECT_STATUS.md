@@ -7,6 +7,7 @@ Last updated: 2026-09-24
 - Approved design for the contract-first freshness extension.
 - Pinned upstream GBrain `v0.54.1.0` at `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29` integrated with both histories and MIT license retained.
 - Tencent freshness docs complete: baseline, requirements mapping, architecture, future data and operation contracts, eval specification, and dated decisions.
+- Receipt contract review resolved: persisted requests have a globally unique key and atomic request-hash replay/conflict rule; ephemeral snapshots carry no cross-call or restart idempotency promise.
 - Structural documentation contract test added and observed red before the docs were completed, then green after completion.
 
 ## In progress
