@@ -127,7 +127,11 @@ export function validateFreshnessContractDocs(file: string, contents: string): v
       .replace(/\*|`+/g, '')
       .replace(/(?<!\w)_{1,2}(?=\w)|(?<=\w)_{1,2}(?!\w)/g, '')
       .replace(/\s+/g, ' ');
-    for (const clause of plain.split(/(?<=[.!?])\s+|\s*[;—]\s*|,\s*(?:but|while)\b\s*|\bwhereas\b\s*/i)) {
+    const withoutInterruptions = plain
+      .replace(/\([^()]*\)/g, ' ')
+      .replace(/,\s*(?:while|although|though|despite|which|even though|even if)\b[^,;.!?—]*,\s*/gi, ' ')
+      .replace(/—[^—]*—/g, ' ');
+    for (const clause of withoutInterruptions.split(/(?<=[.!?])\s+|\s*[;—]\s*|,\s*(?:but|while)\b\s*|\bwhereas\b\s*/i)) {
       subject.lastIndex = 0;
       for (const match of clause.matchAll(subject)) {
         if (affirmative.test(clause.slice(match.index + match[0].length, match.index + match[0].length + 120))) {

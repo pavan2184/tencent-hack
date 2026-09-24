@@ -111,6 +111,9 @@ describe('contract-only freshness baseline', () => {
     'The contract_only baseline is `green`.',
     'The contract_only baseline is [green](https://example.com/status).',
     'The contract_only baseline passes all behavioral tests.',
+    'The contract_only baseline, while still contract-only, is green.',
+    'The contract_only baseline — despite no runner evidence — is green.',
+    'The contract_only baseline (still unmeasured; no runner evidence) is passing.',
   ])('rejects affirmative documentation claim: %s', sentence => {
     expect(() => validateFreshnessContractDocs('README.md', sentence)).toThrow(/green|passing/);
   });
