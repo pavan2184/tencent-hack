@@ -90,7 +90,7 @@ while IFS= read -r file; do
 done < <(find "$CORPUS_DIR" -name '*.md' -type f 2>/dev/null)
 
 # ---------------------------------------------------------------------------
-# BrainBench corpus (evals/brainbench/) — same privacy posture, JSON shape.
+# BrainBench and freshness corpora — same privacy posture, JSON shape.
 # The corpus is GENERATED whole-cloth (evals/brainbench/generator/gen.ts,
 # curated synthetic name pools, PRNG scenarios), so string-level checks are a
 # backstop for hand-authored spike fixtures + future contributions. The
@@ -100,31 +100,35 @@ done < <(find "$CORPUS_DIR" -name '*.md' -type f 2>/dev/null)
 # Env override exists for the negative-path test (test/eval-brainbench-e2e.slow.test.ts)
 # — production callers never set it.
 BB_DIR="${BRAINBENCH_PRIVACY_DIR:-evals/brainbench}"
-if [ -d "$BB_DIR/fixtures" ]; then
-  echo "[corpus-privacy] checking brainbench fixtures for explicit dollar amounts..."
+FRESHNESS_DIR="${FRESHNESS_PRIVACY_DIR:-evals/freshness}"
+for CORPUS_JSON_DIR in "$BB_DIR" "$FRESHNESS_DIR"; do
+if [ -d "$CORPUS_JSON_DIR/fixtures" ]; then
+  JSON_SCAN_DIRS=("$CORPUS_JSON_DIR/fixtures" "$CORPUS_JSON_DIR/gold")
+  [ -d "$CORPUS_JSON_DIR/holdout" ] && JSON_SCAN_DIRS+=("$CORPUS_JSON_DIR/holdout")
+  echo "[corpus-privacy] checking $CORPUS_JSON_DIR fixtures for explicit dollar amounts..."
   while IFS= read -r match; do
     if [ -n "$match" ]; then
       echo "  VIOLATION: explicit dollar amount in $match"
       VIOLATIONS=$((VIOLATIONS + 1))
     fi
-  done < <(grep -rEn '\$[0-9]+(\.[0-9]+)?[MBKkmb]\b' "$BB_DIR/fixtures" "$BB_DIR/gold" --include='*.json' 2>/dev/null || true)
+  done < <(grep -rEn '\$[0-9]+(\.[0-9]+)?[MBKkmb]\b' "${JSON_SCAN_DIRS[@]}" --include='*.json' 2>/dev/null || true)
 
-  echo "[corpus-privacy] checking brainbench fixtures for out-of-range years..."
+  echo "[corpus-privacy] checking $CORPUS_JSON_DIR fixtures for out-of-range years..."
   while IFS= read -r match; do
     if [ -n "$match" ]; then
       echo "  VIOLATION: out-of-range year in $match (fixtures use 2024-2026)"
       VIOLATIONS=$((VIOLATIONS + 1))
     fi
-  done < <(grep -rEn '\b(201[0-9]|202[0-3]|202[7-9]|20[3-9][0-9])\b' "$BB_DIR/fixtures" "$BB_DIR/gold" --include='*.json' 2>/dev/null || true)
+  done < <(grep -rEn '\b(201[0-9]|202[0-3]|202[7-9]|20[3-9][0-9])\b' "${JSON_SCAN_DIRS[@]}" --include='*.json' 2>/dev/null || true)
 fi
+done
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo ""
-  echo "❌ $VIOLATIONS privacy violation(s) found in $CORPUS_DIR."
+  echo "❌ $VIOLATIONS synthetic-corpus privacy violation(s) found."
   echo ""
-  echo "The synthetic calibration corpus must use anonymized placeholder names"
-  echo "(see test/fixtures/calibration/README.md). Real names of YC partners,"
-  echo "portfolio companies, funds, etc. cannot enter this directory."
+  echo "Synthetic calibration, BrainBench, and freshness corpora must not"
+  echo "contain real-world financial amounts or out-of-range timelines."
   echo ""
   echo "Either:"
   echo "  - replace the offending content with placeholder names"

@@ -23,7 +23,7 @@ set -euo pipefail
 
 # cathedral-4: the transcripts-import fixtures (raw harness/export shapes)
 # carry the same placeholder-names-only contract as conversation-formats.
-FIXTURE_DIRS=("test/fixtures/conversation-formats" "test/fixtures/transcripts")
+FIXTURE_DIRS=("test/fixtures/conversation-formats" "test/fixtures/transcripts" "${FRESHNESS_FIXTURE_PRIVACY_DIR:-evals/freshness}")
 # Single-file fixtures under the same contract. The LongMemEval mixed-case
 # fixture mirrors the public dataset's ID SHAPE (sharegpt_yywfIrx_0-style)
 # but every session body is hand-written placeholder text.

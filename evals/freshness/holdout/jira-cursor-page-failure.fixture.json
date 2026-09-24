@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "fixture_id": "jira-cursor-page-failure",
+  "provider": "jira",
+  "suite": "delta-recovery",
+  "initial_cursor": "jira-page-c0",
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-page-one",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "88c9bf449b41895cf92c20532bd8e508ca59b9193a4eeeda43ac3afde82d13d7",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    },
+    {
+      "object_id": "example-harbor-finance-page-two",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "4bd95eae89a08290c3999a3a47f258dac20db00512df9bc7727f5998cc698d54",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "page-one-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-page-one",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "ccd50e1ddf2f565ad2cab15a3250d2def713997abdcb10b4547d97c39a9b0357",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "page-one-delta",
+      "at_seconds": 10,
+      "kind": "delta_poll",
+      "cursor_in": "jira-page-c0",
+      "cursor_out": "jira-page-c1",
+      "object_ids": [
+        "example-harbor-finance-page-one"
+      ],
+      "event_ids": [
+        "ehf-page-one-v2"
+      ]
+    },
+    {
+      "step_id": "page-one-searchable",
+      "at_seconds": 20,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-page-one",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    },
+    {
+      "step_id": "page-two-update",
+      "at_seconds": 30,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-page-two",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "87fb0162ef9cd128fe3feed13bf7d8871b54e70f2488d40b5b0d6d2de1023db5",
+        "modified_at": "2026-09-24T00:00:30.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "page-two-delta",
+      "at_seconds": 40,
+      "kind": "delta_poll",
+      "cursor_in": "jira-page-c1",
+      "cursor_out": "jira-page-c2",
+      "object_ids": [
+        "example-harbor-finance-page-two"
+      ],
+      "event_ids": [
+        "ehf-page-two-v2"
+      ]
+    },
+    {
+      "step_id": "page-two-failure",
+      "at_seconds": 41,
+      "kind": "interrupt",
+      "phase": "before_apply",
+      "object_id": "example-harbor-finance-page-two"
+    },
+    {
+      "step_id": "page-two-retry",
+      "at_seconds": 50,
+      "kind": "retry",
+      "event_id": "ehf-page-two-v2",
+      "object_id": "example-harbor-finance-page-two",
+      "attempt": 1,
+      "outcome": "applied"
+    },
+    {
+      "step_id": "page-two-searchable",
+      "at_seconds": 60,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-page-two",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    }
+  ]
+}

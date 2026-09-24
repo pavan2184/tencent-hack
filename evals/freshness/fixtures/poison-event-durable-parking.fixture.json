@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "fixture_id": "poison-event-durable-parking",
+  "provider": "slack",
+  "suite": "failure-recovery",
+  "initial_cursor": "slack-c0",
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-good-message",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "fefbcb9f441674368d3e1e20f4b5a3e1bbfca13d2ce60c0022f19191a246563a",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    },
+    {
+      "object_id": "example-harbor-finance-poison-message",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "861d0e6462f96b9bc00f1970fe6975f293d0193bb3abe477e630e6b6eb39621d",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "good-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-good-message",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "8130d09571bca257684594b7d5ea0987242a6a3d3d2106db570288a339cef4ae",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "poison-update",
+      "at_seconds": 1,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-poison-message",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "92890dd84de6ccf897f8c8b0eb6628f8a3197d9ebf42f0806c5df332f379f39e",
+        "modified_at": "2026-09-24T00:00:01.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "delta-page",
+      "at_seconds": 2,
+      "kind": "delta_poll",
+      "cursor_in": "slack-c0",
+      "cursor_out": "slack-c1",
+      "object_ids": [
+        "example-harbor-finance-good-message",
+        "example-harbor-finance-poison-message"
+      ],
+      "event_ids": [
+        "ehf-good-v2",
+        "ehf-poison-v2"
+      ]
+    },
+    {
+      "step_id": "good-searchable",
+      "at_seconds": 10,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-good-message",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    },
+    {
+      "step_id": "poison-retry",
+      "at_seconds": 20,
+      "kind": "retry",
+      "event_id": "ehf-poison-v2",
+      "object_id": "example-harbor-finance-poison-message",
+      "attempt": 1,
+      "outcome": "rate_limited"
+    },
+    {
+      "step_id": "poison-parked",
+      "at_seconds": 30,
+      "kind": "retry",
+      "event_id": "ehf-poison-v2",
+      "object_id": "example-harbor-finance-poison-message",
+      "attempt": 2,
+      "outcome": "parked"
+    }
+  ]
+}

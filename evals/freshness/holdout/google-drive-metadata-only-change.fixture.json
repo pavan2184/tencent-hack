@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "fixture_id": "google-drive-metadata-only-change",
+  "provider": "google-drive",
+  "suite": "reconciliation",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-metadata-file",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "eac9927fd28c36fd27379527ca1c22992246b3c4c684b1644aa7d0ff1ac0cb92",
+      "modified_at": "2026-09-23T23:59:30.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "metadata-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-metadata-file",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "eac9927fd28c36fd27379527ca1c22992246b3c4c684b1644aa7d0ff1ac0cb92",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "reconcile-metadata",
+      "at_seconds": 300,
+      "kind": "reconcile",
+      "object_ids": [
+        "example-harbor-finance-metadata-file"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "fixture_id": "rate-limit-durable-retry",
+  "provider": "jira",
+  "suite": "failure-recovery",
+  "initial_cursor": "jira-rate-c0",
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-rate-issue",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "02c51eb69caee27faf89ce76fd7d56f199c74b420598617ceeb71b62059bda88",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-rate-issue",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "c883c90b6d93590c14edd7b65fb5cc12c1272b56f714294af5cf2a8f86ce525e",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "delta-attempt",
+      "at_seconds": 1,
+      "kind": "delta_poll",
+      "cursor_in": "jira-rate-c0",
+      "cursor_out": "jira-rate-c1",
+      "object_ids": [
+        "example-harbor-finance-rate-issue"
+      ],
+      "event_ids": [
+        "ehf-rate-v2"
+      ]
+    },
+    {
+      "step_id": "rate-limited",
+      "at_seconds": 2,
+      "kind": "retry",
+      "event_id": "ehf-rate-v2",
+      "object_id": "example-harbor-finance-rate-issue",
+      "attempt": 1,
+      "outcome": "rate_limited"
+    },
+    {
+      "step_id": "durable-retry",
+      "at_seconds": 50,
+      "kind": "retry",
+      "event_id": "ehf-rate-v2",
+      "object_id": "example-harbor-finance-rate-issue",
+      "attempt": 2,
+      "outcome": "applied"
+    },
+    {
+      "step_id": "searchable",
+      "at_seconds": 100,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-rate-issue",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    }
+  ]
+}

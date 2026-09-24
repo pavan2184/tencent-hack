@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "fixture_id": "google-drive-metadata-only-change",
+  "checkpoints": [
+    {
+      "after_step": "reconcile-metadata",
+      "expected_cursor": null,
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-metadata-file",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "eac9927fd28c36fd27379527ca1c22992246b3c4c684b1644aa7d0ff1ac0cb92",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        }
+      ],
+      "expected_accounted_event_ids": [],
+      "expected_parked_event_ids": []
+    }
+  ],
+  "expected_receipts": [
+    {
+      "object_id": "example-harbor-finance-metadata-file",
+      "provider_version": "v2",
+      "content_hash": "eac9927fd28c36fd27379527ca1c22992246b3c4c684b1644aa7d0ff1ac0cb92",
+      "sync_path": "reconcile",
+      "verification_result": "not_required",
+      "freshness_status": "fresh",
+      "safe_to_use": true
+    }
+  ],
+  "expected_metrics": {
+    "stale_critical_exposures": 0,
+    "accepted_event_loss": 0,
+    "cursor_advanced_past_unaccounted_work": 0,
+    "duplicate_mutations": 0,
+    "tombstone_accuracy": 1,
+    "receipt_field_accuracy": 1,
+    "safe_fallback_rate": 1,
+    "eventual_convergence_rate": 1,
+    "webhook_max_propagation_seconds": null,
+    "delta_max_recovery_seconds": null,
+    "reconciliation_max_convergence_seconds": 300
+  }
+}

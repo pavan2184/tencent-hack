@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "fixture_id": "jira-missed-webhook-delta-recovery",
+  "checkpoints": [
+    {
+      "after_step": "delta-discovers",
+      "expected_cursor": "jira-c0",
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-issue",
+          "provider_version": "v4",
+          "version_order": 4,
+          "content_hash": "80105fbfa0a36f78204a7663b018739c776a5be2e3b1731474c856510dd186e9",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": false,
+          "critical": true,
+          "freshness_status": "stale"
+        }
+      ],
+      "expected_accounted_event_ids": [],
+      "expected_parked_event_ids": []
+    },
+    {
+      "after_step": "searchable",
+      "expected_cursor": "jira-c1",
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-issue",
+          "provider_version": "v4",
+          "version_order": 4,
+          "content_hash": "80105fbfa0a36f78204a7663b018739c776a5be2e3b1731474c856510dd186e9",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        }
+      ],
+      "expected_accounted_event_ids": [
+        "ehf-issue-v4"
+      ],
+      "expected_parked_event_ids": []
+    }
+  ],
+  "expected_receipts": [
+    {
+      "object_id": "example-harbor-finance-issue",
+      "provider_version": "v4",
+      "content_hash": "80105fbfa0a36f78204a7663b018739c776a5be2e3b1731474c856510dd186e9",
+      "sync_path": "delta",
+      "verification_result": "not_required",
+      "freshness_status": "fresh",
+      "safe_to_use": true
+    }
+  ],
+  "expected_metrics": {
+    "stale_critical_exposures": 0,
+    "accepted_event_loss": 0,
+    "cursor_advanced_past_unaccounted_work": 0,
+    "duplicate_mutations": 0,
+    "tombstone_accuracy": 1,
+    "receipt_field_accuracy": 1,
+    "safe_fallback_rate": 1,
+    "eventual_convergence_rate": 1,
+    "webhook_max_propagation_seconds": null,
+    "delta_max_recovery_seconds": 240,
+    "reconciliation_max_convergence_seconds": null
+  }
+}

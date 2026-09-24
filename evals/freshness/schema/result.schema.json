@@ -1,0 +1,239 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "provider",
+    "suite",
+    "pass",
+    "measured_metrics",
+    "produced_receipts",
+    "failure_codes",
+    "logical_duration_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "provider": {
+      "enum": [
+        "confluence",
+        "slack",
+        "jira",
+        "google-drive"
+      ]
+    },
+    "suite": {
+      "enum": [
+        "fast-path",
+        "delta-recovery",
+        "reconciliation",
+        "critical-verification",
+        "receipt-integrity",
+        "failure-recovery",
+        "cross-platform-contract"
+      ]
+    },
+    "pass": {
+      "type": "boolean"
+    },
+    "measured_metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "produced_receipts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/receipt"
+      }
+    },
+    "failure_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "logical_duration_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/pavan2184/tencent-hack/main/evals/freshness/schema/result.schema.json",
+  "$defs": {
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "provider_version",
+        "content_hash",
+        "sync_path",
+        "verification_result",
+        "freshness_status",
+        "safe_to_use"
+      ],
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_version": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_hash": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync_path": {
+          "enum": [
+            "webhook",
+            "delta",
+            "reconcile",
+            "live_verify"
+          ]
+        },
+        "verification_result": {
+          "enum": [
+            "fresh",
+            "stale",
+            "unknown",
+            "not_required"
+          ]
+        },
+        "freshness_status": {
+          "enum": [
+            "fresh",
+            "stale",
+            "unknown",
+            "not_searchable",
+            "deleted"
+          ]
+        },
+        "safe_to_use": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "safe_to_use": { "const": true } } },
+          "then": { "properties": { "freshness_status": { "const": "fresh" }, "verification_result": { "enum": ["fresh", "not_required"] } } }
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stale_critical_exposures",
+        "accepted_event_loss",
+        "cursor_advanced_past_unaccounted_work",
+        "duplicate_mutations",
+        "tombstone_accuracy",
+        "receipt_field_accuracy",
+        "safe_fallback_rate",
+        "eventual_convergence_rate",
+        "webhook_max_propagation_seconds",
+        "delta_max_recovery_seconds",
+        "reconciliation_max_convergence_seconds"
+      ],
+      "properties": {
+        "stale_critical_exposures": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "accepted_event_loss": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "cursor_advanced_past_unaccounted_work": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "duplicate_mutations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "tombstone_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "receipt_field_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "safe_fallback_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "eventual_convergence_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "webhook_max_propagation_seconds": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "delta_max_recovery_seconds": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reconciliation_max_convergence_seconds": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

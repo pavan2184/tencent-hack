@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "fixture_id": "slack-duplicate-reordered-events",
+  "provider": "slack",
+  "suite": "cross-platform-contract",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-thread",
+      "provider_version": "v10",
+      "version_order": 10,
+      "content_hash": "41f7e86a38603cce06ec417b5e81ae28c6a671d8cfe46a8da4db29ae136c5418",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-thread",
+        "provider_version": "v12",
+        "version_order": 12,
+        "content_hash": "6b9bbe83eaf085a21d73cf8bece18933673f0801215441a92e6e220e07f6c3c9",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "newer-event",
+      "at_seconds": 1,
+      "kind": "webhook",
+      "event_id": "ehf-thread-v12",
+      "object_id": "example-harbor-finance-thread",
+      "provider_version": "v12"
+    },
+    {
+      "step_id": "index-newer",
+      "at_seconds": 5,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-thread",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    },
+    {
+      "step_id": "older-event",
+      "at_seconds": 6,
+      "kind": "webhook",
+      "event_id": "ehf-thread-v11",
+      "object_id": "example-harbor-finance-thread",
+      "provider_version": "v11"
+    },
+    {
+      "step_id": "duplicate-older-event",
+      "at_seconds": 7,
+      "kind": "webhook",
+      "event_id": "ehf-thread-v11",
+      "object_id": "example-harbor-finance-thread",
+      "provider_version": "v11"
+    }
+  ]
+}

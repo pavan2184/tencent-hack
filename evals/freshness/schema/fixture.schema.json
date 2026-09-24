@@ -1,0 +1,450 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "provider",
+    "suite",
+    "initial_cursor",
+    "initial_objects",
+    "steps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "provider": {
+      "enum": [
+        "confluence",
+        "slack",
+        "jira",
+        "google-drive"
+      ]
+    },
+    "suite": {
+      "enum": [
+        "fast-path",
+        "delta-recovery",
+        "reconciliation",
+        "critical-verification",
+        "receipt-integrity",
+        "failure-recovery",
+        "cross-platform-contract"
+      ]
+    },
+    "initial_cursor": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "initial_objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/providerObject"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "object"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "provider_mutation"
+              },
+              "object": {
+                "$ref": "#/$defs/providerObject"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "event_id",
+              "object_id",
+              "provider_version"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "webhook"
+              },
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "provider_version": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "cursor_in",
+              "cursor_out",
+              "object_ids",
+              "event_ids"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "delta_poll"
+              },
+              "cursor_in": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cursor_out": {
+                "type": "string",
+                "minLength": 1
+              },
+              "object_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "event_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "object_ids"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "reconcile"
+              },
+              "object_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "object_id",
+              "result",
+              "provider_version"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "verify"
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "enum": [
+                  "fresh",
+                  "stale",
+                  "unknown",
+                  "not_required"
+                ]
+              },
+              "provider_version": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "phase",
+              "object_id"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "interrupt"
+              },
+              "phase": {
+                "enum": [
+                  "before_apply",
+                  "after_apply_before_ack"
+                ]
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "event_id",
+              "object_id",
+              "attempt",
+              "outcome"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "retry"
+              },
+              "event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "attempt": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "outcome": {
+                "enum": [
+                  "applied",
+                  "parked",
+                  "rate_limited"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "step_id",
+              "at_seconds",
+              "kind",
+              "object_id",
+              "content_written",
+              "searchable",
+              "embedded"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "at_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "kind": {
+                "const": "index_outcome"
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content_written": {
+                "type": "boolean"
+              },
+              "searchable": {
+                "type": "boolean"
+              },
+              "embedded": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/pavan2184/tencent-hack/main/evals/freshness/schema/fixture.schema.json",
+  "$defs": {
+    "providerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "provider_version",
+        "version_order",
+        "content_hash",
+        "modified_at",
+        "deleted",
+        "searchable",
+        "critical"
+      ],
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version_order": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{64})?$"
+        },
+        "modified_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "searchable": {
+          "type": "boolean"
+        },
+        "critical": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

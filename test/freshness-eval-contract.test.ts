@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -49,6 +49,96 @@ const rejectFixture = (bad: unknown, match: RegExp) =>
   expect(() => validateFreshnessFixture('sample.fixture.json', bad)).toThrow(match);
 const rejectGold = (bad: unknown, match: RegExp, f = validFixture()) =>
   expect(() => validateFreshnessGold('sample.gold.json', bad, f)).toThrow(match);
+
+describe('committed freshness corpus', () => {
+  test('contains the exact gate and holdout matrix', async () => {
+    const corpus = await loadFreshnessCorpus();
+    const all = [...corpus.fixtures, ...corpus.holdouts];
+    expect(all).toHaveLength(12);
+    expect(corpus.fixtures).toHaveLength(10);
+    expect(corpus.holdouts).toHaveLength(2);
+    expect(new Set(all.map(({ fixture }) => fixture.provider))).toEqual(new Set(FRESHNESS_PROVIDERS));
+    expect(new Set(all.map(({ fixture }) => fixture.suite))).toEqual(new Set(FRESHNESS_SUITES));
+    for (const { fixture } of all) expect(fixture.steps[0].at_seconds).toBe(0);
+    expect(new Set(corpus.fixtures.map(({ fixture }) => fixture.fixture_id))).toEqual(new Set([
+      'confluence-critical-runbook-webhook', 'confluence-live-version-drift',
+      'slack-duplicate-reordered-events', 'slack-worker-crash-replay',
+      'jira-missed-webhook-delta-recovery', 'google-drive-delete-reconcile',
+      'poison-event-durable-parking', 'embedding-failure-not-current',
+      'rate-limit-durable-retry', 'mixed-freshness-receipts',
+    ]));
+    expect(new Set(corpus.holdouts.map(({ fixture }) => fixture.fixture_id))).toEqual(new Set([
+      'jira-cursor-page-failure', 'google-drive-metadata-only-change',
+    ]));
+    for (const { fixture, gold } of all) {
+      for (const [kind, metric] of [
+        ['webhook', 'webhook_max_propagation_seconds'],
+        ['delta_poll', 'delta_max_recovery_seconds'],
+        ['reconcile', 'reconciliation_max_convergence_seconds'],
+      ] as const) {
+        expect(gold.expected_metrics[metric] === null).toBe(!fixture.steps.some(step => step.kind === kind));
+      }
+    }
+  });
+
+  test('keeps sealed expectations out of every fixture file', async () => {
+    const corpus = await loadFreshnessCorpus();
+    for (const { path } of [...corpus.fixtures, ...corpus.holdouts]) {
+      const scan = (value: unknown): void => {
+        if (Array.isArray(value)) { value.forEach(scan); return; }
+        if (value && typeof value === 'object') {
+          for (const [key, nested] of Object.entries(value)) {
+            expect(key === 'gold' || key.startsWith('expected')).toBe(false);
+            scan(nested);
+          }
+        }
+      };
+      scan(JSON.parse(readFileSync(path, 'utf8')));
+    }
+  });
+
+  test('publishes four strict draft 2020-12 JSON Schemas', () => {
+    for (const name of ['fixture', 'gold', 'result', 'baseline']) {
+      const schema = JSON.parse(readFileSync(`evals/freshness/schema/${name}.schema.json`, 'utf8'));
+      expect(schema.$schema).toBe('https://json-schema.org/draft/2020-12/schema');
+      expect(schema.$id).toBe(`https://raw.githubusercontent.com/pavan2184/tencent-hack/main/evals/freshness/schema/${name}.schema.json`);
+      const inspect = (value: unknown): void => {
+        if (Array.isArray(value)) { value.forEach(inspect); return; }
+        if (value && typeof value === 'object') {
+          const node = value as Record<string, unknown>;
+          if (node.type === 'object') expect(node.additionalProperties).toBe(false);
+          Object.values(node).forEach(inspect);
+        }
+      };
+      inspect(schema);
+    }
+  });
+
+  test('existing privacy guards scan freshness gate, holdout, and gold files', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'freshness-privacy-'));
+    try {
+      for (const part of ['fixtures', 'holdout', 'gold']) mkdirSync(join(dir, part));
+      writeFileSync(join(dir, 'fixtures', 'leak.fixture.json'), '{"text":"palantir"}');
+      writeFileSync(join(dir, 'holdout', 'leak.fixture.json'), '{"text":"$50M"}');
+      writeFileSync(join(dir, 'gold', 'leak.gold.json'), '{"text":"2018"}');
+      const stringGuard = Bun.spawnSync(['bash', 'scripts/check-fixture-privacy.sh'], {
+        env: { ...process.env, FRESHNESS_FIXTURE_PRIVACY_DIR: dir },
+        stdout: 'pipe', stderr: 'pipe',
+      });
+      expect(stringGuard.exitCode).toBe(1);
+      expect(stringGuard.stdout.toString()).toContain('palantir');
+      const corpusGuard = Bun.spawnSync(['bash', 'scripts/check-synthetic-corpus-privacy.sh'], {
+        env: { ...process.env, FRESHNESS_PRIVACY_DIR: dir },
+        stdout: 'pipe', stderr: 'pipe',
+      });
+      expect(corpusGuard.exitCode).toBe(1);
+      expect(corpusGuard.stdout.toString()).toContain('explicit dollar amount');
+      expect(corpusGuard.stdout.toString()).toContain('out-of-range year');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('freshness fixture contract', () => {
   test('accepts a literal valid fixture and gold with all supported provider and suite values', () => {

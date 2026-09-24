@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "fixture_id": "embedding-failure-not-current",
+  "provider": "confluence",
+  "suite": "receipt-integrity",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-embed-failure",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "1f92ca54f2da99c5a38fb8b879fb14cc4ab8803405f35c1453019f31396774bd",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": false,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-embed-failure",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "217bf98bbb8359baf691ce15f267666eaaa4d59699ab19c4335226840c632991",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "failed-embedding",
+      "at_seconds": 5,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-embed-failure",
+      "content_written": true,
+      "searchable": false,
+      "embedded": false
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "fixture_id": "jira-cursor-page-failure",
+  "checkpoints": [
+    {
+      "after_step": "page-one-searchable",
+      "expected_cursor": "jira-page-c1",
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-page-one",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "ccd50e1ddf2f565ad2cab15a3250d2def713997abdcb10b4547d97c39a9b0357",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        },
+        {
+          "object_id": "example-harbor-finance-page-two",
+          "provider_version": "v1",
+          "version_order": 1,
+          "content_hash": "4bd95eae89a08290c3999a3a47f258dac20db00512df9bc7727f5998cc698d54",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        }
+      ],
+      "expected_accounted_event_ids": [
+        "ehf-page-one-v2"
+      ],
+      "expected_parked_event_ids": []
+    },
+    {
+      "after_step": "page-two-failure",
+      "expected_cursor": "jira-page-c1",
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-page-one",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "ccd50e1ddf2f565ad2cab15a3250d2def713997abdcb10b4547d97c39a9b0357",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        },
+        {
+          "object_id": "example-harbor-finance-page-two",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "87fb0162ef9cd128fe3feed13bf7d8871b54e70f2488d40b5b0d6d2de1023db5",
+          "modified_at": "2026-09-24T00:00:30.000Z",
+          "deleted": false,
+          "searchable": false,
+          "critical": true,
+          "freshness_status": "stale"
+        }
+      ],
+      "expected_accounted_event_ids": [
+        "ehf-page-one-v2"
+      ],
+      "expected_parked_event_ids": []
+    },
+    {
+      "after_step": "page-two-searchable",
+      "expected_cursor": "jira-page-c2",
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-page-one",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "ccd50e1ddf2f565ad2cab15a3250d2def713997abdcb10b4547d97c39a9b0357",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        },
+        {
+          "object_id": "example-harbor-finance-page-two",
+          "provider_version": "v2",
+          "version_order": 2,
+          "content_hash": "87fb0162ef9cd128fe3feed13bf7d8871b54e70f2488d40b5b0d6d2de1023db5",
+          "modified_at": "2026-09-24T00:00:30.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        }
+      ],
+      "expected_accounted_event_ids": [
+        "ehf-page-one-v2",
+        "ehf-page-two-v2"
+      ],
+      "expected_parked_event_ids": []
+    }
+  ],
+  "expected_receipts": [
+    {
+      "object_id": "example-harbor-finance-page-one",
+      "provider_version": "v2",
+      "content_hash": "ccd50e1ddf2f565ad2cab15a3250d2def713997abdcb10b4547d97c39a9b0357",
+      "sync_path": "delta",
+      "verification_result": "not_required",
+      "freshness_status": "fresh",
+      "safe_to_use": true
+    },
+    {
+      "object_id": "example-harbor-finance-page-two",
+      "provider_version": "v2",
+      "content_hash": "87fb0162ef9cd128fe3feed13bf7d8871b54e70f2488d40b5b0d6d2de1023db5",
+      "sync_path": "delta",
+      "verification_result": "not_required",
+      "freshness_status": "fresh",
+      "safe_to_use": true
+    }
+  ],
+  "expected_metrics": {
+    "stale_critical_exposures": 0,
+    "accepted_event_loss": 0,
+    "cursor_advanced_past_unaccounted_work": 0,
+    "duplicate_mutations": 0,
+    "tombstone_accuracy": 1,
+    "receipt_field_accuracy": 1,
+    "safe_fallback_rate": 1,
+    "eventual_convergence_rate": 1,
+    "webhook_max_propagation_seconds": null,
+    "delta_max_recovery_seconds": 30,
+    "reconciliation_max_convergence_seconds": null
+  }
+}

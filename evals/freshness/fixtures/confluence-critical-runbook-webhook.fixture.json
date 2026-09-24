@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "fixture_id": "confluence-critical-runbook-webhook",
+  "provider": "confluence",
+  "suite": "fast-path",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-runbook",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "fbf6cf4383a8990d8f4974e6cba258a3e9a06df1211b285f8e853fac17e4eec4",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-runbook",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "4795019065e551913282e061e3613f6bb84abb24bbce9546598f2146250d5c89",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "webhook-accepted",
+      "at_seconds": 1,
+      "kind": "webhook",
+      "event_id": "ehf-runbook-v2",
+      "object_id": "example-harbor-finance-runbook",
+      "provider_version": "v2"
+    },
+    {
+      "step_id": "indexed-and-embedded",
+      "at_seconds": 45,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-runbook",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    }
+  ]
+}

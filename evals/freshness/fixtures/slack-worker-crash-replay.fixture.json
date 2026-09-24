@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "fixture_id": "slack-worker-crash-replay",
+  "provider": "slack",
+  "suite": "failure-recovery",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-crash-note",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "25587e5dfc4e3c83289e45e4049a77a9f885178e99be81d97b85c59cad239cf9",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-crash-note",
+        "provider_version": "v2",
+        "version_order": 2,
+        "content_hash": "22c00d04c3752fac9ebe43eb5b5d38789dd51d2a281eb4557bdbe7ccdc407280",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "accept-event",
+      "at_seconds": 1,
+      "kind": "webhook",
+      "event_id": "ehf-crash-v2",
+      "object_id": "example-harbor-finance-crash-note",
+      "provider_version": "v2"
+    },
+    {
+      "step_id": "crash-before-ack",
+      "at_seconds": 2,
+      "kind": "interrupt",
+      "phase": "after_apply_before_ack",
+      "object_id": "example-harbor-finance-crash-note"
+    },
+    {
+      "step_id": "replay-event",
+      "at_seconds": 3,
+      "kind": "retry",
+      "event_id": "ehf-crash-v2",
+      "object_id": "example-harbor-finance-crash-note",
+      "attempt": 1,
+      "outcome": "applied"
+    },
+    {
+      "step_id": "searchable",
+      "at_seconds": 20,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-crash-note",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    }
+  ]
+}

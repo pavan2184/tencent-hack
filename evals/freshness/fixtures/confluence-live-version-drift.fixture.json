@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "fixture_id": "confluence-live-version-drift",
+  "provider": "confluence",
+  "suite": "critical-verification",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-policy",
+      "provider_version": "v7",
+      "version_order": 7,
+      "content_hash": "265a77b02c437396073e9b1353a48c8c162deb35e9f9ba415dc6ae05f6616426",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-policy",
+        "provider_version": "v8",
+        "version_order": 8,
+        "content_hash": "1760c6ee3b0d659e74352e32c92e2a93d4047af862c18bdc1c71d9f9f0ba68aa",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "verify-version",
+      "at_seconds": 2,
+      "kind": "verify",
+      "object_id": "example-harbor-finance-policy",
+      "result": "stale",
+      "provider_version": "v8"
+    }
+  ]
+}

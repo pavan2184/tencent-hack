@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "fixture_id": "mixed-freshness-receipts",
+  "provider": "google-drive",
+  "suite": "receipt-integrity",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-mixed-fresh",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "d49d9429eadcb278f71d793919a672b03909b95579051ae7607e388248a32eec",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    },
+    {
+      "object_id": "example-harbor-finance-mixed-stale",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "a30ea03b0714c5982d80f246fe3878aca941f156f8b3b6c375584c9d2ebe9eab",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    },
+    {
+      "object_id": "example-harbor-finance-mixed-unknown",
+      "provider_version": "v1",
+      "version_order": 1,
+      "content_hash": "ae37778dc01d148187f21c5042c03b71e3895d04983132dc7f93cbc9a618167c",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": false,
+      "critical": true
+    },
+    {
+      "object_id": "example-harbor-finance-mixed-deleted",
+      "provider_version": "v2",
+      "version_order": 2,
+      "content_hash": "",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": true,
+      "searchable": false,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "verify-stale",
+      "at_seconds": 0,
+      "kind": "verify",
+      "object_id": "example-harbor-finance-mixed-stale",
+      "result": "stale",
+      "provider_version": "v2"
+    },
+    {
+      "step_id": "verify-unknown",
+      "at_seconds": 1,
+      "kind": "verify",
+      "object_id": "example-harbor-finance-mixed-unknown",
+      "result": "unknown",
+      "provider_version": null
+    },
+    {
+      "step_id": "verify-fresh",
+      "at_seconds": 2,
+      "kind": "verify",
+      "object_id": "example-harbor-finance-mixed-fresh",
+      "result": "fresh",
+      "provider_version": "v1"
+    }
+  ]
+}

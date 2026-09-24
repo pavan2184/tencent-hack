@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "fixture_id": "jira-missed-webhook-delta-recovery",
+  "provider": "jira",
+  "suite": "delta-recovery",
+  "initial_cursor": "jira-c0",
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-issue",
+      "provider_version": "v3",
+      "version_order": 3,
+      "content_hash": "4301964dc196c730e022e3ce5f55cde81a1645ae6170eb9f3737e35bc998546f",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-update",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-issue",
+        "provider_version": "v4",
+        "version_order": 4,
+        "content_hash": "80105fbfa0a36f78204a7663b018739c776a5be2e3b1731474c856510dd186e9",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": false,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "delta-discovers",
+      "at_seconds": 60,
+      "kind": "delta_poll",
+      "cursor_in": "jira-c0",
+      "cursor_out": "jira-c1",
+      "object_ids": [
+        "example-harbor-finance-issue"
+      ],
+      "event_ids": [
+        "ehf-issue-v4"
+      ]
+    },
+    {
+      "step_id": "searchable",
+      "at_seconds": 240,
+      "kind": "index_outcome",
+      "object_id": "example-harbor-finance-issue",
+      "content_written": true,
+      "searchable": true,
+      "embedded": true
+    }
+  ]
+}

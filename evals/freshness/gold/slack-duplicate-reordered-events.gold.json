@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "fixture_id": "slack-duplicate-reordered-events",
+  "checkpoints": [
+    {
+      "after_step": "duplicate-older-event",
+      "expected_cursor": null,
+      "expected_objects": [
+        {
+          "object_id": "example-harbor-finance-thread",
+          "provider_version": "v12",
+          "version_order": 12,
+          "content_hash": "6b9bbe83eaf085a21d73cf8bece18933673f0801215441a92e6e220e07f6c3c9",
+          "modified_at": "2026-09-24T00:00:00.000Z",
+          "deleted": false,
+          "searchable": true,
+          "critical": true,
+          "freshness_status": "fresh"
+        }
+      ],
+      "expected_accounted_event_ids": [
+        "ehf-thread-v12",
+        "ehf-thread-v11"
+      ],
+      "expected_parked_event_ids": []
+    }
+  ],
+  "expected_receipts": [
+    {
+      "object_id": "example-harbor-finance-thread",
+      "provider_version": "v12",
+      "content_hash": "6b9bbe83eaf085a21d73cf8bece18933673f0801215441a92e6e220e07f6c3c9",
+      "sync_path": "webhook",
+      "verification_result": "not_required",
+      "freshness_status": "fresh",
+      "safe_to_use": true
+    }
+  ],
+  "expected_metrics": {
+    "stale_critical_exposures": 0,
+    "accepted_event_loss": 0,
+    "cursor_advanced_past_unaccounted_work": 0,
+    "duplicate_mutations": 0,
+    "tombstone_accuracy": 1,
+    "receipt_field_accuracy": 1,
+    "safe_fallback_rate": 1,
+    "eventual_convergence_rate": 1,
+    "webhook_max_propagation_seconds": 4,
+    "delta_max_recovery_seconds": null,
+    "reconciliation_max_convergence_seconds": null
+  }
+}

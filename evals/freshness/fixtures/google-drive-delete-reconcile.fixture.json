@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "fixture_id": "google-drive-delete-reconcile",
+  "provider": "google-drive",
+  "suite": "reconciliation",
+  "initial_cursor": null,
+  "initial_objects": [
+    {
+      "object_id": "example-harbor-finance-drive-file",
+      "provider_version": "v3",
+      "version_order": 3,
+      "content_hash": "17dcb47dfcfd2e8b4d70d5fe0066366ddc413259f1a0f32a27b5b8017d0fa33b",
+      "modified_at": "2026-09-24T00:00:00.000Z",
+      "deleted": false,
+      "searchable": true,
+      "critical": true
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "provider-delete",
+      "at_seconds": 0,
+      "kind": "provider_mutation",
+      "object": {
+        "object_id": "example-harbor-finance-drive-file",
+        "provider_version": "v4",
+        "version_order": 4,
+        "content_hash": "",
+        "modified_at": "2026-09-24T00:00:00.000Z",
+        "deleted": true,
+        "searchable": false,
+        "critical": true
+      }
+    },
+    {
+      "step_id": "reconcile-missing",
+      "at_seconds": 3300,
+      "kind": "reconcile",
+      "object_ids": [
+        "example-harbor-finance-drive-file"
+      ]
+    }
+  ]
+}
