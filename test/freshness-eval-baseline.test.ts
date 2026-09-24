@@ -119,7 +119,16 @@ describe('contract-only freshness baseline', () => {
     'The contract_only baseline is not behaviorally green.',
     'The contract_only baseline does not pass behavioral tests.',
     'The contract_only baseline cannot be promoted to behavioral green by document checks.',
+    'The contract_only baseline is not behaviorally green; the measured runner is green.',
+    'The contract_only baseline is not green, while the measured runner is passing.',
+    'The contract_only baseline is not green — the measured runner is passing.',
+    'The contract_only baseline is not green whereas the measured runner is passing.',
   ])('accepts cautionary documentation: %s', sentence => {
     expect(() => validateFreshnessContractDocs('README.md', sentence)).not.toThrow();
+  });
+
+  test('still rejects a positive contract claim in a later clause', () => {
+    expect(() => validateFreshnessContractDocs('README.md',
+      'The measured runner is green; the contract_only baseline is **passing**.')).toThrow(/passing/);
   });
 });

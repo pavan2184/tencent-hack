@@ -127,10 +127,10 @@ export function validateFreshnessContractDocs(file: string, contents: string): v
       .replace(/\*|`+/g, '')
       .replace(/(?<!\w)_{1,2}(?=\w)|(?<=\w)_{1,2}(?!\w)/g, '')
       .replace(/\s+/g, ' ');
-    for (const sentence of plain.split(/(?<=[.!?])\s+/)) {
+    for (const clause of plain.split(/(?<=[.!?])\s+|\s*[;—]\s*|,\s*(?:but|while)\b\s*|\bwhereas\b\s*/i)) {
       subject.lastIndex = 0;
-      for (const match of sentence.matchAll(subject)) {
-        if (affirmative.test(sentence.slice(match.index + match[0].length, match.index + match[0].length + 120))) {
+      for (const match of clause.matchAll(subject)) {
+        if (affirmative.test(clause.slice(match.index + match[0].length, match.index + match[0].length + 120))) {
           fail(file, 'documentation', 'contract_only cannot claim green or behaviorally passing');
         }
       }
