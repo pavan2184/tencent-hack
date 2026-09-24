@@ -10,11 +10,9 @@ directory; restart and real task-use verification remain separate. Existing
 sharing choices and personal edits are preserved by the staged migration.
 See [shared brain skills and migration](docs/guides/shared-brain-skills.md).
 
-## Tencent FinTech freshness extension
+## Tencent freshness
 
-This repository derives from GBrain v0.54.1.0 and adds a contract-first data-freshness layer for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026 FinTech track. The pinned upstream baseline, architecture, API contracts, and hermetic evaluation design live in [`docs/tencent/`](docs/tencent/UPSTREAM_BASELINE.md).
-
-The current phase contains [approved freshness contracts](docs/tencent/FRESHNESS_ARCHITECTURE.md) and a [structural evaluation specification](docs/tencent/FRESHNESS_EVALS.md). Its baseline is `contract_only`: no measured production freshness behavior is claimed. Access control and answer groundedness are separate team workstreams; [current implementation status](docs/tencent/PROJECT_STATUS.md) tracks the remaining freshness work.
+This GBrain v0.54.1.0 fork defines a [freshness contract](docs/tencent/PROJECT_BRIEF.md). The `contract_only` baseline has no measured result. Access control and groundedness are separate workstreams.
 
 ## Choose your setup
 

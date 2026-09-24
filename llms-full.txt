@@ -3,13 +3,13 @@
 > GBrain is a personal knowledge brain and GStack mod for agent platforms. Pluggable engines (PGLite default, Postgres+pgvector for scale), contract-first operations, 26 fat-markdown skills. Teaches agents brain ops, ingestion, enrichment, scheduling, identity, and access control.
 
 This file concatenates core GBrain documentation for single-fetch ingestion.
-For the link-only index, see `llms.txt`. Source of truth: https://github.com/garrytan/gbrain.
+For the link-only index, see `llms.txt`. Source of truth: https://github.com/pavan2184/tencent-hack.
 
 # Choose your agent setup
 
 ## docs/guides/remote-mcp.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/remote-mcp.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/remote-mcp.md
 
 # Use your brain from anywhere over MCP
 
@@ -409,7 +409,7 @@ pre-mint before the service runs and pass `--token <value>`, or use the scoped
 
 ## docs/guides/grok-bot.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/grok-bot.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/grok-bot.md
 
 # GBrain for Grok Bot
 
@@ -616,7 +616,7 @@ network and OAuth failures belong to the
 
 ## docs/guides/muse.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/muse.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/muse.md
 
 # GBrain for Muse
 
@@ -847,7 +847,7 @@ old path. More errors and fixes are in the
 
 ## docs/guides/in-agent-setup.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/in-agent-setup.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/in-agent-setup.md
 
 # Install GBrain inside a personal agent
 
@@ -1169,7 +1169,7 @@ policies. Those remain app-level acceptance checks in the product guides.
 
 ## docs/guides/hosted-harness-access.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/hosted-harness-access.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/hosted-harness-access.md
 
 # Connect your agent to an existing hosted GBrain
 
@@ -1409,7 +1409,7 @@ As of **2026-09-09**, repository tests exercise private configuration writers, c
 
 ## AGENTS.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/AGENTS.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/AGENTS.md
 
 # Agents working on GBrain
 
@@ -1585,11 +1585,29 @@ use generic placeholders (`alice-example`, `acme-example`, `fund-a`).
 If you are a fork, regenerate `llms.txt` + `llms-full.txt` with your own URL base before
 publishing: `LLMS_REPO_BASE=https://raw.githubusercontent.com/your-org/your-fork/main bun run build:llms`.
 
+## Tencent FinTech freshness extension
+
+For work on this branch, read these Tencent project documents before making changes:
+
+- `docs/tencent/PROJECT_BRIEF.md`
+- `docs/tencent/HACKATHON_REQUIREMENTS.md`
+- `docs/tencent/UPSTREAM_BASELINE.md`
+- `docs/tencent/FRESHNESS_ARCHITECTURE.md`
+- `docs/tencent/FRESHNESS_DATA_MODEL.md`
+- `docs/tencent/FRESHNESS_API_CONTRACT.md`
+- `docs/tencent/FRESHNESS_EVALS.md`
+- `docs/tencent/DECISIONS.md`
+- `docs/tencent/PROJECT_STATUS.md`
+
+This branch owns data freshness only. Preserve GBrain's engineering invariants, and
+keep evaluation fixtures and checks hermetic and synthetic. Do not implement
+access control or answer groundedness in this workstream.
+
 ---
 
 ## CLAUDE.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/CLAUDE.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/CLAUDE.md
 
 # CLAUDE.md
 
@@ -2081,7 +2099,7 @@ installation is not proof of native use. Read
 
 ## INSTALL_FOR_AGENTS.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/INSTALL_FOR_AGENTS.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/INSTALL_FOR_AGENTS.md
 
 # GBrain Installation Guide for AI Agents
 
@@ -2708,7 +2726,7 @@ Init + upgrade banners auto-skip in non-TTY too.
 
 ## skills/RESOLVER.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/skills/RESOLVER.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/skills/RESOLVER.md
 
 # GBrain Skill Resolver
 
@@ -2898,7 +2916,7 @@ These apply to ALL brain-writing skills:
 
 ## README.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/README.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/README.md
 
 # GBrain
 
@@ -2911,6 +2929,10 @@ use. Managed coding-agent installs place an owned router in the native skill
 directory; restart and real task-use verification remain separate. Existing
 sharing choices and personal edits are preserved by the staged migration.
 See [shared brain skills and migration](docs/guides/shared-brain-skills.md).
+
+## Tencent freshness
+
+This GBrain v0.54.1.0 fork defines a [freshness contract](docs/tencent/PROJECT_BRIEF.md). The `contract_only` baseline has no measured result. Access control and groundedness are separate workstreams.
 
 ## Choose your setup
 
@@ -3359,11 +3381,420 @@ Community PR contributors are credited in `CHANGELOG.md` per release. ZeroEntrop
 
 ---
 
+# Tencent FinTech freshness extension
+
+## docs/tencent/PROJECT_BRIEF.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/PROJECT_BRIEF.md
+
+# Tencent FinTech Freshness Project Brief
+
+Last updated: 2026-09-24
+
+## Purpose and selected challenge
+
+Build a proof-oriented data-freshness extension on the pinned [GBrain baseline](UPSTREAM_BASELINE.md) for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026 FinTech track. Aspire's Internal Brain challenge spans Confluence, Jira, Slack, and Google Drive. The full challenge also asks for permission-aware retrieval, answer quality, and auditability; this workstream supplies only source-scoped freshness facts and safe-use signals to those later integrations. The [requirements mapping](HACKATHON_REQUIREMENTS.md) keeps team and organizer scope distinct.
+
+Employees need current operational knowledge without old policy or runbook versions being silently presented as current. The freshness layer will observe provider changes, recover missed changes, prove deletion handling, verify critical evidence at query time, and emit versioned receipts. Downstream consumers can omit or abstain when a critical item is stale or unknown.
+
+## Ownership and providers
+
+Pavan owns data freshness. Chai owns access control; Raphael owns answer groundedness. Access control and groundedness are out of scope for this freshness workstream. Jev may prioritize semantically important changes but does not own deterministic freshness state, provider truth, or fallback decisions.
+
+One normalized contract covers Confluence, Slack, Jira, and Google Drive. Confluence and Slack are live MVP targets using controlled test spaces. Jira and Google Drive are deterministic simulations in the current phase. This is a full derived copy of GBrain, preserving its source history, MIT attribution, source-scoped page identity, operation registry, PGLite/Postgres parity, and test discipline.
+
+## User-visible freshness journey
+
+1. A provider update arrives by webhook or is recovered by delta polling or slim reconciliation. Durable acceptance is recorded before acknowledgement; indexing becomes current only when searchable state matches the provider version.
+2. A critical selected item is checked against the provider when policy requires live verification. It becomes `fresh`, `stale`, `unknown`, or `not_required`; stale/unknown critical evidence is omitted or causes abstention before exposure.
+3. A versioned receipt states which source-scoped objects and versions were selected, when they were accepted/indexed/verified, their age and budget, and the safe-use result. A tombstone remains visible as a deletion fact.
+
+## Targets and phase boundary
+
+- Webhook propagation: `<=60` logical seconds from durable acceptance to searchability.
+- Delta recovery: `<=300` logical seconds from provider change to searchability.
+- Slim reconciliation: `<=3600` logical seconds from provider change to convergence.
+- Hard future eval gates: zero stale critical exposures, accepted event loss, unsafe cursor advances, and duplicate mutations; exact tombstone, receipt, fallback, and convergence rates of `1.0`.
+
+These are approved design targets, not measured performance. The current phase delivers contracts and a hermetic synthetic eval corpus plan with `contract_only` baseline status. Production tables, state machine, live connectors, webhook routes, and behavioral scoring follow later. The docs and structural test are not proof that any provider already meets the targets.
+
+## Delivery dependencies and risks
+
+The team's combined submission must demonstrate the official five scenarios and preserve CodeBuddy or WorkBuddy usage evidence, a live walkthrough, architecture diagram, repository, description, and cover image. Freshness contributes directly to the bounded-freshness scenario and neutral evidence/receipt signals for the combined demo. Duplicate, reordered, missed, and poisoned events; partial embedding; provider outages; and deletion/search mismatches are the main freshness failure modes. Controlled live provider access remains a delivery dependency. See [architecture](FRESHNESS_ARCHITECTURE.md), [data model](FRESHNESS_DATA_MODEL.md), [operations](FRESHNESS_API_CONTRACT.md), and [evals](FRESHNESS_EVALS.md).
+
+---
+
+## docs/tencent/UPSTREAM_BASELINE.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/UPSTREAM_BASELINE.md
+
+# Pinned GBrain Upstream Baseline
+
+Last updated: 2026-09-24
+
+## Attribution and immutable pin
+
+This repository is a full derived copy of [GBrain](https://github.com/garrytan/gbrain), licensed under the upstream [MIT license](../../LICENSE). Its [Company Brain tutorial](https://github.com/garrytan/gbrain/blob/master/docs/tutorials/company-brain.md) is background for the existing knowledge substrate, not a freshness or permission contract. The integrated release is `v0.54.1.0`, exact commit `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, integrated on 2026-09-24 in merge commit `051714a1df41a357a5f0dd1decf42469797d4e16`.
+
+This pin remains fixed for the current evaluation corpus and baseline. An upstream change can alter indexing, source behavior, test results, or fixture interpretation; letting a baseline float would make a comparison unreproducible. Cite the exact upstream commit in every baseline record and review any future upgrade as a separate change.
+
+## Inherited capabilities
+
+GBrain already supplies source-scoped pages, chunks, embeddings, and retrieval; source identity and per-source locks; resumable synchronization and status surfaces; PGLite and Postgres engines with parity requirements; a generated CLI and MCP surface; the operation registry in `src/core/operations.ts`; and BrainBench's hermetic fixture loader, sealed gold, corpus hash, and protected-baseline comparison conventions. These capabilities are retained rather than reimplemented by the freshness extension.
+
+Source identity is part of page identity: `(source_id, slug)` distinguishes pages, and freshness objects must also bind a connector source and external object ID. Existing source locks and status remain upstream authority for current sync behavior; future freshness checkpoints and runs add provider-specific evidence without silently changing that authority.
+
+## Extension points and current gap
+
+Future operations belong in `src/core/operations.ts` and its `src/core/ops/` modules, with CLI and MCP definitions derived from the registry. Engine methods and SQL must remain in PGLite/Postgres parity; schema changes belong in `src/core/migrate.ts` and the engine bootstrap surfaces. Connector source identity must use the existing source model. Freshness eval loaders should follow `src/eval/brainbench/fixtures.ts` and `evals/brainbench/` for strict fixture/gold separation, deterministic hashes, and held-out fixtures.
+
+At this pin, GBrain does not provide one shared provider event ledger, a common provider cursor contract, per-object freshness state, tombstone proof tied to searchability, query-time provider verification, or a versioned freshness receipt. Existing sync behavior must not be described as satisfying those future guarantees.
+
+## Reviewed upstream update procedure
+
+1. Fetch `upstream` tags and commits; verify the proposed tag resolves to an exact commit and retain the current pin in the review record.
+2. Review the upstream changelog and the diff from `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, especially operations, source identity, engines, migrations, sync, and eval loaders.
+3. Merge the exact reviewed commit while retaining both histories and the MIT license. Resolve conflicts against GBrain invariants and this extension's contracts.
+4. Regenerate any generated documentation and inventories using the repository scripts, including `bun run build:llms` if upstream reference docs changed and `bun scripts/classify-tests.ts` when tests changed.
+5. Run the upstream verification gates plus the Tencent freshness structural, corpus, and behavioral gates applicable at that phase. Rebuild and review baselines against the new pin; never auto-approve a changed baseline from the same branch.
+
+For published documentation links in this derived repository, regenerate from `https://raw.githubusercontent.com/pavan2184/tencent-hack/main` instead of the upstream raw base. The current phase only documents this procedure; it does not advance the pin.
+
+---
+
+## docs/tencent/FRESHNESS_ARCHITECTURE.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/FRESHNESS_ARCHITECTURE.md
+
+# Freshness Architecture
+
+Last updated: 2026-09-24 · Approved future contract, not production behavior
+
+## Boundary and six-layer flow
+
+GBrain remains the root application. Its source-scoped pages, chunks, embeddings, search, source locks, and sync status are the substrate. The freshness extension will add durable provider-change accounting and evidence status before a consumer uses selected evidence.
+
+```text
+provider webhook -> durable event -> deterministic worker -> indexed/searchable state
+provider delta cursor ------------------------------^
+provider slim reconcile ----------------------------^
+critical query -> live verify -> fresh | stale | unknown | not_required
+selected evidence -> versioned freshness receipt
+```
+
+1. A thin provider webhook adapter authenticates and normalizes the envelope, deduplicates the provider event identity, commits durable acceptance, then schedules work. HTTP success means durable acceptance, not completed indexing. Supported webhook-path changes target `<=60` logical seconds from durable acceptance to searchability.
+2. A delta poller tracks a per-source, per-scope provider cursor. A page cursor advances only when every preceding change is applied or durably parked for retry with affected evidence marked non-current. Delta-recovered changes target `<=300` logical seconds from provider change to searchability.
+3. Slim reconciliation compares stable external object IDs, provider versions, modification times, deletion state, and available metadata fingerprints. It detects missed changes and tombstones without downloading every object. Reconcile-only changes target `<=3600` logical seconds from provider change to convergence.
+4. The deterministic worker fetches current provider state, compares versions, updates GBrain's source-scoped page and derived chunks/embeddings, and records the matching freshness state. `searchable_current` requires the page, chunks, searchable representation, and freshness metadata to agree on the same provider version. Partial indexing remains non-current.
+5. A critical query invokes live verification when policy requires it or the last verification is too old. The result is `fresh`, `stale`, `unknown`, or `not_required`. A version mismatch or deletion is stale; provider timeout, outage, malformed response, or incomparable version is unknown until resolved. Critical stale/unknown evidence produces a safe omission or abstention signal and is never silently exposed as current.
+6. A selected evidence set produces a versioned freshness receipt with source and object identities, provider version and hash, observation/acceptance/index/search/verification times, sync path, age, budget, and status. Mixed, deleted, or unknown items stay visible in the receipt.
+
+## Providers and deployment phases
+
+One normalized connector contract covers Confluence, Slack, Jira, and Google Drive. Confluence and Slack are the live MVP integration targets, subject to controlled test spaces and credentials. Jira and Google Drive use deterministic simulations in this phase. All four must obey the same lifecycle and safety invariants. These docs define contracts only; there are no new webhook routes, workers, tables, or live connectors yet.
+
+## Failure and recovery rules
+
+Duplicate event IDs return the original durable acceptance and cannot cause duplicate content mutation. A lower comparable provider version cannot overwrite a higher one; an incomparable version requires a provider read. A confirmed deletion creates a tombstone and removes searchability. If removal fails, the object remains explicitly unsafe and retryable. Rate limits and transient errors use bounded backoff with durable next-attempt times. Poison events are parked with a stable error code; parking permits cursor movement only after the affected evidence is marked non-current. Interrupted runs replay idempotently. No partial or unverifiable run stamps a source or scope as successfully current.
+
+Deterministic code owns clock comparisons, versions and hashes, deduplication, cursor movement, tombstones, retries, policy budgets, breach classification, and fallback. Jev may prioritize semantically important work, but cannot change provider truth, cursor safety, status, or fallback. The access-control and groundedness workstreams consume neutral identifiers and status later; this architecture does not make their decisions.
+
+## GBrain seams
+
+Future operations enter `src/core/operations.ts` and derive CLI/MCP surfaces. PGLite and Postgres changes must move together, with schema migration and bootstrap coverage. Every object lookup, page mutation, receipt item, and status read preserves GBrain source identity. Tests use isolated stores, an injected logical clock, synthetic data, and no live provider, network, key, or LLM in CI. [Data model](FRESHNESS_DATA_MODEL.md), [operations](FRESHNESS_API_CONTRACT.md), and [evals](FRESHNESS_EVALS.md) are the executable design references.
+
+---
+
+## docs/tencent/FRESHNESS_DATA_MODEL.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/FRESHNESS_DATA_MODEL.md
+
+# Freshness Data Model
+
+Last updated: 2026-09-24 · Contract version 1
+
+These are approved future production contracts. No freshness migration or table exists in this phase. GBrain's existing sources, pages, chunks, embeddings, locks, and status remain canonical. Every `source_id` below references an existing GBrain source within the selected brain. An object reference is `(source_id, external_object_id)`; a page reference is `(source_id, gbrain_page_slug)` or an equivalent source-scoped page ID. Never identify a page by slug alone. Times are UTC instants; nullable times mean the transition has not happened, not an inferred success.
+
+## `connector_checkpoints`
+
+One durable cursor per connector scope. Primary identifier and unique key: `(source_id, scope_key)`.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `source_id` | text, required | Existing GBrain source; part of primary key. |
+| `scope_key` | text, required | Provider collection, channel, space, or equivalent cursor scope. |
+| `connector_kind` | enum, required | `confluence`, `slack`, `jira`, `google_drive`. |
+| `cursor_value` | opaque text, nullable | Last safely accounted provider page or watermark. |
+| `cursor_version` | integer, required | Compare-and-swap generation, initially zero. |
+| `last_polled_at`, `last_reconciled_at` | timestamp, nullable | Last completed attempt of each path. |
+| `last_successful_run_id` | ID, nullable | Completed `sync_runs.id`, never a partial/failed run. |
+| `status` | enum, required | `ready`, `polling`, `degraded`, or `paused`. |
+| `created_at`, `updated_at` | timestamp, required | Row creation and last durable transition. |
+
+The cursor advances with a compare-and-swap on `cursor_version` only after each change in the preceding page is applied or durably parked with its object marked non-current. A failed page leaves the cursor unchanged. Reconciliation does not overwrite the delta cursor. Deleting a source retires its checkpoint with the source lifecycle; a provider object deletion never deletes this row.
+
+## `source_change_events`
+
+Append-oriented acceptance and retry ledger. Primary key: `id` (stable UUID). Unique `(source_id, provider_event_id)` for provider events; synthesized delta/reconcile changes receive a deterministic source-scoped event ID from provider object, version, and change kind.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `id` | UUID, required | Durable event identity. |
+| `source_id`, `scope_key`, `connector_kind` | text, required | GBrain source, cursor scope, provider kind. |
+| `provider_event_id`, `external_object_id` | text, required | Deduplication key and provider object identity. |
+| `change_kind` | enum, required | `upsert`, `delete`, or `metadata_change`. |
+| `provider_version` | opaque text, nullable | Provider revision, possibly unavailable until fetch. |
+| `observed_at`, `accepted_at` | timestamp, required | Adapter observation and durable commit time. |
+| `state` | enum, required | `accepted`, `processing`, `applied`, or `parked`. |
+| `attempt_count` | integer, required | Nonnegative processing attempts. |
+| `next_attempt_at` | timestamp, nullable | Durable backoff wake-up for retryable/parked work. |
+| `last_error_code` | text, nullable | Stable classified failure; required when parked. |
+| `payload_hash` | SHA-256 hex, required | Fingerprint of normalized minimal envelope, not raw secrets. |
+| `applied_at`, `parked_at` | timestamp, nullable | Mutually exclusive terminal accounting times. |
+
+`accepted -> processing -> applied` or `accepted/processing -> parked`; a parked event can retry through `processing` without losing its prior receipt. A duplicate returns the existing acceptance and does not increment a content mutation count. `parked` is durable accounting, never successful indexing. A delete event remains in the ledger; it creates a tombstone in `object_freshness` and cannot erase history. Payloads exclude credentials and unrestricted provider bodies.
+
+## `object_freshness`
+
+One current record per provider object. Primary and unique key: `(source_id, external_object_id)`.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `source_id`, `external_object_id` | text, required | GBrain source and stable provider object identity. |
+| `connector_kind` | enum, required | Provider matching the source. |
+| `gbrain_page_slug` | text, nullable | Linked source-scoped GBrain page; null before first successful index or after full removal. |
+| `provider_version` | opaque text, nullable | Latest accepted comparable revision. |
+| `content_hash` | SHA-256 hex, nullable | Indexed content fingerprint; null for unindexed/deleted objects. |
+| `provider_modified_at` | timestamp, nullable | Provider time when available. |
+| `observed_at` | timestamp, required | Local observation time. |
+| `accepted_at`, `indexed_at`, `searchable_at` | timestamp, nullable | Durable event acceptance, page write, and matching searchable representation. |
+| `last_verified_at` | timestamp, nullable | Last live provider check. |
+| `verification_result` | enum, nullable | `fresh`, `stale`, `unknown`, `not_required`. |
+| `sync_path` | enum, required | `webhook`, `delta`, `reconcile`, `live_verify`. |
+| `deleted_at`, `tombstone_version` | timestamp/text, nullable | Confirmed provider deletion and deletion revision. |
+| `freshness_status` | enum, required | `pending`, `searchable_current`, `stale`, `unknown`, `deleted`. |
+| `last_run_id` | ID, nullable | Producing `sync_runs.id`. |
+| `created_at`, `updated_at` | timestamp, required | Record lifecycle. |
+
+An older comparable version cannot replace a newer version. An incomparable version requires a provider fetch before mutation. `searchable_at >= indexed_at`, and `searchable_current` requires matching page/chunk/embedding/search state and provider version. A content write with failed embedding remains `pending` or `unknown`. A tombstoned object is `deleted`, has no searchable content, and cannot be `searchable_current`; failed removal leaves `stale`/`unknown` with retry work, never a clean delete. Provider object deletion retains this row as proof.
+
+## `sync_runs`
+
+Durable run receipt. Primary key: `id` (UUID); unique `(source_id, scope_key, idempotency_key)` so replay finds the same run.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `id`, `idempotency_key` | UUID/text, required | Run and replay identity. |
+| `source_id`, `scope_key`, `connector_kind` | text, required | GBrain source and provider scope. |
+| `trigger_kind` | enum, required | `webhook`, `delta`, `reconcile`, `live_verify`. |
+| `cursor_before`, `cursor_after` | opaque text, nullable | Provider cursor around the run; after stays null until safe advancement. |
+| `started_at` | timestamp, required | Worker start. |
+| `completed_at` | timestamp, nullable | Terminal finish only. |
+| `status` | enum, required | `queued`, `running`, `completed`, `partial`, `failed`, `parked`. |
+| `observed_count`, `applied_count`, `tombstoned_count`, `retry_count`, `failed_count` | integer, required | Nonnegative accounting. |
+| `next_attempt_at` | timestamp, nullable | Retry schedule for nonterminal work. |
+| `error_summary` | redacted text, nullable | Stable failure summary without provider secrets. |
+| `created_at`, `updated_at` | timestamp, required | Durable lifecycle. |
+
+`queued -> running -> completed/partial/failed/parked`; replay may resume partial, failed, or parked work with the same key. Only `completed` with all changes accounted can become `last_successful_run_id`. Counts and cursor must agree with ledger rows. A delete is counted in `tombstoned_count`, not physically erased from run history.
+
+## `freshness_policies`
+
+Immutable versioned policy rows. Primary key: `(policy_id, schema_version)`; unique active combination `(connector_kind, evidence_class, schema_version)`.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `policy_id` | text, required | Stable policy family. |
+| `schema_version` | integer, required | Contract/policy revision. |
+| `connector_kind` | enum, required | One of four providers. |
+| `evidence_class` | enum, required | `critical` or `standard`. |
+| `max_index_age_seconds`, `max_verification_age_seconds` | integer, required | Nonnegative budgets. |
+| `require_live_verification` | boolean, required | Query-time check requirement. |
+| `failure_action` | enum, required | `omit`, `abstain`, or explicitly marked standard-evidence treatment. |
+| `status` | enum, required | `draft`, `active`, or `retired`. |
+| `effective_at`, `retired_at` | timestamp, nullable | Policy activation interval; `effective_at` is required when active or retired. |
+| `created_at`, `updated_at` | timestamp, required | Audit timestamps; published versions are immutable. |
+
+Policy publication goes `draft -> active -> retired` as metadata; revisions create rows rather than mutating an active budget. Critical stale/unknown evidence always uses safe fallback. Deletions and tombstones are object state, never policy deletion. Policy rows have no retry/parking state; a failed rollout leaves the previous active version and a failed run receipt.
+
+## `freshness_receipts`
+
+Immutable persisted snapshots for selected evidence, especially demo and audit reconstruction. Primary key: `receipt_id` (UUID). `request_key` is globally unique across all persisted `freshness_receipts`, including requests whose evidence spans sources; it is never scoped to one source or connector. `receipt_hash` is an integrity fingerprint of the canonical receipt payload and schema version, not the idempotency key.
+
+| Field | Type / nullability | Meaning |
+| --- | --- | --- |
+| `receipt_id`, `schema_version` | UUID/integer, required | Snapshot identity and version. |
+| `request_key` | text, required | Globally unique persisted request identity, independent of source scope. |
+| `request_payload_hash` | SHA-256 hex, required | Canonical request hash for replay/conflict comparison. |
+| `created_at` | timestamp, required | Snapshot creation. |
+| `policy_id`, `policy_schema_version` | text/integer, required | Exact policy revision used. |
+| `evidence_items` | structured array, required | Every requested `(source_id, external_object_id, gbrain_page_slug?)`, connector kind, provider version/hash, provider modification/observation/acceptance/index/search/verification times, verification result, sync path, age, budget, status, and tombstone marker. |
+| `oldest_evidence_age_seconds` | integer, nullable | Null only when no item has a measurable age. |
+| `overall_status` | enum, required | `fresh`, `stale`, `unknown`, `not_required`, or `mixed`. |
+| `receipt_hash` | SHA-256 hex, required | Canonical snapshot integrity hash. |
+
+For `persist: true`, compute `request_payload_hash` from contract version, ordered source-scoped evidence identifiers, policy ID/version, and the explicit empty-set declaration before reading mutable freshness state. Atomically reserve the globally unique `request_key` and commit its hash with the complete immutable receipt in one transaction. On a key collision, the same key plus the same canonical request hash returns the existing receipt, even if provider state changed later; the same key plus a different hash returns `receipt_conflict`. Concurrent attempts wait for the winner's committed result or receive a retryable in-progress outcome, never a second receipt. A failed transaction rolls back its reservation and receipt together.
+
+Receipts are append-only. A later provider update or deletion does not rewrite old proof; a new request key produces a new receipt reflecting the new status. Unknown/deleted/mismatched items remain in `evidence_items`, preserving input order and source scope. There is no receipt parking state because no partial receipt is published. `persist: false` produces an ephemeral snapshot and no table row or durable idempotency reservation. Ordinary query storage is optional, but demo and audit reconstruction require persistence.
+
+## Integrity and implementation boundary
+
+All future writes must use source-scoped keys and PGLite/Postgres parity. Foreign links from events/runs/objects to GBrain sources and pages must reject cross-source reuse. The event ledger, checkpoint generation, object mutation, and run accounting must be recoverable after interruption. The receipt schema is about freshness facts only; it carries neither an authorization decision nor a groundedness score. Migrations, engine methods, and actual storage will be designed and tested in the production phase, after the eval contract and corpus are approved.
+
+---
+
+## docs/tencent/FRESHNESS_API_CONTRACT.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/FRESHNESS_API_CONTRACT.md
+
+# Freshness API and Operation Contract
+
+Last updated: 2026-09-24 · Future JSON contract version 1
+
+No operation or route in this document is implemented in the current phase. Each future operation is defined once in `src/core/operations.ts` (with implementation in `src/core/ops/`), including schema, `read`/`write` scope, handler, and CLI hints. GBrain derives CLI, MCP, and tools-json surfaces from that registry. The source resolver must preserve the selected brain and GBrain source scope; every object identifier is paired with `source_id`. This document does not define a new authorization policy.
+
+The common response includes `schema_version: 1`. Failed calls use GBrain's operation error envelope with a stable `code`, safe `message`, and redacted `details`; errors never imply evidence is fresh. Provider payloads, tokens, and private content must not be logged in status or errors.
+
+## `connector_sync`
+
+Purpose: accept or execute work for one source and provider scope.
+
+Input: required `source_id`, `scope_key`, `trigger_kind` (`webhook`, `delta`, `reconcile`), and `idempotency_key`; optional normalized `event_id` and bounded `deadline_at`. The connector kind resolves from the existing source and must match the event. A webhook invocation references an already durably accepted event.
+
+Output: `schema_version`, `run_id`, `status` (`queued`, `running`, `completed`, `partial`, `failed`, `parked`), `accepted_count`, `applied_count`, `parked_count`, `cursor_before`, `cursor_after`, and `next_attempt_at` when retryable. Counts distinguish durable acceptance from completed indexing.
+
+Errors: `invalid_source`, `invalid_scope`, `invalid_event`, `cursor_conflict`, `provider_unavailable`, `rate_limited`, `storage_unavailable`, `deadline_exceeded`. A duplicate `idempotency_key` returns the same run/acceptance result without a second content mutation. A failure leaves pending work durable and affected objects non-current; no failed or partial run stamps success or advances a cursor past unaccounted work. This is a write operation scoped to exactly one GBrain source.
+
+## `freshness_status`
+
+Purpose: read source, scope, or object freshness without changing state.
+
+Input: required `source_id`; optional `scope_key` and `external_object_id`. An object lookup uses the composite `(source_id, external_object_id)`, never a global object ID.
+
+Output: `schema_version`, source/scope/object identity, `freshness_status`, SLA class and budget, last successful webhook/delta/reconcile times when known, pending and parked failure counts, oldest non-current age, provider version, index/search timestamps, last verification result, and tombstone state when an object was requested. Unknown times are null with an explicit unknown status.
+
+Errors: `invalid_source`, `invalid_scope`, `object_not_found`, `storage_unavailable`. The operation is read-only and idempotent. When status cannot be read, the safe fallback is `unknown`; a caller must not treat missing status as `fresh`.
+
+## `verify_freshness`
+
+Purpose: live-check source-scoped selected evidence immediately before critical use.
+
+Input: required `source_id`, `external_object_id`, `evidence_class` (`critical` or `standard`), `policy_id`/version, and an `idempotency_key`; optional expected `provider_version`, `content_hash`, and bounded `deadline_at`. The linked GBrain page identity, if supplied, must match the same source.
+
+Output: `schema_version`, source/object/page identity, expected and observed provider versions, `verified_at`, `verification_result` (`fresh`, `stale`, `unknown`, `not_required`), `freshness_status`, budget, `safe_use` boolean, and `fallback_action` (`none`, `omit`, `abstain`). A matching provider version and indexed/searchable state are required for `fresh`.
+
+Errors: `invalid_source`, `object_not_found`, `policy_not_found`, `provider_unavailable`, `rate_limited`, `provider_malformed`, `deadline_exceeded`, `storage_unavailable`. Provider uncertainty is represented as `unknown` with a safe fallback for critical evidence; transport failure never upgrades state to `fresh`. Repeated verification with the same key and provider observation is idempotent, while a new observation can produce a new result. This is a scoped write because it records verification state; it does not perform authorization or claim scoring.
+
+## `freshness_receipt`
+
+Purpose: produce a stable, versioned snapshot for the exact selected evidence set.
+
+Input: required ordered `evidence` array of `(source_id, external_object_id, gbrain_page_slug?)`, `policy_id`/version, and `request_key`; optional `persist` flag (default `true`). Every item must be checked in its own GBrain source. A zero-item set is valid only when the caller explicitly records that no evidence was selected.
+
+Output: `schema_version`, `receipt_id`, `created_at`, policy revision, ordered `evidence_items`, `oldest_evidence_age_seconds`, `overall_status`, and `receipt_hash`. Each item includes source/connector/object/page identity, provider version and content hash, provider modification/observation/acceptance/index/search/live-verification times, verification result, sync path, computed age, budget, tombstone state, freshness status, and safe-use/fallback signal. Unknown, stale, deleted, or mismatched evidence remains in the receipt instead of disappearing from the input set.
+
+Persistence modes:
+
+- `persist: true`: `request_key` is globally unique across persisted receipts. The service computes `request_payload_hash` from the canonical contract version, ordered source-scoped evidence identifiers, policy ID/version, and explicit empty-set declaration. Atomic reservation and receipt commit ensure the same key plus the same hash returns the existing immutable receipt, while the same key plus a different hash returns `receipt_conflict`. A concurrent in-progress reservation is waited on or returned as retryable; no partial receipt is published.
+- `persist: false`: returns an ephemeral snapshot with no persisted receipt or key reservation. `request_key` is for correlation and deterministic behavior within that request only; there is no cross-call or restart replay or conflict guarantee. A later call may observe changed freshness state and return a different snapshot.
+
+Errors: `invalid_evidence`, `invalid_source`, `policy_not_found`, and `evidence_unavailable` apply to either mode. `receipt_conflict` and `storage_unavailable` apply only when persistence was requested. On failure no partial receipt is presented as fresh. A persisted receipt write that fails returns `storage_unavailable`, never an unauditable success. This operation reads scoped evidence and may write an immutable receipt, so its registry scope is statically `write` even when a caller chooses `persist: false`.
+
+## Provider webhook transport
+
+Future provider-specific HTTP webhook routes are thin adapters only: validate transport authenticity and envelope shape, normalize a provider event, deduplicate, call the shared durable-acceptance primitive, and return its stable acceptance ID. A successful `2xx` response means durable acceptance, never completed indexing. If durable storage fails, the route must fail for provider retry; it cannot acknowledge an in-memory-only event. Duplicate delivery returns the existing ID. Routes contain no cursor, indexing, policy, or query business logic. Their concrete paths and authentication mechanics are deferred to the live connector implementation.
+
+## Compatibility and safety
+
+Contract version changes are explicit and additive where possible; old receipt versions remain readable. Provider revisions are opaque until a connector can compare them; incomparable versions force a provider read. Source isolation, per-source locks, PGLite/Postgres parity, and GBrain's existing operation/error conventions remain binding. Freshness outputs carry neutral evidence identities, status, and safe-use signals. They contain no authorization decision and no groundedness score.
+
+---
+
+## docs/tencent/FRESHNESS_EVALS.md
+
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/tencent/FRESHNESS_EVALS.md
+
+# Freshness Evaluation Contract
+
+Last updated: 2026-09-24 · Evaluation contract version 1
+
+The current baseline status is exactly `contract_only`. Contract validation proves document/schema/corpus integrity; it is not a measured behavioral baseline and does not claim measured production freshness, provider latency, or a green state machine. Behavioral scoring begins only after production adapters and the deterministic freshness state machine exist.
+
+## Hermetic corpus and sealed gold
+
+`evals/freshness/` contains `fixtures/`, separate sealed `gold/`, `holdout/`, JSON schemas for fixture/gold/result/baseline, and `baselines/main.json`. Fixtures expose only synthetic provider state, events, and logical time steps to a future adapter. Expected versions, hashes, cursor moves, tombstones, receipts, and verdicts live only in gold. The loader rejects expectation keys in fixtures, orphan gold, malformed schema, and incomplete runs. A corpus hash covers sorted relative paths and bytes of both fixture and gold files. Two of twelve cases are held out of ordinary CI and reserved for published/manual evaluation.
+
+CI uses a deterministic fake provider, injected logical clock, synthetic Confluence/Slack/Jira/Google Drive content, isolated disposable storage, and no provider credentials, network calls, wall-clock sleeps, or LLM calls. GBrain's `docs/TESTING.md` remains authoritative for test isolation. The upstream BrainBench sealed-gold and protected-main baseline conventions apply. Logical-time gates prove state-machine expectations; they do not measure real provider latency.
+
+## Seven behavioral suites
+
+| Suite | Required cases |
+| --- | --- |
+| Fast path | Webhook create/update is durably accepted then searchable at the same version within 60 logical seconds. |
+| Delta recovery | Missed webhook, pagination failure, duplicate/reordered change, safe cursor, and recovery within 300 logical seconds. |
+| Reconciliation | Drift, missed changes, delete/tombstone, unchanged hash with changed provider metadata, convergence within 3600 logical seconds. |
+| Critical verification | Matching version, drift, deletion, outage, timeout, malformed response, `fresh`/`stale`/`unknown`/`not_required`, and safe fallback. |
+| Receipt integrity | All required receipt fields, source-scoped identities, policy revision, ordering, mixed statuses, and canonical receipt hash. |
+| Failure recovery | Duplicate delivery, rate limiting, poison parking, partial embedding/searchability, worker crash, replay, and deterministic final state. |
+| Cross-platform contract | Equivalent lifecycle invariants for Confluence, Slack, Jira, and Google Drive adapters. |
+
+The initial synthetic matrix includes a Confluence critical runbook webhook update and verification race; Slack duplicate/reordered thread update and crash replay; Jira missed webhook delta recovery and cursor page retry; Google Drive reconciliation delete and modification-time-only update; plus poison parking, embedding failure, rate-limit retry, and a mixed-source receipt. Fixtures must not mirror a real company, person, incident, provider payload, or credential.
+
+## Metric definitions
+
+Counts are nonnegative integers. A critical selection is one evidence item offered to downstream use under a critical policy. `exposed` means it passed the freshness gate to the consumer. Changed-object deadlines are measured with the injected logical clock. Required receipt fields are those in [the API contract](FRESHNESS_API_CONTRACT.md), not only fields populated by a successful case.
+
+```text
+stale_critical_exposures = count(critical selections where status != fresh and evidence was exposed)
+accepted_event_loss = count(durably accepted changes absent from applied or durably parked terminal accounting)
+cursor_advanced_past_unaccounted_work = count(cursor advances whose preceding page contains an unaccounted change)
+duplicate_mutations = sum(max(0, applied_mutation_count_per_change - 1))
+tombstone_accuracy = correct_delete_outcomes / expected_delete_outcomes
+receipt_field_accuracy = matching_required_receipt_fields / required_receipt_fields
+safe_fallback_rate = safe_fallbacks / stale_or_unknown_critical_verifications
+eventual_convergence_rate = converged_objects / changed_objects_at_deadline
+webhook_max_propagation_seconds = max(searchable_at - durable_accepted_at) for webhook-path changes
+delta_max_recovery_seconds = max(searchable_at - provider_changed_at) for delta-recovered changes
+reconciliation_max_convergence_seconds = max(converged_at - provider_changed_at) for reconcile-only changes
+```
+
+`correct_delete_outcomes` requires a tombstone and no retained searchable object. `matching_required_receipt_fields` compares each field with sealed gold. `safe_fallbacks` counts stale/unknown critical verifications that omit or abstain before exposure. `converged_objects` match the gold provider version, hash, tombstone, and searchable state by the suite deadline. Max latency metrics are invalid if a required path has no cases, unless that fixture explicitly declares the path intentionally empty. Ratio metrics are `1.0` only when the fixture declares the denominator intentionally empty; otherwise a missing or zero denominator is invalid gold. An absent timestamp, thrown run, or incomplete accounting is failure, never a skipped pass.
+
+## Hard thresholds
+
+```text
+stale_critical_exposures = 0
+accepted_event_loss = 0
+cursor_advanced_past_unaccounted_work = 0
+duplicate_mutations = 0
+tombstone_accuracy = 1.0
+receipt_field_accuracy = 1.0
+safe_fallback_rate = 1.0
+eventual_convergence_rate = 1.0
+fast_path_sla_pass_rate = 1.0 at 60 logical seconds
+delta_recovery_sla_pass_rate = 1.0 at 300 logical seconds
+reconciliation_sla_pass_rate = 1.0 at 3600 logical seconds
+```
+
+The three SLA pass rates divide eligible path changes meeting their respective deadlines by all eligible changes on that path. They use the same explicit-empty-denominator rule. The corresponding max latency metrics are reported alongside the rates, with expected bounds `webhook_max_propagation_seconds <= 60`, `delta_max_recovery_seconds <= 300`, and `reconciliation_max_convergence_seconds <= 3600` for a passing nonempty suite. Diagnostic reports also include events per run, retry count, logical processing latency distribution, provider calls per changed object, reconcile scan efficiency, and receipt byte size; these are not initial hard gates.
+
+## Baseline governance and limits
+
+The committed `contract_only` baseline binds schema version, canonical provider and suite coverage, hermetic configuration, exact hard thresholds, fixture counts, and the full corpus hash. `bun run check:freshness-evals` checks these contracts and sealed gold without running an adapter. The baseline contains no scores, pass flags, measured metrics, or results.
+
+Replacing `contract_only` requires a separate reviewed production-runner plan, result schema validation, full suite execution, same-hash comparison against the protected main baseline, and an explicit baseline-bless command. That graduation is not implemented in this phase. A future behavioral gate must bind results to corpus hash and run configuration, require the committed baseline to match an actual run after fixture changes, and require written justification for adverse movement. A pull request cannot self-approve by replacing its comparison baseline.
+
+Manual or scheduled Confluence and Slack smoke checks use controlled test spaces. For each mutation they record provider mutation time, webhook receipt and durable acceptance time, indexed/searchable time, provider version/hash, observed wall-clock latency, and the final freshness receipt. They are separate from hermetic CI and do not enter its baseline. Jira and Google Drive remain simulations for this MVP unless the team explicitly expands live scope. Access control and groundedness evaluation belong to separate workstreams.
+
+The [Confluence](runbooks/CONFLUENCE_LIVE_SMOKE.md) and [Slack](runbooks/SLACK_LIVE_SMOKE.md) runbooks specify test-tenant-only manual procedures, redacted evidence, and cleanup. They contain no executable adapter commands because the live implementations do not exist yet. No live smoke result has been recorded or claimed.
+
+---
+
 # Configuration
 
 ## docs/ENGINES.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/ENGINES.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/ENGINES.md
 
 # Pluggable Engine Architecture
 
@@ -3894,7 +4325,7 @@ Note: there is no SQLite engine. PGLite uses the same SQL as Postgres, so no sep
 
 ## docs/what-schemas-unlock.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/what-schemas-unlock.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/what-schemas-unlock.md
 
 # What schemas unlock
 
@@ -4074,7 +4505,7 @@ That's what we built. Try it on a corpus you actually have and the numbers go up
 
 ## docs/schema-author-tutorial.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/schema-author-tutorial.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/schema-author-tutorial.md
 
 # Tutorial: Build your first schema pack
 
@@ -4303,7 +4734,7 @@ gbrain schema lint --with-db
 
 ## docs/guides/live-sync.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/live-sync.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/live-sync.md
 
 # Live Sync: Keep the Index Current
 
@@ -4565,7 +4996,7 @@ vars — incident-time escape hatches, not everyday knobs.
 
 ## docs/guides/cron-schedule.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/cron-schedule.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/cron-schedule.md
 
 # Reference Cron Schedule
 
@@ -4923,7 +5354,7 @@ echo "Dream cycle complete at $(date)"
 
 ## docs/guides/quiet-hours.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/quiet-hours.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/quiet-hours.md
 
 # Quiet Hours and Timezone-Aware Delivery
 
@@ -5126,7 +5557,7 @@ Set `enabled: false` to disable quiet hours entirely (e.g., for 24/7 monitoring)
 
 ## docs/guides/scaling-skills.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/scaling-skills.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/scaling-skills.md
 
 # Scaling skills past 300 without drowning the context window
 
@@ -5469,7 +5900,7 @@ the bundled resolver lives at [`skills/RESOLVER.md`](../../skills/RESOLVER.md).
 
 ## docs/guides/push-context.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/push-context.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/push-context.md
 
 # Push-based context
 
@@ -5624,7 +6055,7 @@ never reach a prompt regardless of caller trust.
 
 ## docs/guides/github-source.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/github-source.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/github-source.md
 
 # GitHub source kind: issues and PRs live in the brain
 
@@ -5790,7 +6221,7 @@ gbrain sources remove gh --confirm-destructive
 
 ## docs/mcp/DEPLOY.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/mcp/DEPLOY.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/mcp/DEPLOY.md
 
 # Deploy GBrain Remote MCP Server
 
@@ -6470,7 +6901,7 @@ built-in server is the recommended path.
 
 ## docs/protocol/MEMORY_VERBS_v1.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/protocol/MEMORY_VERBS_v1.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/protocol/MEMORY_VERBS_v1.md
 
 # MEMORY_VERBS v1 — the memory wire protocol
 
@@ -6948,7 +7379,7 @@ dominates (~minutes); the measured calls report p50/p99 + the ratio guard.
 
 ## docs/GBRAIN_VERIFY.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/GBRAIN_VERIFY.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/GBRAIN_VERIFY.md
 
 # GBrain Installation Verification Runbook
 
@@ -7304,7 +7735,7 @@ end-to-end sync test (4c), push a real change and verify it appears in search.
 
 ## docs/guides/minions-fix.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/guides/minions-fix.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/guides/minions-fix.md
 
 # Minions fix: repairing a half-migrated install
 
@@ -7443,7 +7874,7 @@ Each phase is idempotent. Re-running is safe. Common failure modes:
 
 ## docs/integrations/reliability-repair.md
 
-Source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/integrations/reliability-repair.md
+Source: https://raw.githubusercontent.com/pavan2184/tencent-hack/main/docs/integrations/reliability-repair.md
 
 # Reliability repair
 

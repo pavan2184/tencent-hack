@@ -29,10 +29,10 @@ export const PROJECT = {
   name: "GBrain",
   summary:
     "GBrain is a personal knowledge brain and GStack mod for agent platforms. Pluggable engines (PGLite default, Postgres+pgvector for scale), contract-first operations, 26 fat-markdown skills. Teaches agents brain ops, ingestion, enrichment, scheduling, identity, and access control.",
-  repoUrl: "https://github.com/garrytan/gbrain",
+  repoUrl: "https://github.com/pavan2184/tencent-hack",
   rawBaseUrl:
     process.env.LLMS_REPO_BASE ??
-    "https://raw.githubusercontent.com/garrytan/gbrain/master",
+    "https://raw.githubusercontent.com/pavan2184/tencent-hack/main",
 };
 
 export const SECTIONS: DocSection[] = [
@@ -94,6 +94,22 @@ export const SECTIONS: DocSection[] = [
         description: "Project overview, benchmarks, 30-minute setup.",
         path: "README.md",
       },
+    ],
+  },
+  {
+    heading: "Tencent FinTech freshness extension",
+    entries: [
+      { title: "Tencent project brief", path: "docs/tencent/PROJECT_BRIEF.md", description: "Freshness ownership, provider scope, user journey, targets, and phase boundary." },
+      { title: "Hackathon requirements", path: "docs/tencent/HACKATHON_REQUIREMENTS.md", description: "Official challenge and submission mapping, with team workstream boundaries.", includeInFull: false },
+      { title: "Pinned upstream baseline", path: "docs/tencent/UPSTREAM_BASELINE.md", description: "GBrain v0.54.1.0 exact commit, attribution, inherited seams, and update procedure." },
+      { title: "Freshness architecture", path: "docs/tencent/FRESHNESS_ARCHITECTURE.md", description: "Future webhook, delta, reconciliation, verification, receipt, and failure flow." },
+      { title: "Freshness data model", path: "docs/tencent/FRESHNESS_DATA_MODEL.md", description: "Future event, checkpoint, object, run, policy, and receipt contracts." },
+      { title: "Freshness API contract", path: "docs/tencent/FRESHNESS_API_CONTRACT.md", description: "Future source-scoped operations and safe-use response semantics." },
+      { title: "Freshness evaluation contract", path: "docs/tencent/FRESHNESS_EVALS.md", description: "Hermetic synthetic corpus, logical-time metrics, hard targets, and contract-only baseline." },
+      { title: "Freshness decisions", path: "docs/tencent/DECISIONS.md", description: "Accepted foundation decisions and workstream boundary.", includeInFull: false },
+      { title: "Freshness project status", path: "docs/tencent/PROJECT_STATUS.md", description: "Current contract, implementation, verification, and live-smoke status.", includeInFull: false },
+      { title: "Confluence live smoke runbook", path: "docs/tencent/runbooks/CONFLUENCE_LIVE_SMOKE.md", description: "Manual test-tenant procedure for the future Confluence connector.", includeInFull: false },
+      { title: "Slack live smoke runbook", path: "docs/tencent/runbooks/SLACK_LIVE_SMOKE.md", description: "Manual test-tenant procedure for the future Slack connector.", includeInFull: false },
     ],
   },
   {

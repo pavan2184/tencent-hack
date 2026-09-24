@@ -2,6 +2,13 @@
 
 Last updated: 2026-09-24
 
+## Foundation handoff
+
+- Docs/eval foundation: complete. Contract gate: passing (`contract_only`, 12 synthetic fixtures: 10 gate and 2 holdout).
+- Behavioral runner/baseline: not implemented; no behavioral claim. Production freshness implementation is ready for a separate plan.
+- Live smoke execution: not run until adapters and disposable test tenants exist. No production latency or freshness SLA has been measured.
+- Upstream pin: GBrain `v0.54.1.0` at `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`. Complete corpus hash: `2a6c2245b4e0645274a04263c1a72b563ab80e163f80da52597b29a358f3a3ec`.
+
 ## Completed
 
 - Approved design for the contract-first freshness extension.
@@ -91,3 +98,24 @@ project suite was not rerun for this documentation-focused task. No live
 provider smoke was executed, no latency was measured, and no local server is
 running. Future execution requires implemented adapters and disposable test
 tenants.
+
+## Final foundation verification (2026-09-24)
+
+Bun `1.4.2` (`744846f84`) was on `PATH`; TypeScript and full verify used `NODE_OPTIONS=--max-old-space-size=6144`. All commands below ran in this worktree. An exit 0 for a contract check proves only contract integrity.
+
+| Command | Result |
+| --- | --- |
+| `LLMS_REPO_BASE=https://raw.githubusercontent.com/pavan2184/tencent-hack/main bun run build:llms` | Exit 0; fork index and full bundle generated. The final bundle is 489,493 bytes, below the 800,000-byte budget. Generated source links use the fork URL; upstream links inside inherited document bodies remain upstream references. |
+| `bun scripts/classify-tests.ts`; `bun run check:structural-manifest` | Exit 0; 341 structural suites, 1,477 cases, 196 files, zero unknown; regeneration caused no TSV diff. |
+| `bun test test/freshness-docs-contract.test.ts test/freshness-eval-contract.test.ts test/freshness-eval-baseline.test.ts` | Exit 0; 104 passed, zero failed. |
+| `bun run check:freshness-evals`; `env -i PATH="/Users/pavan/.bun/bin:/usr/bin:/bin:/usr/sbin:/sbin" bun run check:freshness-evals` | Both exit 0 with the same `contract_only`, 12/10/2 count and corpus hash above; no provider or AI credentials required. |
+| `bun run check:fixture-privacy`; `bun run check:synthetic-corpus-privacy` | Both exit 0; no banned fixture tokens or corpus privacy violations. |
+| `bun test test/build-llms.test.ts`; `bun test test/scripts/check-key-files-current-state.test.ts` | Exit 0; 12 and 13 cases passed respectively. |
+| `bun run typecheck`; `git diff --check` | Exit 0 with 6 GiB Node heap for typecheck; no whitespace errors. |
+| `bun install --frozen-lockfile` | Exit 0; 290 installs checked, no dependency changes. |
+| `bun run verify` | First attempt exited 1: 54/56 checks passed. The orphan guard counted 48 test-only modules against 46, including three intentionally test-only freshness eval modules; README was 45,503 bytes against its 45,000-byte cap. After the narrow guard assertion and README compression, the latest run exited 0: 56/56 passed. |
+| `bun run test` | Exit 130 after an explicit interrupt at about 3 minutes 30 seconds: the memory-adapted runner used one shard and one file at a time, with 30 of 1,917 files complete and a several-hour projection. This is an incomplete full-suite result, not a pass. One inherited skillpack case had already failed. |
+| `bun test test/skillpack-scaffold-harness.test.ts` | Default temp path exited 1 (21 pass, one fail): CLI init reported “A content-root component is not a real directory.” The test and product source are unchanged from the upstream pin. `TMPDIR=/private/tmp bun test test/skillpack-scaffold-harness.test.ts` exited 0 (22 pass), confirming the default macOS `/var` symlink path as the local cause. No product behavior was changed for this. |
+| Pin, ancestry, scope, non-claim, and link audits | Exact `v0.54.1.0` tag and ancestor checks exited 0; no tracked `.codex` files; no unfinished markers, affirmative measured-behavior claims, or access-control implementation markers in the scoped freshness files; 55 fork links in `llms.txt` and 30 fork `Source:` links in `llms-full.txt`. |
+
+Database E2E was not run: `DATABASE_URL` is unset and no disposable Postgres/PgBouncer environment was provisioned. No provider live smoke was run and no local server is running. The full unit suite remains unverified despite the clean isolated skillpack rerun.

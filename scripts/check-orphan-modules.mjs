@@ -48,7 +48,15 @@ const ALLOWLIST = new Map([
 // by the test tree are a separate, softer tier: not dead code, but not
 // product code either — candidates for wiring or deletion. Their COUNT is a
 // shrink-only ratchet so the tier can't quietly grow.
-const MAX_TEST_ONLY_REACHABLE = 46;
+// These three freshness eval modules intentionally serve the hermetic contract
+// tests only. Require their names and cap the current total, so another
+// test-only module requires an explicit ratchet review.
+const EXPECTED_FRESHNESS_TEST_ONLY = [
+  'src/eval/freshness/baseline.ts',
+  'src/eval/freshness/fixtures.ts',
+  'src/eval/freshness/types.ts',
+];
+const MAX_TEST_ONLY_REACHABLE = 48;
 
 function walkDir(dir, out = []) {
   for (const e of readdirSync(dir)) {
@@ -171,6 +179,7 @@ function main() {
   const hardOrphans = notRuntime.filter(f => !testReachable.has(f) && !allow.has(f)).sort();
   const testOnly = notRuntime.filter(f => testReachable.has(f) && !allow.has(f)).sort();
   const stale = [...allow.keys()].filter(f => !srcSet.has(f) || runtimeReachable.has(f)).sort();
+  const missingFreshness = fixtureMode ? [] : EXPECTED_FRESHNESS_TEST_ONLY.filter(f => !testOnly.includes(f));
 
   let failed = false;
   if (hardOrphans.length > 0) {
@@ -184,6 +193,11 @@ function main() {
     console.error(`FAIL: test-only-reachable tier grew to ${testOnly.length} (ratchet ceiling ${MAX_TEST_ONLY_REACHABLE}):`);
     for (const f of testOnly) console.error(`  ${f}`);
     console.error('  New src modules must be reachable from a runtime entrypoint; wire it or (for a deliberate test-only helper) raise the ceiling in a reviewer-visible edit.');
+  }
+  if (missingFreshness.length > 0) {
+    failed = true;
+    console.error(`FAIL: expected freshness eval test-only module(s) missing; review the ratchet before changing it:`);
+    for (const f of missingFreshness) console.error(`  ${f}`);
   }
   if (stale.length > 0) {
     failed = true;
