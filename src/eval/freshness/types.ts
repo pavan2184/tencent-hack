@@ -82,6 +82,7 @@ export interface FreshnessMetrics {
 export interface FreshnessGold {
   schema_version: 1;
   fixture_id: string;
+  empty_denominators: Array<'tombstone_accuracy' | 'receipt_field_accuracy' | 'safe_fallback_rate' | 'eventual_convergence_rate'>;
   checkpoints: FreshnessCheckpoint[];
   expected_receipts: ExpectedFreshnessReceipt[];
   expected_metrics: FreshnessMetrics;

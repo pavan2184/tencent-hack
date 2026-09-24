@@ -18,7 +18,8 @@ export class FreshnessFixtureValidationError extends Error {
 
 const objectKeys = ['object_id', 'provider_version', 'version_order', 'content_hash', 'modified_at', 'deleted', 'searchable', 'critical'];
 const fixtureKeys = ['schema_version', 'fixture_id', 'provider', 'suite', 'initial_cursor', 'initial_objects', 'steps'];
-const goldKeys = ['schema_version', 'fixture_id', 'checkpoints', 'expected_receipts', 'expected_metrics'];
+const goldKeys = ['schema_version', 'fixture_id', 'empty_denominators', 'checkpoints', 'expected_receipts', 'expected_metrics'];
+const ratioKeys = ['tombstone_accuracy', 'receipt_field_accuracy', 'safe_fallback_rate', 'eventual_convergence_rate'] as const;
 const checkpointKeys = ['after_step', 'expected_cursor', 'expected_objects', 'expected_accounted_event_ids', 'expected_parked_event_ids'];
 const receiptKeys = ['object_id', 'provider_version', 'content_hash', 'sync_path', 'verification_result', 'freshness_status', 'safe_to_use'];
 const metricKeys = [
@@ -246,6 +247,12 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
   const g = record(file, 'gold', raw, goldKeys);
   if (g.schema_version !== FRESHNESS_SCHEMA_VERSION) fail(file, 'gold.schema_version', 'must be 1');
   if (g.fixture_id !== fixture.fixture_id) fail(file, 'gold.fixture_id', `must match fixture_id ${fixture.fixture_id}`);
+  const emptyDenominators = stringArray(file, 'gold.empty_denominators', g.empty_denominators, true);
+  for (const [i, name] of emptyDenominators.entries()) {
+    if (!ratioKeys.includes(name as typeof ratioKeys[number])) {
+      fail(file, `gold.empty_denominators[${i}]`, `unknown ratio metric ${name}`);
+    }
+  }
   if (!Array.isArray(g.checkpoints)) fail(file, 'gold.checkpoints', 'must be an array');
   const stepIndices = new Map(fixture.steps.map((step, i) => [step.step_id, i]));
   const seenCheckpoints = new Set<string>();
@@ -280,6 +287,15 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
     }
     oneOf(file, `${at}.sync_path`, receipt.sync_path, ['webhook', 'delta', 'reconcile', 'live_verify']);
     oneOf(file, `${at}.verification_result`, receipt.verification_result, verificationResults);
+    if (receipt.sync_path === 'live_verify') {
+      const latestVerify = fixture.steps
+        .filter((step): step is Extract<FreshnessStep, { kind: 'verify' }> => step.kind === 'verify' && step.object_id === receipt.object_id)
+        .at(-1);
+      if (!latestVerify) fail(file, `${at}.sync_path`, `live_verify requires a verify step for object_id ${receipt.object_id}`);
+      if (latestVerify.result !== receipt.verification_result) {
+        fail(file, `${at}.verification_result`, `must match latest verify result ${latestVerify.result} for ${receipt.object_id}`);
+      }
+    }
     oneOf(file, `${at}.freshness_status`, receipt.freshness_status, statuses);
     boolean(file, `${at}.safe_to_use`, receipt.safe_to_use);
     if (receipt.safe_to_use && (receipt.freshness_status !== 'fresh'
@@ -296,6 +312,33 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
     } else if (key.endsWith('_seconds')) {
       if (value !== null) nonNegativeNumber(file, at, value);
     } else nonNegativeInteger(file, at, value);
+  }
+  const currentObjects = new Map(fixture.initial_objects.map(obj => [obj.object_id, obj]));
+  let hasChangedObject = false;
+  let hasCriticalFallback = false;
+  for (const step of fixture.steps) {
+    if (step.kind === 'provider_mutation') {
+      const previous = currentObjects.get(step.object.object_id);
+      if (!previous || objectKeys.some(key => previous[key as keyof ProviderObjectState] !== step.object[key as keyof ProviderObjectState])) {
+        hasChangedObject = true;
+      }
+      currentObjects.set(step.object.object_id, step.object);
+    } else if (step.kind === 'verify' && (step.result === 'stale' || step.result === 'unknown')
+      && currentObjects.get(step.object_id)?.critical === true) {
+      hasCriticalFallback = true;
+    }
+  }
+  const denominatorPresent: Record<typeof ratioKeys[number], boolean> = {
+    tombstone_accuracy: fixture.steps.some(step => step.kind === 'provider_mutation' && step.object.deleted),
+    receipt_field_accuracy: g.expected_receipts.length > 0,
+    safe_fallback_rate: hasCriticalFallback,
+    eventual_convergence_rate: hasChangedObject,
+  };
+  const declaredEmpty = new Set(emptyDenominators);
+  for (const name of ratioKeys) {
+    if (denominatorPresent[name] && declaredEmpty.has(name)) fail(file, 'gold.empty_denominators', `${name} has a nonempty denominator`);
+    if (!denominatorPresent[name] && !declaredEmpty.has(name)) fail(file, 'gold.empty_denominators', `${name} has an empty denominator and must be declared`);
+    if (declaredEmpty.has(name) && metrics[name] !== 1) fail(file, `gold.expected_metrics.${name}`, 'declared empty denominator requires 1.0');
   }
   return raw as FreshnessGold;
 }

@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "fixture_id": "jira-missed-webhook-delta-recovery",
+  "empty_denominators": ["tombstone_accuracy","safe_fallback_rate"],
   "checkpoints": [
     {
       "after_step": "delta-discovers",

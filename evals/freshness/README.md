@@ -42,7 +42,11 @@ cross-record rules are enforced by the TypeScript loader.
 All eleven metrics are present in every gold file. Latency values are null
 only when the corresponding webhook, delta, or reconciliation path is
 unexercised. Ratio values use the explicit empty-denominator convention in
-`docs/tencent/FRESHNESS_EVALS.md`. An attempted but failed index is represented
+`docs/tencent/FRESHNESS_EVALS.md`. Each gold file must list exactly its empty
+ratio denominators in sealed `empty_denominators`; those metric values must
+be 1.0. The loader derives presence from delete mutations, receipt items,
+critical stale/unknown verification, and changed provider objects. An
+attempted but failed index is represented
 as non-searchable evidence and an unsafe receipt, never as fresh evidence.
 
 Run the contract and privacy checks from the repository root:

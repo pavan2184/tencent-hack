@@ -34,6 +34,7 @@ const METRICS = {
 };
 const GOLD = {
   schema_version: 1, fixture_id: 'sample-fixture',
+  empty_denominators: ['tombstone_accuracy', 'safe_fallback_rate'],
   checkpoints: [{ after_step: 'webhook-event', expected_cursor: null,
     expected_objects: [{ ...OBJECT, freshness_status: 'fresh' }],
     expected_accounted_event_ids: ['event-1'], expected_parked_event_ids: [] }],
@@ -225,6 +226,50 @@ describe('freshness fixture contract', () => {
 });
 
 describe('sealed gold and review focus', () => {
+  test('requires exact fixture-specific empty-denominator declarations', () => {
+    const missing = gold(); delete missing.empty_denominators;
+    rejectGold(missing, /empty_denominators/);
+    const omitted = gold(); omitted.empty_denominators = [];
+    rejectGold(omitted, /tombstone_accuracy|safe_fallback_rate/);
+    const spurious = gold(); spurious.empty_denominators.push('receipt_field_accuracy');
+    rejectGold(spurious, /receipt_field_accuracy/);
+    const duplicate = gold(); duplicate.empty_denominators.push('tombstone_accuracy');
+    rejectGold(duplicate, /duplicate/);
+    const unknown = gold(); unknown.empty_denominators.push('invented_rate');
+    rejectGold(unknown, /invented_rate/);
+    const wrongValue = gold(); wrongValue.expected_metrics.safe_fallback_rate = 0.5;
+    rejectGold(wrongValue, /safe_fallback_rate/);
+  });
+
+  test('derives nonempty safe-fallback and empty receipt-field denominators', () => {
+    const verified = fixture();
+    verified.steps.push({ step_id: 'verify-stale', at_seconds: 2, kind: 'verify',
+      object_id: 'obj-1', result: 'stale', provider_version: 'v3' });
+    const declaredEmpty = gold();
+    rejectGold(declaredEmpty, /safe_fallback_rate/, validateFreshnessFixture('sample.fixture.json', verified));
+    declaredEmpty.empty_denominators = ['tombstone_accuracy'];
+    expect(validateFreshnessGold('sample.gold.json', declaredEmpty, validateFreshnessFixture('sample.fixture.json', verified)).empty_denominators)
+      .toEqual(['tombstone_accuracy']);
+    const noReceipts = gold();
+    noReceipts.expected_receipts = [];
+    rejectGold(noReceipts, /receipt_field_accuracy/);
+  });
+
+  test('live-verify receipts require a matching object and verification result', () => {
+    const g = gold();
+    g.expected_receipts[0] = { ...g.expected_receipts[0], sync_path: 'live_verify',
+      verification_result: 'unknown', freshness_status: 'not_searchable', safe_to_use: false };
+    rejectGold(g, /verify|object_id/);
+    const wrong = fixture();
+    wrong.steps.push({ step_id: 'verify-other', at_seconds: 2, kind: 'verify',
+      object_id: 'obj-other', result: 'unknown', provider_version: null });
+    rejectGold(g, /verify|object_id/, validateFreshnessFixture('sample.fixture.json', wrong));
+    const mismatch = fixture();
+    mismatch.steps.push({ step_id: 'verify-stale', at_seconds: 2, kind: 'verify',
+      object_id: 'obj-1', result: 'stale', provider_version: 'v3' });
+    rejectGold(g, /verification_result|verify/, validateFreshnessFixture('sample.fixture.json', mismatch));
+  });
+
   test('rejects unknown keys at gold, checkpoint, expected object, receipt and metrics levels', () => {
     for (const mutate of [
       (g: any) => { g.surprise = true; }, (g: any) => { g.checkpoints[0].surprise = true; },
@@ -338,6 +383,7 @@ describe('sealed gold and review focus', () => {
       { step_id: 'restore-object', at_seconds: 3, kind: 'provider_mutation', object: { ...OBJECT, provider_version: 'v4', version_order: 4 } },
     );
     const g = gold(); g.checkpoints[0].after_step = 'restore-object';
+    g.empty_denominators = ['safe_fallback_rate'];
     g.checkpoints[0].expected_objects[0].provider_version = 'v4'; g.checkpoints[0].expected_objects[0].version_order = 4;
     expect(validateFreshnessGold('sample.gold.json', g, validateFreshnessFixture('sample.fixture.json', f)).checkpoints[0].expected_objects[0].freshness_status).toBe('fresh');
   });

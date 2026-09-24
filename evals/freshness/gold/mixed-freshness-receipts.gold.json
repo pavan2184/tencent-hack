@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "fixture_id": "mixed-freshness-receipts",
+  "empty_denominators": ["tombstone_accuracy","eventual_convergence_rate"],
   "checkpoints": [
     {
       "after_step": "verify-fresh",

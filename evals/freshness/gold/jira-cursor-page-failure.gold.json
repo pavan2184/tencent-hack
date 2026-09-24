@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "fixture_id": "jira-cursor-page-failure",
+  "empty_denominators": ["tombstone_accuracy","safe_fallback_rate"],
   "checkpoints": [
     {
       "after_step": "page-one-searchable",

@@ -4,6 +4,7 @@
   "required": [
     "schema_version",
     "fixture_id",
+    "empty_denominators",
     "checkpoints",
     "expected_receipts",
     "expected_metrics"
@@ -15,6 +16,18 @@
     "fixture_id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "empty_denominators": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "tombstone_accuracy",
+          "receipt_field_accuracy",
+          "safe_fallback_rate",
+          "eventual_convergence_rate"
+        ]
+      }
     },
     "checkpoints": {
       "type": "array",

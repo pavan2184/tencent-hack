@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "fixture_id": "slack-duplicate-reordered-events",
+  "empty_denominators": ["tombstone_accuracy","safe_fallback_rate"],
   "checkpoints": [
     {
       "after_step": "duplicate-older-event",

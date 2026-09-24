@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "fixture_id": "embedding-failure-not-current",
+  "empty_denominators": ["tombstone_accuracy"],
   "checkpoints": [
     {
-      "after_step": "failed-embedding",
+      "after_step": "verify-unavailable",
       "expected_cursor": null,
       "expected_objects": [
         {

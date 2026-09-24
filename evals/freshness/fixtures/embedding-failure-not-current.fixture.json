@@ -40,6 +40,14 @@
       "content_written": true,
       "searchable": false,
       "embedded": false
+    },
+    {
+      "step_id": "verify-unavailable",
+      "at_seconds": 6,
+      "kind": "verify",
+      "object_id": "example-harbor-finance-embed-failure",
+      "result": "unknown",
+      "provider_version": null
     }
   ]
 }

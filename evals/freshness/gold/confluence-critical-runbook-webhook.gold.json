@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "fixture_id": "confluence-critical-runbook-webhook",
+  "empty_denominators": ["tombstone_accuracy","safe_fallback_rate"],
   "checkpoints": [
     {
       "after_step": "webhook-accepted",
