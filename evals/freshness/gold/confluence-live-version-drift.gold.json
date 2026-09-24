@@ -26,7 +26,7 @@
   "expected_receipts": [
     {
       "object_id": "example-harbor-finance-policy",
-      "provider_version": "v7",
+      "provider_version": "v8",
       "content_hash": "265a77b02c437396073e9b1353a48c8c162deb35e9f9ba415dc6ae05f6616426",
       "sync_path": "live_verify",
       "verification_result": "stale",

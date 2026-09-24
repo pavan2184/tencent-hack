@@ -4,7 +4,7 @@ Last updated: 2026-09-24
 
 ## Attribution and immutable pin
 
-This repository is a full derived copy of [GBrain](https://github.com/garrytan/gbrain), licensed under the upstream [MIT license](../../LICENSE). Its [Company Brain tutorial](https://github.com/garrytan/gbrain/blob/master/docs/tutorials/company-brain.md) is background for the existing knowledge substrate, not a freshness or permission contract. The integrated release is `v0.54.1.0`, exact commit `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, integrated on 2026-09-24 in merge commit `051714a1df41a357a5f0dd1decf42469797d4e16`.
+This repository is a full derived copy of [GBrain](https://github.com/garrytan/gbrain), licensed under the upstream [MIT license](../../LICENSE). Its [Company Brain tutorial](https://github.com/garrytan/gbrain/blob/master/docs/tutorials/company-brain.md) is background for the existing knowledge substrate, not a freshness or permission contract. The integrated release is `v0.54.1.0`, exact commit `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`, integrated on 2026-09-24 in merge commit `639d0d9242fb6294eb1515ec645831918c22b98e`.
 
 This pin remains fixed for the current evaluation corpus and baseline. An upstream change can alter indexing, source behavior, test results, or fixture interpretation; letting a baseline float would make a comparison unreproducible. Cite the exact upstream commit in every baseline record and review any future upgrade as a separate change.
 

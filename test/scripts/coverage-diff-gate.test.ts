@@ -14,11 +14,11 @@ import { isGateScopedPath, parseExemptions, parseUnifiedDiff } from "../../scrip
 
 const REPO_ROOT = join(import.meta.dir, "..", "..");
 
-// Simulates the exemption list AS IT EXISTS ON origin/master (the gate
-// resolves the list from master, never the working tree).
+// Simulates the exemption list AS IT EXISTS ON origin/main (the gate
+// resolves the list from main, never the working tree).
 const MASTER_EXEMPTIONS =
   [
-    "# fixture exemption list (simulated origin/master content)",
+    "# fixture exemption list (simulated origin/main content)",
     "src/core/postgres-engine.ts",
     "src/core/pglite-engine.ts",
     "src/core/postgres-engine/",
@@ -244,11 +244,11 @@ describe("exemptions", () => {
     expect(res.stdout).toContain("[e2e-exempt]");
   });
 
-  it("a working-tree-only exemption entry does NOT exempt (list resolves from origin/master)", () => {
-    // Governance: the exemption LIST is read from origin/master, so a PR
+  it("a working-tree-only exemption entry does NOT exempt (list resolves from origin/main)", () => {
+    // Governance: the exemption LIST is read from origin/main, so a PR
     // adding its own file to scripts/coverage-gate-exemptions.txt cannot
-    // self-exempt. The seam simulates master's content WITHOUT the entry
-    // (deterministic — no dependency on the real origin/master), while the
+    // self-exempt. The seam simulates main's content WITHOUT the entry
+    // (deterministic — no dependency on the real origin/main), while the
     // REAL working-tree file temporarily carries the entry; the gate must
     // ignore the working-tree addition (inert until merged).
     const worktreeExemptions = join(REPO_ROOT, "scripts", "coverage-gate-exemptions.txt");

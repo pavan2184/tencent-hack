@@ -65,7 +65,7 @@ One current record per provider object. Primary and unique key: `(source_id, ext
 | `last_run_id` | ID, nullable | Producing `sync_runs.id`. |
 | `created_at`, `updated_at` | timestamp, required | Record lifecycle. |
 
-An older comparable version cannot replace a newer version. An incomparable version requires a provider fetch before mutation. `searchable_at >= indexed_at`, and `searchable_current` requires matching page/chunk/embedding/search state and provider version. A content write with failed embedding remains `pending` or `unknown`. A tombstoned object is `deleted`, has no searchable content, and cannot be `searchable_current`; failed removal leaves `stale`/`unknown` with retry work, never a clean delete. Provider object deletion retains this row as proof.
+An older comparable version cannot replace a newer version. Deletion retains the comparable version high-water; a live comparable revision must be strictly higher to clear its tombstone. An incomparable revision cannot restore content by arrival alone: a later same-object provider verification must be fresh and match that revision. `searchable_at >= indexed_at`, and `searchable_current` requires matching page/chunk/embedding/search state and provider version. A content write with failed embedding remains `pending` or `unknown`. A tombstoned object is `deleted`, has no searchable content, and cannot be `searchable_current`; failed removal leaves `stale`/`unknown` with retry work, never a clean delete. Provider object deletion retains this row as proof.
 
 ## `sync_runs`
 

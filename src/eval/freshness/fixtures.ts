@@ -175,33 +175,89 @@ export function validateFreshnessFixture(file: string, raw: unknown): FreshnessF
   return raw as FreshnessFixture;
 }
 
-function validateCheckpointSemantics(file: string, at: string, checkpoint: Record<string, unknown>, fixture: FreshnessFixture, stepIndex: number): void {
-  const objects = checkpoint.expected_objects as ExpectedObjectState[];
-  const objectById = new Map(objects.map(obj => [obj.object_id, obj]));
+/** Replay only the public safety facts, retaining history across delete/retry transitions. */
+function prefixState(fixture: FreshnessFixture, stepIndex: number) {
   const newest = new Map<string, number>();
   const failedIndex = new Set<string>();
   const deletedObjects = new Set<string>();
+  const providerObjects = new Map(fixture.initial_objects.map(obj => [obj.object_id, obj]));
+  const pendingRestorations = new Map<string, ProviderObjectState>();
+  const indexed = new Map<string, { provider_version: string; content_hash: string; at_seconds: number }>();
+  const retries = new Map<string, Extract<FreshnessStep, { kind: 'retry' }>>();
+  const wasParked = new Set<string>();
   for (const obj of fixture.initial_objects) {
     if (obj.deleted) deletedObjects.add(obj.object_id);
-    else if (obj.version_order !== null) newest.set(obj.object_id, obj.version_order);
+    if (obj.version_order !== null) newest.set(obj.object_id, obj.version_order);
   }
   const deltas: Array<Extract<FreshnessStep, { kind: 'delta_poll' }>> = [];
-  const parked = new Map<string, string>();
   for (const step of fixture.steps.slice(0, stepIndex + 1)) {
     if (step.kind === 'provider_mutation') {
-      if (step.object.deleted) {
-        newest.delete(step.object.object_id);
-        deletedObjects.add(step.object.object_id);
+      const obj = step.object;
+      const high = newest.get(obj.object_id) ?? -1;
+      if (obj.version_order !== null) newest.set(obj.object_id, Math.max(high, obj.version_order));
+      if (obj.deleted) {
+        deletedObjects.add(obj.object_id);
+        pendingRestorations.delete(obj.object_id);
+        providerObjects.set(obj.object_id, obj);
+      } else if (deletedObjects.has(obj.object_id)) {
+        if (obj.version_order !== null && obj.version_order > high) {
+          deletedObjects.delete(obj.object_id);
+          pendingRestorations.delete(obj.object_id);
+          providerObjects.set(obj.object_id, obj);
+        } else if (obj.version_order === null) {
+          // An opaque revision alone cannot resurrect content. A subsequent
+          // same-object, same-version fresh provider read must establish truth.
+          pendingRestorations.set(obj.object_id, obj);
+        }
       } else {
-        deletedObjects.delete(step.object.object_id);
-        if (step.object.version_order !== null) newest.set(step.object.object_id, Math.max(newest.get(step.object.object_id) ?? -1, step.object.version_order));
+        if (obj.version_order === null || obj.version_order >= high) providerObjects.set(obj.object_id, obj);
+      }
+    } else if (step.kind === 'verify') {
+      const pending = pendingRestorations.get(step.object_id);
+      if (pending && step.result === 'fresh' && step.provider_version === pending.provider_version) {
+        deletedObjects.delete(step.object_id);
+        providerObjects.set(step.object_id, pending);
+        pendingRestorations.delete(step.object_id);
       }
     } else if (step.kind === 'index_outcome') {
-      if (!step.searchable || !step.embedded || !step.content_written) failedIndex.add(step.object_id);
-      else failedIndex.delete(step.object_id);
+      if (!step.searchable || !step.embedded || !step.content_written) {
+        failedIndex.add(step.object_id);
+        indexed.delete(step.object_id);
+      } else {
+        failedIndex.delete(step.object_id);
+        const obj = providerObjects.get(step.object_id);
+        if (obj && !obj.deleted) indexed.set(step.object_id, {
+          provider_version: obj.provider_version, content_hash: obj.content_hash, at_seconds: step.at_seconds,
+        });
+      }
     } else if (step.kind === 'delta_poll') deltas.push(step);
-    else if (step.kind === 'retry' && step.outcome === 'parked') parked.set(step.event_id, step.object_id);
+    else if (step.kind === 'retry') {
+      retries.set(step.event_id, step);
+      if (step.outcome === 'parked') wasParked.add(step.event_id);
+    }
   }
+  return { newest, failedIndex, deletedObjects, deltas, retries, wasParked, indexed, providerObjects };
+}
+
+function nonCurrentReason(objectId: string, state: ReturnType<typeof prefixState>, version: string | null, hash: string | null): string | undefined {
+  if (state.deletedObjects.has(objectId)) return 'requires a deleted, non-searchable tombstone';
+  if (state.failedIndex.has(objectId)) return 'cannot be fresh after failed index_outcome';
+  for (const [eventId, retry] of state.retries) {
+    if (retry.object_id !== objectId || !state.wasParked.has(eventId)) continue;
+    if (retry.outcome !== 'applied') return `parked event ${eventId} requires a non-current freshness_status`;
+    const indexed = state.indexed.get(objectId);
+    if (!indexed || indexed.at_seconds <= retry.at_seconds
+      || indexed.provider_version !== version || indexed.content_hash !== hash) {
+      return `recovery of parked event ${eventId} requires a later successful index_outcome for the same object/version`;
+    }
+  }
+}
+
+function validateCheckpointSemantics(file: string, at: string, checkpoint: Record<string, unknown>, fixture: FreshnessFixture, stepIndex: number): void {
+  const objects = checkpoint.expected_objects as ExpectedObjectState[];
+  const objectById = new Map(objects.map(obj => [obj.object_id, obj]));
+  const state = prefixState(fixture, stepIndex);
+  const { newest, deletedObjects, deltas, retries } = state;
   for (const [objectId, high] of newest) {
     const obj = objectById.get(objectId);
     if (obj && obj.version_order !== null && obj.version_order < high) fail(file, `${at}.expected_objects`, `${objectId} version_order is lower than accepted mutation`);
@@ -212,8 +268,13 @@ function validateCheckpointSemantics(file: string, at: string, checkpoint: Recor
       fail(file, `${at}.expected_objects`, `${objectId} requires a deleted, non-searchable tombstone`);
     }
   }
-  for (const objectId of failedIndex) {
-    if (objectById.get(objectId)?.freshness_status === 'fresh') fail(file, `${at}.expected_objects`, `${objectId} cannot be fresh after failed index_outcome`);
+  for (const obj of objects) {
+    if (obj.freshness_status === 'fresh' && obj.version_order === null
+      && state.providerObjects.get(obj.object_id)?.provider_version !== obj.provider_version) {
+      fail(file, `${at}.expected_objects`, `${obj.object_id} provider_version must match the verified live revision`);
+    }
+    const reason = nonCurrentReason(obj.object_id, state, obj.provider_version, obj.content_hash);
+    if (obj.freshness_status === 'fresh' && reason) fail(file, `${at}.expected_objects`, `${obj.object_id} ${reason}`);
   }
   const cursor = checkpoint.expected_cursor;
   if (cursor === fixture.initial_cursor) return;
@@ -225,14 +286,14 @@ function validateCheckpointSemantics(file: string, at: string, checkpoint: Recor
     for (const [i, eventId] of delta.event_ids.entries()) {
       const affectedObject = delta.object_ids[i];
       if (!accounted.has(eventId) && !expectedParked.has(eventId)) fail(file, `${at}.expected_cursor`, `cannot advance past unaccounted event ${eventId}`);
-      const parkedObject = parked.get(eventId);
-      if (parkedObject && parkedObject !== affectedObject) {
-        fail(file, `${at}.expected_cursor`, `parked retry ${eventId} names ${parkedObject}, expected affected object ${affectedObject}`);
+      const retry = retries.get(eventId);
+      if (retry && retry.object_id !== affectedObject) {
+        fail(file, `${at}.expected_cursor`, `retry ${eventId} names ${retry.object_id}, expected affected object ${affectedObject}`);
       }
-      if (expectedParked.has(eventId) && !parkedObject) {
+      if (expectedParked.has(eventId) && retry?.outcome !== 'parked') {
         fail(file, `${at}.expected_parked_event_ids`, `event ${eventId} has no preceding parked retry`);
       }
-      if (parkedObject) {
+      if (retry?.outcome === 'parked') {
         if (!expectedParked.has(eventId)) fail(file, `${at}.expected_parked_event_ids`, `parked event ${eventId} must be recorded`);
         const status = objectById.get(affectedObject)?.freshness_status;
         if (status !== 'unknown' && status !== 'stale' && status !== 'not_searchable') {
@@ -256,6 +317,7 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
   if (!Array.isArray(g.checkpoints)) fail(file, 'gold.checkpoints', 'must be an array');
   const stepIndices = new Map(fixture.steps.map((step, i) => [step.step_id, i]));
   const seenCheckpoints = new Set<string>();
+  const terminalObjects = new Map<string, { index: number; object: ExpectedObjectState }>();
   g.checkpoints.forEach((rawCheckpoint, i) => {
     const at = `gold.checkpoints[${i}]`;
     const cp = record(file, at, rawCheckpoint, checkpointKeys);
@@ -271,12 +333,16 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
       const parsed = objectState(file, `${at}.expected_objects[${j}]`, obj, true);
       if (seenObjects.has(parsed.object_id)) fail(file, `${at}.expected_objects[${j}]`, `duplicate object_id ${parsed.object_id}`);
       seenObjects.add(parsed.object_id);
+      if (index > (terminalObjects.get(parsed.object_id)?.index ?? -1)) {
+        terminalObjects.set(parsed.object_id, { index, object: parsed as ExpectedObjectState });
+      }
     });
     stringArray(file, `${at}.expected_accounted_event_ids`, cp.expected_accounted_event_ids, true);
     stringArray(file, `${at}.expected_parked_event_ids`, cp.expected_parked_event_ids, true);
     validateCheckpointSemantics(file, at, cp, fixture, index);
   });
   if (!Array.isArray(g.expected_receipts)) fail(file, 'gold.expected_receipts', 'must be an array');
+  const terminalState = prefixState(fixture, fixture.steps.length - 1);
   g.expected_receipts.forEach((rawReceipt, i) => {
     const at = `gold.expected_receipts[${i}]`;
     const receipt = record(file, at, rawReceipt, receiptKeys);
@@ -287,6 +353,24 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
     }
     oneOf(file, `${at}.sync_path`, receipt.sync_path, ['webhook', 'delta', 'reconcile', 'live_verify']);
     oneOf(file, `${at}.verification_result`, receipt.verification_result, verificationResults);
+    oneOf(file, `${at}.freshness_status`, receipt.freshness_status, statuses);
+    boolean(file, `${at}.safe_to_use`, receipt.safe_to_use);
+    const terminal = terminalObjects.get(receipt.object_id as string)?.object;
+    if (!terminal) fail(file, `${at}.object_id`, 'requires a terminal expected object for the selected receipt');
+    if (receipt.freshness_status !== terminal.freshness_status) {
+      fail(file, `${at}.freshness_status`, 'must match terminal expected object freshness_status');
+    }
+    // Tombstones may omit the deleted provider revision and have no content hash.
+    if (receipt.provider_version !== terminal.provider_version && !(terminal.deleted && receipt.provider_version === null)) {
+      fail(file, `${at}.provider_version`, 'must match terminal expected object provider_version');
+    }
+    if (receipt.content_hash !== (terminal.content_hash || null)) {
+      fail(file, `${at}.content_hash`, 'must match terminal expected object content_hash');
+    }
+    const reason = nonCurrentReason(terminal.object_id, terminalState, receipt.provider_version as string | null, receipt.content_hash as string | null);
+    if ((receipt.freshness_status === 'fresh' || receipt.safe_to_use) && (terminal.deleted || !terminal.searchable || reason)) {
+      fail(file, `${at}.safe_to_use`, `terminal receipt cannot be fresh or safe: ${reason ?? 'object is not searchable'}`);
+    }
     if (receipt.sync_path === 'live_verify') {
       const latestVerify = fixture.steps
         .filter((step): step is Extract<FreshnessStep, { kind: 'verify' }> => step.kind === 'verify' && step.object_id === receipt.object_id)
@@ -295,9 +379,18 @@ export function validateFreshnessGold(file: string, raw: unknown, fixture: Fresh
       if (latestVerify.result !== receipt.verification_result) {
         fail(file, `${at}.verification_result`, `must match latest verify result ${latestVerify.result} for ${receipt.object_id}`);
       }
+      if (latestVerify.result === 'fresh' && latestVerify.provider_version !== receipt.provider_version) {
+        fail(file, `${at}.provider_version`, 'fresh live_verify must match verified provider_version');
+      }
+    } else {
+      const supplied = fixture.steps.some(step => {
+        if (receipt.sync_path === 'webhook') return step.kind === 'webhook' && step.object_id === receipt.object_id
+          && step.provider_version === (receipt.provider_version ?? terminal.provider_version);
+        if (receipt.sync_path === 'delta') return step.kind === 'delta_poll' && step.object_ids.includes(receipt.object_id as string);
+        return step.kind === 'reconcile' && step.object_ids.includes(receipt.object_id as string);
+      });
+      if (!supplied) fail(file, `${at}.sync_path`, `${receipt.sync_path} requires same-object public provenance`);
     }
-    oneOf(file, `${at}.freshness_status`, receipt.freshness_status, statuses);
-    boolean(file, `${at}.safe_to_use`, receipt.safe_to_use);
     if (receipt.safe_to_use && (receipt.freshness_status !== 'fresh'
       || receipt.verification_result === 'stale' || receipt.verification_result === 'unknown')) {
       fail(file, `${at}.safe_to_use`, 'non-current or unverified evidence cannot be safe to use');

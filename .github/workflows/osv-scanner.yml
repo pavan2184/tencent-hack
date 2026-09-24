@@ -8,7 +8,7 @@ name: OSV-Scanner
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
     paths:
       - 'bun.lock'
       - 'package.json'

@@ -7,7 +7,7 @@ Last updated: 2026-09-24
 - Docs/eval foundation: complete. Contract gate: passing (`contract_only`, 12 synthetic fixtures: 10 gate and 2 holdout).
 - Behavioral runner/baseline: not implemented; no behavioral claim. Production freshness implementation is ready for a separate plan.
 - Live smoke execution: not run until adapters and disposable test tenants exist. No production latency or freshness SLA has been measured.
-- Upstream pin: GBrain `v0.54.1.0` at `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`. Complete corpus hash: `2a6c2245b4e0645274a04263c1a72b563ab80e163f80da52597b29a358f3a3ec`.
+- Upstream pin: GBrain `v0.54.1.0` at `6040075c6cb95be5881cc2e1b76ef7d71f4e5d29`. Complete corpus hash: `19dc8a5f09de704e249ec1365bcb3af1a546bfd5c77a27c70bcc38f5879bf816`.
 
 ## Completed
 
@@ -101,14 +101,14 @@ tenants.
 
 ## Final foundation verification (2026-09-24)
 
-Bun `1.4.2` (`744846f84`) was on `PATH`; TypeScript and full verify used `NODE_OPTIONS=--max-old-space-size=6144`. All commands below ran in this worktree. An exit 0 for a contract check proves only contract integrity.
+Bun `1.4.2` (`744846f84`) was on `PATH`; TypeScript and full verify used `NODE_OPTIONS=--max-old-space-size=6144`. All commands below ran in this worktree before the final review corrections, with corpus hash `2a6c2245b4e0645274a04263c1a72b563ab80e163f80da52597b29a358f3a3ec`. An exit 0 for a contract check proves only contract integrity.
 
 | Command | Result |
 | --- | --- |
 | `LLMS_REPO_BASE=https://raw.githubusercontent.com/pavan2184/tencent-hack/main bun run build:llms` | Exit 0; fork index and full bundle generated. The final bundle is 489,493 bytes, below the 800,000-byte budget. Generated source links use the fork URL; upstream links inside inherited document bodies remain upstream references. |
 | `bun scripts/classify-tests.ts`; `bun run check:structural-manifest` | Exit 0; 341 structural suites, 1,477 cases, 196 files, zero unknown; regeneration caused no TSV diff. |
 | `bun test test/freshness-docs-contract.test.ts test/freshness-eval-contract.test.ts test/freshness-eval-baseline.test.ts` | Exit 0; 104 passed, zero failed. |
-| `bun run check:freshness-evals`; `env -i PATH="/Users/pavan/.bun/bin:/usr/bin:/bin:/usr/sbin:/sbin" bun run check:freshness-evals` | Both exit 0 with the same `contract_only`, 12/10/2 count and corpus hash above; no provider or AI credentials required. |
+| `bun run check:freshness-evals`; `env -i PATH="/Users/pavan/.bun/bin:/usr/bin:/bin:/usr/sbin:/sbin" bun run check:freshness-evals` | Both exit 0 with the same `contract_only`, 12/10/2 count and pre-review corpus hash; no provider or AI credentials required. |
 | `bun run check:fixture-privacy`; `bun run check:synthetic-corpus-privacy` | Both exit 0; no banned fixture tokens or corpus privacy violations. |
 | `bun test test/build-llms.test.ts`; `bun test test/scripts/check-key-files-current-state.test.ts` | Exit 0; 12 and 13 cases passed respectively. |
 | `bun run typecheck`; `git diff --check` | Exit 0 with 6 GiB Node heap for typecheck; no whitespace errors. |
@@ -119,3 +119,37 @@ Bun `1.4.2` (`744846f84`) was on `PATH`; TypeScript and full verify used `NODE_O
 | Pin, ancestry, scope, non-claim, and link audits | Exact `v0.54.1.0` tag and ancestor checks exited 0; no tracked `.codex` files; no unfinished markers, affirmative measured-behavior claims, or access-control implementation markers in the scoped freshness files; 55 fork links in `llms.txt` and 30 fork `Source:` links in `llms-full.txt`. |
 
 Database E2E was not run: `DATABASE_URL` is unset and no disposable Postgres/PgBouncer environment was provisioned. No provider live smoke was run and no local server is running. The full unit suite remains unverified despite the clean isolated skillpack rerun.
+
+## Final review corrections (2026-09-24)
+
+Main-branch PR and push verification now use the inherited Bun workflows;
+obsolete starter CI was removed. BrainBench, E2E selection, and coverage read
+`origin/main`. Release publication still targets `master` intentionally: enabling
+releases is outside this verification change. Required jobs and gates retain
+their prior conditions and failure behavior.
+
+Receipts now bind to terminal checkpoint status, provider version and indexed
+hash, public sync-path provenance, and outstanding deletion/index/parking facts.
+Deletion retains version high-water; incomparable restoration requires a later
+matching fresh verification. Latest retry outcomes allow recovery from parking
+only after applied retry and successful indexing of the same object/version.
+Earlier parked checkpoints remain valid.
+
+The mixed-receipt fixture now publicly reconciles its tombstone at logical second
+3, and its gold records that step and reconciliation latency. The stale Confluence
+receipt uses observed terminal revision v8 while retaining its older indexed hash
+and unsafe status. These committed contract corrections produce the current hash
+at the top of this page; counts remain 12/10/2 and baseline status remains
+`contract_only`. Byte-level `request_payload_hash` serialization remains deferred.
+
+Verification: 145 focused docs/eval/baseline/safety/workflow tests and 99 inherited
+CI/E2E-selection/coverage/generator tests passed. All four JSON Schemas compiled;
+25 fixture, gold, and baseline documents validated. Both privacy guards, the
+normal and clean-room freshness checks, and 6 GiB typecheck passed. Full
+`bun run verify` passed all 56 checks. The structural inventory was regenerated
+(342 suites, 1,479 cases, 197 files, zero unknown). The fork documentation bundle
+was regenerated and its 12 generator tests passed.
+
+The full 1,917-file suite was not attempted again in this fix wave. Its prior
+incomplete result and the database/live-smoke limits above remain explicit;
+no full-suite or production freshness pass is claimed. No local server is running.

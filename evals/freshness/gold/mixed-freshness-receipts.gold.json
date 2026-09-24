@@ -4,7 +4,7 @@
   "empty_denominators": ["tombstone_accuracy","eventual_convergence_rate"],
   "checkpoints": [
     {
-      "after_step": "verify-fresh",
+      "after_step": "reconcile-deleted",
       "expected_cursor": null,
       "expected_objects": [
         {
@@ -105,6 +105,6 @@
     "eventual_convergence_rate": 1,
     "webhook_max_propagation_seconds": null,
     "delta_max_recovery_seconds": null,
-    "reconciliation_max_convergence_seconds": null
+    "reconciliation_max_convergence_seconds": 3
   }
 }

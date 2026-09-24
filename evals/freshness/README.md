@@ -41,6 +41,23 @@ parked non-current objects, monotonic comparable versions, and deletion
 tombstones. JSON Schema covers document shape and scalar constraints; these
 cross-record rules are enforced by the TypeScript loader.
 
+Receipts describe each selected object's last applicable checkpoint by logical
+step order. Status, provider revision and indexed hash must agree with that
+terminal object; deleted receipts may omit the revision and have a null hash.
+Stale objects may retain an older indexed hash alongside the observed provider
+revision, but remain unsafe. Webhook receipts require a same-object/version event;
+delta and reconciliation receipts require public same-object membership;
+live-verification receipts require a matching object and result (and revision
+when fresh). Outstanding deletion, failed indexing or parking prevents fresh or
+safe receipts even if the last checkpoint precedes the failure.
+
+Deletion retains the comparable version high-water. Only a strictly higher live
+revision clears its tombstone; an incomparable live revision requires a later
+same-object, same-version fresh verification. Retry outcomes are evaluated at
+each checkpoint prefix. A parked event can later become applied and accounted,
+but fresh recovery also requires subsequent successful indexing of that object's
+current version and hash. Earlier parked checkpoints remain valid history.
+
 All eleven metrics are present in every gold file. Latency values are null
 only when the corresponding webhook, delta, or reconciliation path is
 unexercised. Ratio values use the explicit empty-denominator convention in

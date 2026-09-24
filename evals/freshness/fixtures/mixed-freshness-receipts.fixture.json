@@ -70,6 +70,14 @@
       "object_id": "example-harbor-finance-mixed-fresh",
       "result": "fresh",
       "provider_version": "v1"
+    },
+    {
+      "step_id": "reconcile-deleted",
+      "at_seconds": 3,
+      "kind": "reconcile",
+      "object_ids": [
+        "example-harbor-finance-mixed-deleted"
+      ]
     }
   ]
 }

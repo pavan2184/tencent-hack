@@ -44,6 +44,21 @@ Decision: the initial baseline is exactly `contract_only`. It records contract a
 
 Consequence: downstream demos and reports must distinguish design targets, deterministic future evals, and manual Confluence/Slack wall-clock smokes.
 
+## 2026-09-24 — Bind eval receipts and recovery to terminal evidence
+
+Decision: sealed receipts represent each object's last applicable checkpoint,
+with public sync-path provenance and checks for outstanding fixture failures.
+Comparable version high-water survives deletion; incomparable restoration needs
+a later matching fresh provider verification. Parking is evaluated per prefix,
+and applied retry recovery requires successful indexing of the same version.
+
+Consequence: historical checkpoints remain valid, while terminal receipt fields
+cannot contradict them. The current receipt's single provider-version field is
+the terminal observed revision; a stale object can retain the older indexed
+content hash. A future production receipt may distinguish observed and indexed
+versions explicitly. Byte-level serialization for `request_payload_hash` remains
+deferred to production design.
+
 ## Workstream boundary
 
 Access control and groundedness are out of scope here. This workstream exports neutral source-scoped evidence identity, provider version/hash, freshness status, tombstone state, receipt, and safe-use/fallback signal. Team integrations can consume these without assigning authorization or claim entailment to freshness.

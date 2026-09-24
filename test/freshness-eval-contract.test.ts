@@ -259,6 +259,7 @@ describe('sealed gold and review focus', () => {
     const g = gold();
     g.expected_receipts[0] = { ...g.expected_receipts[0], sync_path: 'live_verify',
       verification_result: 'unknown', freshness_status: 'not_searchable', safe_to_use: false };
+    g.checkpoints[0].expected_objects[0].freshness_status = 'not_searchable';
     rejectGold(g, /verify|object_id/);
     const wrong = fixture();
     wrong.steps.push({ step_id: 'verify-other', at_seconds: 2, kind: 'verify',
@@ -306,6 +307,7 @@ describe('sealed gold and review focus', () => {
     g.checkpoints[0].expected_parked_event_ids = ['poison-event'];
     rejectGold(g, /non-current|freshness_status/, validated);
     g.checkpoints[0].expected_objects[0].freshness_status = 'unknown';
+    Object.assign(g.expected_receipts[0], { freshness_status: 'unknown', safe_to_use: false });
     expect(validateFreshnessGold('sample.gold.json', g, validated).checkpoints[0].expected_cursor).toBe('c1');
   });
 
@@ -368,12 +370,14 @@ describe('sealed gold and review focus', () => {
     g.checkpoints[0].expected_objects[0].freshness_status = 'deleted';
     rejectGold(g, /searchable/);
     g.checkpoints[0].expected_objects[0].searchable = false;
+    Object.assign(g.expected_receipts[0], { freshness_status: 'deleted', safe_to_use: false });
     expect(validateFreshnessGold('sample.gold.json', g, validFixture()).checkpoints[0].expected_objects[0].deleted).toBe(true);
   });
 
   test('review focus 4: provider deletion must remain a tombstone in every later checkpoint until superseded', () => {
     const f = fixture(); f.steps.push({ step_id: 'delete-object', at_seconds: 2, kind: 'provider_mutation', object: { ...OBJECT, provider_version: 'v3', version_order: 3, deleted: true, searchable: false, content_hash: '' } });
     const g = gold(); g.checkpoints[0].after_step = 'delete-object';
+    g.checkpoints[0].expected_objects[0].version_order = 3;
     rejectGold(g, /tombstone|deleted|searchable/, validateFreshnessFixture('sample.fixture.json', f));
   });
 
@@ -385,6 +389,8 @@ describe('sealed gold and review focus', () => {
     const g = gold(); g.checkpoints[0].after_step = 'restore-object';
     g.empty_denominators = ['safe_fallback_rate'];
     g.checkpoints[0].expected_objects[0].provider_version = 'v4'; g.checkpoints[0].expected_objects[0].version_order = 4;
+    g.expected_receipts[0].provider_version = 'v4';
+    f.steps.push({ step_id: 'restore-webhook', at_seconds: 4, kind: 'webhook', event_id: 'event-restore', object_id: 'obj-1', provider_version: 'v4' });
     expect(validateFreshnessGold('sample.gold.json', g, validateFreshnessFixture('sample.fixture.json', f)).checkpoints[0].expected_objects[0].freshness_status).toBe('fresh');
   });
 

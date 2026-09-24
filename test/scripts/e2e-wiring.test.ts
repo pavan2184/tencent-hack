@@ -10,7 +10,7 @@
  *   3. The job passes NO live provider keys, so it is fork-runnable by
  *      construction (service Postgres only) and can never spend tokens.
  *   4. The job's checkout fetches real history (select-e2e diffs
- *      origin/master...HEAD).
+ *      origin/main...HEAD).
  *   5. Every workflow-side EXCLUDE entry is honest: either a file a named
  *      job in this same workflow already runs, or a live-key token spender.
  *   6. Unmapped-file ratchet: every test/e2e/*.test.ts is mapped in
@@ -77,7 +77,7 @@ describe('selected-e2e job wiring', () => {
     }
   });
 
-  test('checkout fetches real history for the master diff', () => {
+  test('checkout fetches real history for the main diff', () => {
     expect(prep).toContain('fetch-depth: 0');
   });
 
@@ -90,7 +90,7 @@ describe('selected-e2e job wiring', () => {
       };
       git(['init', '-q']);
       git(['-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture', '--allow-empty']);
-      git(['update-ref', 'refs/remotes/origin/master', 'HEAD']);
+      git(['update-ref', 'refs/remotes/origin/main', 'HEAD']);
       mkdirSync(join(dir, 'test/e2e'), { recursive: true });
       const files = ['test/e2e/mechanical.test.ts', 'test/e2e/route-a.test.ts', 'test/e2e/route-b.test.ts'];
       for (const file of files) writeFileSync(join(dir, file), '// fixture\n');

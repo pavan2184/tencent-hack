@@ -2,7 +2,7 @@
   "schema_version": 1,
   "baseline_id": "main",
   "status": "contract_only",
-  "fixtures_hash": "2a6c2245b4e0645274a04263c1a72b563ab80e163f80da52597b29a358f3a3ec",
+  "fixtures_hash": "19dc8a5f09de704e249ec1365bcb3af1a546bfd5c77a27c70bcc38f5879bf816",
   "config": {
     "clock": "logical",
     "network": "disabled",
