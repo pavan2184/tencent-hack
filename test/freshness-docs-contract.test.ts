@@ -139,6 +139,17 @@ describe('Tencent freshness documentation contract', () => {
     expect(slack).toMatch(/history.{0,30}recovery|recovery.{0,30}history/i);
   });
 
+  test('prepares Confluence webhook and cursor before creating the measured page', () => {
+    const confluence = doc('runbooks/CONFLUENCE_LIVE_SMOKE.md');
+    const setup = confluence.split('## Setup\n')[1]?.split('\n## Scenario')[0] ?? '';
+    const scenario = confluence.split('## Scenario\n')[1]?.split('\n## Expected observation')[0] ?? '';
+    expect(setup).toMatch(/(?:configure|ready).{0,100}connector/i);
+    expect(setup).toMatch(/webhook/i);
+    expect(setup).toMatch(/initial.{0,30}cursor/i);
+    expect(setup).not.toMatch(/(?:create|publish|post).{0,100}(?:synthetic|runbook|test) page/i);
+    expect(scenario).toMatch(/^1\.\s+\*\*Create[^\n]*\*\*[^\n]*Create the (?:single )?synthetic page/im);
+  });
+
   test('contains no unfinished authoring markers', () => {
     for (const name of readdirSync(docsDir).filter((file) => file.endsWith('.md'))) {
       expect(doc(name), name).not.toMatch(/\bTODO\b|\bTBD\b|<placeholder>/);
