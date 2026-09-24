@@ -2,7 +2,7 @@
 
 Date: 2026-09-24
 
-Status: Approved in conversation; awaiting written-spec review
+Status: Approved by Pavan
 
 Owners: Pavan (data freshness), with separate team workstreams for access control and groundedness
 
