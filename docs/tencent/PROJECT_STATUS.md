@@ -13,6 +13,7 @@ Last updated: 2026-09-24
 - Published the draft 2020-12 freshness JSON Schemas and a deterministic synthetic corpus: ten gate fixtures, two holdouts, and twelve paired sealed gold files. The new committed-corpus tests observed an absent-directory RED before the files were added.
 - Hardened sealed gold after review: every ratio with an empty fixture-specific denominator is declared explicitly and fixed at 1.0; live-verification receipts require a matching public verify step and result. The embedding-failure case now includes its unknown verification step.
 - Added the committed `contract_only` baseline, strict hash/config/coverage/threshold validator, and hermetic `check:freshness-evals` verify gate. Its output is a contract summary, not a behavioral result.
+- Added manual, non-CI Confluence and Slack live-smoke runbooks for disposable test tenants. They define evidence, lifecycle/recovery observations, and cleanup without asserting an implemented adapter or measured live result.
 
 ## In progress
 
@@ -23,6 +24,7 @@ Last updated: 2026-09-24
 
 - Production freshness state machine, database migrations, and PGLite/Postgres methods.
 - Live Confluence and Slack connectors and webhook routes; Jira and Google Drive remain planned simulations.
+- Execution of the Confluence and Slack live-smoke runbooks; they require future provider adapters and controlled test-tenant access.
 - Behavioral baseline, logical-time scoring, and manual provider latency evidence.
 
 ## Out of scope here
@@ -79,3 +81,13 @@ freshness tests passed, including cautionary comparisons and prior Markdown
 regressions. The contract check, 6 GiB typecheck, and diff whitespace check passed.
 The full suite was not rerun for this focused review fix. This remains a bounded
 prose guard, with no behavioral runner or natural-language parser added.
+
+For the manual live-smoke runbooks, the documentation contract first failed
+because both provider runbooks were absent, then passed all 9 focused tests.
+The structural inventory was regenerated for the two added cases and its
+freshness check passed. `check:freshness-evals`, the 6 GiB typecheck, the
+forbidden-marker/secret scan, and diff whitespace checks passed. The full
+project suite was not rerun for this documentation-focused task. No live
+provider smoke was executed, no latency was measured, and no local server is
+running. Future execution requires implemented adapters and disposable test
+tenants.

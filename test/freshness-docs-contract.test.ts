@@ -100,6 +100,45 @@ describe('Tencent freshness documentation contract', () => {
     expect(brief).toMatch(/groundedness.{0,80}out of scope|out of scope.{0,80}groundedness/i);
   });
 
+  test('publishes bounded manual live-smoke runbooks for Confluence and Slack', () => {
+    for (const provider of ['CONFLUENCE', 'SLACK']) {
+      const name = `runbooks/${provider}_LIVE_SMOKE.md`;
+      expect(existsSync(join(docsDir, name)), name).toBe(true);
+      const text = doc(name);
+      for (const section of [
+        'Prerequisites', 'Setup', 'Scenario', 'Expected observation',
+        'Evidence capture', 'Cleanup',
+      ]) {
+        expect(text, `${name}: ${section}`).toMatch(new RegExp(`^## ${section}`, 'im'));
+      }
+      expect(text, name).toMatch(/test[- ]tenant[- ]only/i);
+      expect(text, name).toMatch(/manual.{0,30}non-CI|non-CI.{0,30}manual/i);
+      expect(text, name).toMatch(/no live result.{0,20}claim|no live result has been claimed/i);
+      expect(text, name).toMatch(/webhook.{0,80}(fast.path|durable acceptance)/i);
+      expect(text, name).toMatch(/cursor.{0,80}delta|delta.{0,80}cursor/i);
+      expect(text, name).toMatch(/durable acceptance[\s\S]{0,300}(?:not|distinct|separate|before) [\s\S]{0,100}(?:completed indexing|searchab)/i);
+      expect(text, name).toMatch(/redact.{0,100}secret|secret.{0,100}redact/i);
+      expect(text, name).toMatch(/(?:do not|never) commit.{0,80}(?:payload|token)/i);
+      expect(text, name).toMatch(/access.control.{0,60}out of scope/i);
+      expect(text, name).toMatch(/groundedness.{0,60}out of scope/i);
+      expect(text, name).toMatch(/commands? (?:are|is) unavailable|no executable commands?/i);
+      expect(text, name).not.toMatch(/\b[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|KEY|CLIENT_ID)\b/);
+    }
+  });
+
+  test('requires provider-specific mutation and recovery observations', () => {
+    const confluence = doc('runbooks/CONFLUENCE_LIVE_SMOKE.md');
+    for (const marker of ['create', 'update', 'delete', 'tombstone', 'version drift', 'live verification']) {
+      expect(confluence.toLowerCase(), marker).toContain(marker);
+    }
+    expect(confluence).toMatch(/missed.{0,30}webhook/i);
+    const slack = doc('runbooks/SLACK_LIVE_SMOKE.md');
+    for (const marker of ['create', 'edit', 'delete', 'duplicate', 'reordered', 'worker replay']) {
+      expect(slack.toLowerCase(), marker).toContain(marker);
+    }
+    expect(slack).toMatch(/history.{0,30}recovery|recovery.{0,30}history/i);
+  });
+
   test('contains no unfinished authoring markers', () => {
     for (const name of readdirSync(docsDir).filter((file) => file.endsWith('.md'))) {
       expect(doc(name), name).not.toMatch(/\bTODO\b|\bTBD\b|<placeholder>/);
