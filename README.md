@@ -1,6 +1,26 @@
-# Tencent Hack — Proof-Carrying Enterprise Knowledge
+<a id="readme-top"></a>
 
-FinTech-track project for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026.
+<div align="center">
+  <h1>Proof-Carrying Enterprise Knowledge</h1>
+  <p><strong>Enterprise answers with evidence.</strong></p>
+  <p>A permission-aware knowledge system for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026.</p>
+  <p>
+    <a href="docs/PROJECT_BRIEF.md"><strong>Explore the project brief »</strong></a>
+    <br /><br />
+    <a href="docs/HACKATHON_REQUIREMENTS.md">View requirements</a>
+    &middot;
+    <a href="https://github.com/pavan2184/tencent-hack/issues/new">Report a bug</a>
+    &middot;
+    <a href="https://github.com/pavan2184/tencent-hack/issues/new">Request a feature</a>
+  </p>
+</div>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Tencent_Cloud-Hackathon-0052D9" alt="Tencent Cloud Hackathon" />
+  <img src="https://img.shields.io/badge/Track-FinTech-1F6FEB" alt="FinTech" />
+  <img src="https://img.shields.io/badge/Focus-Grounded_AI-7C3AED" alt="Grounded AI" />
+  <img src="https://img.shields.io/badge/Status-In_Development-F59E0B" alt="In development" />
+</p>
 
 The project extends [GBrain](https://github.com/garrytan/gbrain) into a context-aware enterprise knowledge system spanning Slack, Jira, Confluence, and Google Drive. Its core goal is to produce permission-aware, current, grounded answers with a reconstructable audit trail.
 
