@@ -141,3 +141,18 @@ All are required before the demo; status is pending integration.
   submission or posted periodically) to cover the superuser-rewrite residual risk?
 - When real authentication arrives: OIDC from which provider, and how do platform identities map
   to it?
+
+## Integration addenda (2026-10-12)
+
+- **MCP transport host check disabled.** The `mcp` SDK enables DNS-rebinding protection
+  automatically for host `127.0.0.1`, which rejects `testserver`, `api:8000`, Caddy and any cloud
+  hostname. The mount at `/mcp` therefore passes `transport_security` with the check disabled. The
+  persona header is already spoofable, so this removes no real protection in the demo; re-enable
+  it with an explicit allowed-host list when real authentication lands.
+- **MCP `put_page` and `capture` never overwrite.** A taken slug gets a `-<id8>` suffix; the owner
+  is always the calling persona and any `permissions`/`grants`/`owner`/`simulate` frontmatter in
+  uploaded content is ignored, so an agent cannot grant itself access by uploading a page.
+- **Webhooks.** Secret comparison is constant-time; a missing or unconfigured secret is 401, an
+  unknown source 404, a stub connector 501, a non-object body 422 and a body over 1 MB 413.
+- **Source payloads** strip any config key that looks like a secret (for example
+  `webhook_secret`) before returning sources over REST or MCP.

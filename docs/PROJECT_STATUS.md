@@ -30,17 +30,17 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   pages engineered for the five scenarios plus a prompt-injection fixture
   (`backend/seed/`).
 
-## In progress (wave 1 → wave 2 → integration)
+## Skeleton delivered (PR #1, `feat/foundation-skeleton`, 2026-10-12)
 
-| Workstream                                                             | Owner                                    | State                                                                                                                         |
-| ---------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `groundedness` library                                                 | Raphael                                  | Public interfaces, stubs (regex sanitizer, extractive/LLM composer, lexical verifier, abstention) and tests landing in wave 1 |
-| `freshness` library                                                    | Pavan                                    | Faithful port of the approved spec (enums, models, service, policy, versioning, receipts, in-memory stores) landing in wave 1 |
-| `access_control` library                                               | Chai                                     | Principals, raw per-platform permissions, ordered policy R1–R10, stores, tests landing in wave 1                              |
-| App core (config, core, db, services, routers, providers, seed loader) | Raphael                                  | Wave 2                                                                                                                        |
-| Celery, connectors, MCP server, webhooks, Dockerfile                   | Raphael (foundation), Pavan (connectors) | Wave 2                                                                                                                        |
-| Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Wave 1                                                                                                                        |
-| Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Wave 3                                                                                                                        |
+| Workstream                                                             | Owner                                    | State                                                                                                                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `groundedness` library                                                 | Raphael                                  | Done: interfaces, regex sanitizer, extractive + LLM composer, lexical verifier, abstention policy, 185 tests                             |
+| `freshness` library                                                    | Pavan                                    | Done: faithful port of the approved spec (enums, models, service, policy, versioning, receipts, in-memory stores), 121 tests             |
+| `access_control` library                                               | Chai                                     | Done: principals, raw per-platform permissions, ordered policy R1–R10, stores, 100 tests                                                 |
+| App core (config, core, db, services, routers, providers, seed loader) | Raphael                                  | Done: governed pipeline, memory + SQL repos, providers (mock, OpenAI-compatible, Tencent ADP app), connectors, seed loader, 68 app tests |
+| Celery, MCP server, webhooks, Dockerfile                               | Raphael (foundation), Pavan (connectors) | Done: six tasks + beat, 18 MCP tools over streamable HTTP, webhook acceptance route, one image with `ROLE` dispatch                      |
+| Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                  |
+| Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                       |
 
 ## Next
 
@@ -67,28 +67,34 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   pass on stubs alone.
 - Tencent ADP embedding endpoint and model are unconfirmed; `EMBEDDING_DIM` must match before the
   first real ingest (otherwise `make reset`).
-- Critical evidence goes `stale` once its index age exceeds 3,600 s unless reconciliation or
-  verification refreshes the age basis; the seeded KYC runbook could stop being "fresh" an hour
-  after `make seed` (open question for Pavan).
-- `mcp>=2.0` request access for the actor header inside tools is unverified (ContextVar fallback
-  planned).
+- Critical evidence goes `stale` once its index age exceeds 3,600 s. The seed loader live-verifies
+  every object at seed time so the age basis is the seed time, but an hour later the KYC runbook
+  ages out until reconciliation or verification runs (beat triggers delta/reconcile; Pavan owns
+  the policy for refreshing the age basis).
+- MCP actor identity reads `X-Actor-Id` from each JSON-RPC request (verified with `mcp` 2.3.0);
+  the MCP mount disables the SDK's DNS-rebinding protection because it rejects any host that is
+  not `127.0.0.1` (see `docs/SECURITY_REVIEW.md`).
 - The persona header is spoofable; never load real data.
+- Frontend `/queries` panel shows only the current actor's questions; the API enforces it.
 - Upload cap numbers are placeholders (TBD).
 - Missing CodeBuddy/WorkBuddy usage evidence makes the project ineligible for scoring.
 
 ## Verification
 
-Results are pending integration (wave 3 fills this table).
+Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; images use Node 22).
 
-| Check                              | Command                                                     | Result              |
-| ---------------------------------- | ----------------------------------------------------------- | ------------------- |
-| Env file matches the example       | `bash scripts/validate_env.sh`                              | pending integration |
-| Compose file valid                 | `docker compose --env-file .env.example config -q`          | pending integration |
-| Backend + library tests (offline)  | `make test`                                                 | pending integration |
-| Lint                               | `make lint`                                                 | pending integration |
-| Frontend typecheck and build       | `make typecheck` and `cd frontend && npm run build`         | pending integration |
-| Stack up, migrations applied       | `cp .env.example .env && make up`                           | pending integration |
-| Seed loaded                        | `make seed`                                                 | pending integration |
-| Five scenarios end to end          | `make smoke`                                                | pending integration |
-| MCP initialize, tools/list, whoami | `make mcp-smoke`                                            | pending integration |
-| Integration tests against Postgres | `cd backend && DATABASE_URL=… uv run pytest -m integration` | pending integration |
+| Check                              | Command                                                     | Result                                                                                                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compose file valid                 | `docker compose --env-file .env.example config -q`          | pass                                                                                                                                                                          |
+| Backend + library tests (offline)  | `make test`                                                 | 474 passed, 11 skipped (integration tests need `DATABASE_URL`)                                                                                                                |
+| Lint                               | `make lint`                                                 | ruff clean (128 files), eslint clean                                                                                                                                          |
+| Frontend typecheck and build       | `make typecheck` and `cd frontend && npm run build`         | pass                                                                                                                                                                          |
+| Stack up, migrations applied       | `make up`                                                   | postgres, redis healthy; migrate applied 5 files; api `/healthz` `{db: ok, redis: ok, provider_mode: mock}`; worker registered 6 tasks; beat running                          |
+| Seed loaded                        | `make seed`                                                 | 6 principals, 6 sources, 11 pages; verified 10 fresh, 1 stale (failover runbook)                                                                                              |
+| Five scenarios end to end          | `make smoke`                                                | 12/12 steps: cited answer (7 citations); runbook stale and omitted; deck citations 8 → 0 and allowed 11 → 10 after revoke; byte-identical 404; audit reconstruction; chain ok |
+| MCP initialize, tools/list, whoami | `make mcp-smoke`                                            | pass (18 tools)                                                                                                                                                               |
+| Integration tests against Postgres | `cd backend && DATABASE_URL=… uv run pytest -m integration` | 11 passed against a throwaway `pgvector/pgvector:pg16`                                                                                                                        |
+
+Open integration items: confirm the Tencent ADP non-streaming response shape against the console
+(`backend/app/providers/real/tencent_adp_app.py`); unhandled 500s carry no `request_id` because
+the generic handler runs outside the request-id middleware; upload cap numbers are still TBD.
