@@ -2,51 +2,77 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
-jobs:
-  backend-checks:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  backend:
+    name: backend (${{ matrix.path }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - app/tests
+          - libs/groundedness/tests
+          - libs/freshness/tests
+          - libs/access_control/tests
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install workspace
+        run: uv sync --all-packages
+      - name: Test (offline, mock providers)
+        run: uv run pytest -q ${{ matrix.path }}
 
-      - name: Install Python dependencies
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest ruff pre-commit
-
-      - name: Run pre-commit
-        run: pre-commit run --all-files
-
-      - name: Run tests
-        run: |
-          if [ -d tests ]; then pytest; else echo "No tests directory found"; fi
-
-  frontend-checks:
+  lint:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install workspace
+        run: uv sync --all-packages
+      - name: Ruff
+        run: uv run ruff check . && uv run ruff format --check .
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
 
-      - name: Install frontend dependencies
-        run: |
-          if [ -f package-lock.json ]; then npm ci; fi
-          if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile; fi
-
-      - name: Run frontend checks
-        run: |
-          if [ -f package.json ]; then npm run lint --if-present; fi
-          if [ -f package.json ]; then npm run typecheck --if-present; fi
-          if [ -f package.json ]; then npm test --if-present; fi
-
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.yml
+        run: docker compose --env-file .env.example config -q

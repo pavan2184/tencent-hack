@@ -1,5 +1,7 @@
 # AI Coding Instructions
 
+Last updated: 2026-10-12
+
 Before writing code, always read:
 
 1. docs/PROJECT_BRIEF.md
@@ -30,3 +32,28 @@ Before writing code, always read:
 - For LLM features, consider prompt injection, data leakage, logging risk, and output unreliability.
 - Use existing project patterns before adding new abstractions or dependencies.
 - Keep changes scoped to the task unless the user explicitly asks for refactoring.
+
+## Workstream boundaries
+
+| Workstream     | Owner   | You may change                                                                                                | Entry points other code relies on                                                                                        |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Groundedness   | Raphael | `backend/libs/groundedness/**`, `backend/app/adapters/llm_port.py`, `infra/postgres/migrations/03xx_*`        | `sanitize → compose → verify → should_abstain`, called from `app/services/retrieval.py`                                  |
+| Data freshness | Pavan   | `backend/libs/freshness/**`, `backend/app/adapters/freshness_store.py`, `infra/postgres/migrations/01xx_*`    | `FreshnessService` (`accept`, `connector_sync`, `freshness_status`, `evaluate`, `verify_freshness`, `freshness_receipt`) |
+| Access control | Chai    | `backend/libs/access_control/**`, `backend/app/adapters/access_stores.py`, `infra/postgres/migrations/02xx_*` | `DefaultAccessPolicy.decide/filter`, store Protocols, `Principal`                                                        |
+| Foundation     | Raphael | everything else (`backend/app/**`, `frontend/**`, `infra/**`, docs, compose, CI, core migrations `00xx_*`)    | `get_principal`, the repo, the governed pipeline, the error envelope                                                     |
+
+Ownership rules:
+
+- **Only touch your lib, your adapter, your migration range.** Changes elsewhere go through the
+  foundation owner (Raphael) in a separate PR.
+- **Libs never import `app`.** Libraries are pure Python with Pydantic as their only dependency;
+  each has a test that fails if its `src/` imports the app. The app implements their `*Store`
+  Protocols in `backend/app/adapters/`.
+- **Pipeline order is an invariant.** Nothing may call an LLM, probe freshness, or put evidence in
+  a response before `access_control.filter` has allowed it.
+- **No existence leaks.** Denied documents get the same `404` as missing ones; no denied counts in
+  any asker-visible payload.
+- **Migrations** are idempotent numbered SQL files in your range, one transaction each, no psql
+  meta-commands or `CONCURRENTLY`, and may reference only the same or lower ranges. Never edit an
+  applied file; add a new one.
+- **Tests stay offline** (`make test` must pass with no network, no Docker and no `.env`).

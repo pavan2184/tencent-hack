@@ -1,3 +1,7 @@
+> **Superseded 2026-10-12** by D-002 in `docs/DECISIONS.md`: the project is now a Python monorepo
+> (see `docs/ARCHITECTURE.md`). Retained as the freshness design reference; its entities and
+> operations are ported into `backend/libs/freshness`.
+
 # GBrain Freshness Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

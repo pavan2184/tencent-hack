@@ -77,8 +77,10 @@ class Settings(BaseSettings):
     WATCHDOG_INTERVAL_S: int = 60
     TASK_MAX_RETRIES: int = 3
 
-    # --- Seed ---
+    # --- Seed / migrations ---
     SEED_DIR: str = "/app/seed"
+    # Empty = resolve <repo>/infra/postgres/migrations by walking up from app/; compose sets it.
+    MIGRATIONS_DIR: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -1,0 +1,159 @@
+# Single-box stack for the Internal Brain (see docs/ARCHITECTURE.md -> Deployment).
+#   cp .env.example .env && make up && make seed      -> http://localhost:3000 (UI), :8000 (API, /mcp)
+#   docker compose --profile edge up -d               -> adds Caddy on :80 (one origin)
+# Every value has a mock-safe default, so `docker compose --env-file .env.example config -q` validates
+# without a .env. Postgres/Redis are published on 127.0.0.1 only (5433/6380) for `make dev-api` and
+# the opt-in integration tests; containers always talk to each other by service name.
+
+x-backend-build: &backend-build
+  context: ./backend
+
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://brain:brain@postgres:5432/brain}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  SEED_DIR: ${SEED_DIR:-/app/seed}
+  UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+  MIGRATIONS_DIR: /app/migrations
+
+x-env-file: &env-file
+  - path: .env
+    required: false
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: brain
+      POSTGRES_PASSWORD: brain
+      POSTGRES_DB: brain
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brain -d brain"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redisdata:/data
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: applies infra/postgres/migrations/*.sql (app/db/migrate.py), then exits 0.
+  migrate:
+    build: *backend-build
+    env_file: *env-file
+    environment:
+      <<: *backend-env
+      ROLE: migrate
+    volumes:
+      - ./infra/postgres/migrations:/app/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: *backend-build
+    restart: unless-stopped
+    env_file: *env-file
+    environment:
+      <<: *backend-env
+      ROLE: api
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/data/uploads
+      - ./backend/seed:/app/seed:ro
+      - ./infra/postgres/migrations:/app/migrations:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # curl when the image has it, otherwise the stdlib (python:3.12-slim ships without curl).
+      test:
+        - CMD-SHELL
+        - >-
+          curl -fsS http://127.0.0.1:8000/healthz >/dev/null 2>&1 ||
+          python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  worker:
+    build: *backend-build
+    restart: unless-stopped
+    env_file: *env-file
+    environment:
+      <<: *backend-env
+      ROLE: worker
+    volumes:
+      - uploads:/data/uploads
+      - ./backend/seed:/app/seed:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    # Longest task hard limit is 600 s (sync); let it finish on `docker compose stop`.
+    stop_grace_period: 660s
+
+  beat:
+    build: *backend-build
+    restart: unless-stopped
+    env_file: *env-file
+    environment:
+      <<: *backend-env
+      ROLE: beat
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api}
+        NEXT_PUBLIC_MCP_URL: ${NEXT_PUBLIC_MCP_URL:-http://localhost:8000/mcp}
+        NEXT_PUBLIC_DEFAULT_ACTOR_ID: ${NEXT_PUBLIC_DEFAULT_ACTOR_ID:-alex.tan}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["edge"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
