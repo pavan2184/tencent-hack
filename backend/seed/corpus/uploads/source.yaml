@@ -1,0 +1,4 @@
+id: uploads
+name: Uploads
+kind: upload
+description: Documents uploaded through the web UI, REST or MCP put_page/capture. Owned by the uploader; shared explicitly with principals or groups. Starts empty.
