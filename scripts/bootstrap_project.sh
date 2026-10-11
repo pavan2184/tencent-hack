@@ -48,4 +48,3 @@ if command -v pre-commit >/dev/null 2>&1; then
 fi
 
 echo "Project bootstrap complete."
-

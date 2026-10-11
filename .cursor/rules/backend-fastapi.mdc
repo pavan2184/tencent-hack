@@ -13,4 +13,3 @@ alwaysApply: false
 - Add pytest coverage for backend behavior.
 - Prefer explicit dependency injection for auth, database, and config.
 - Keep API behavior aligned with `docs/API_CONTRACT.md`.
-
