@@ -15,3 +15,12 @@ build/
 .claude/settings.local.json
 tsconfig.tsbuildinfo
 
+.venv/
+backend/.venv/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+data/
+uploads/
+*.aof
+*.rdb

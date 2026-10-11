@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Minimal prose styling for compiled-truth / timeline markdown. */
+.markdown {
+  @apply space-y-3 text-sm leading-relaxed text-slate-800;
+}
+.markdown h1 {
+  @apply text-lg font-semibold;
+}
+.markdown h2 {
+  @apply pt-2 text-base font-semibold;
+}
+.markdown h3 {
+  @apply text-sm font-semibold;
+}
+.markdown ul {
+  @apply list-disc space-y-1 pl-5;
+}
+.markdown ol {
+  @apply list-decimal space-y-1 pl-5;
+}
+.markdown a {
+  @apply text-sky-700 underline underline-offset-2;
+}
+.markdown code {
+  @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-xs;
+}
+.markdown pre {
+  @apply overflow-x-auto rounded-md bg-slate-100 p-3 text-xs;
+}
+.markdown blockquote {
+  @apply border-l-2 border-slate-300 pl-3 text-slate-600;
+}
+.markdown table {
+  @apply w-full border-collapse text-xs;
+}
+.markdown th,
+.markdown td {
+  @apply border border-slate-200 px-2 py-1 text-left;
+}

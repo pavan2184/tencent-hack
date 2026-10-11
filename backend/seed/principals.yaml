@@ -1,0 +1,92 @@
+# Demo personas and groups for "Example Harbor Finance" (synthetic — no real people or companies).
+# Loaded by `make seed` (app/seed.py). There is no authentication: the actor is chosen with the
+# X-Actor-Id header / persona switcher. See docs/SECURITY_REVIEW.md.
+#
+# external_identities maps a platform kind -> this principal's identity on that platform. The
+# access_control policy matches raw platform permissions against it:
+#   slack      -> Slack member ids (channel member_ids / workspace_member_ids)
+#   jira       -> Jira account ids (project_roles members, security_level_members) = principal ids
+#   confluence -> Confluence account ids (space/page view users) = principal ids
+#   gdrive     -> Google account email (ACL user entries; domain entries match its domain)
+#   email      -> mailbox address (from_/to/cc/bcc)
+# Group ids are matched directly against platform group entries (Confluence groups, Drive groups).
+
+groups:
+  - { id: engineering, name: Engineering }
+  - { id: finance-ops, name: Finance Ops }
+  - { id: leadership, name: Leadership }
+  - { id: compliance, name: Compliance }
+
+principals:
+  # Engineer. Sees engineering + domain-wide content; NOT the finance-only Jira issue, the private
+  # #treasury-ops channel, the KYC runbook (page-restricted to finance-ops) or the board deck.
+  - id: alex.tan
+    display_name: Alex Tan
+    email: alex.tan@example-harbor.com
+    roles: [employee]
+    groups: [engineering]
+    external_identities:
+      slack: U_ALEX
+      jira: alex.tan
+      confluence: alex.tan
+      gdrive: alex.tan@example-harbor.com
+      email: alex.tan@example-harbor.com
+
+  # Finance Ops manager on the leadership team. Sees almost everything; loses the Q3 board deck
+  # when the `leadership` grant is revoked live (demo scenario 4).
+  - id: priya.nair
+    display_name: Priya Nair
+    email: priya.nair@example-harbor.com
+    roles: [employee, manager]
+    groups: [finance-ops, leadership]
+    external_identities:
+      slack: U_PRIYA
+      jira: priya.nair
+      confluence: priya.nair
+      gdrive: priya.nair@example-harbor.com
+      email: priya.nair@example-harbor.com
+
+  # Compliance auditor. Reads the audit trail (demo scenario 5); little document access by design.
+  - id: sam.lee
+    display_name: Sam Lee
+    email: sam.lee@example-harbor.com
+    roles: [employee, auditor]
+    groups: [compliance]
+    external_identities:
+      slack: U_SAM
+      jira: sam.lee
+      confluence: sam.lee
+      gdrive: sam.lee@example-harbor.com
+      email: sam.lee@example-harbor.com
+
+  # Administrator. Allowed everywhere by role (rule R4); performs the live revocation.
+  - id: root.admin
+    display_name: Root Admin
+    email: admin@example-harbor.com
+    roles: [admin]
+    groups: []
+    external_identities: {}
+
+  # Treasury operations analyst. Member of the private #treasury-ops channel and the finance-only
+  # Jira security level.
+  - id: jordan.lim
+    display_name: Jordan Lim
+    email: jordan.lim@example-harbor.com
+    roles: [employee]
+    groups: [finance-ops]
+    external_identities:
+      slack: U_JORDAN
+      jira: jordan.lim
+      confluence: jordan.lim
+      gdrive: jordan.lim@example-harbor.com
+      email: jordan.lim@example-harbor.com
+
+  # External contractor with no groups and an outside email domain: the "cannot see" persona used
+  # for negative permission enforcement without existence leaks (demo scenario 3).
+  - id: mei.chen
+    display_name: Mei Chen
+    email: mei.chen@contractor-example.com
+    roles: [contractor]
+    groups: []
+    external_identities:
+      slack: U_MEI

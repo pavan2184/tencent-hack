@@ -1,0 +1,4 @@
+id: gdrive-finance
+name: Google Drive — Finance shared drive
+kind: gdrive
+description: Finance shared drive files. File- and folder-level ACLs (user, group, domain, anyone) with reader/commenter/writer/owner roles.

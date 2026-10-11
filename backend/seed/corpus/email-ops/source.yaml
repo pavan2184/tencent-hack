@@ -1,0 +1,4 @@
+id: email-ops
+name: Email — ops mailbox
+kind: email
+description: Messages sent from the shared ops@ mailbox. Visible to the sender and the to/cc/bcc recipients.

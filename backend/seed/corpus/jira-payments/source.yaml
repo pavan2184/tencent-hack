@@ -1,0 +1,4 @@
+id: jira-payments
+name: Jira — PAY project
+kind: jira
+description: Payments engineering project. Project roles grant browse; issue security levels restrict individual issues.
