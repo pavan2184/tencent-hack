@@ -1,0 +1,4 @@
+id: slack-ops
+name: Slack — Example Harbor workspace
+kind: slack
+description: Daily conversation logs per channel, one page per channel per day. Public channels are visible to workspace members; private channels to their members only.

@@ -1,0 +1,37 @@
+{
+  "name": "internal-brain-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@radix-ui/react-select": "^2.3.8",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.55.0",
+    "next": "^15.5.27",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
+    "@eslint/eslintrc": "^3.3.7",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.27",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  },
+  "//": "@emnapi/core and @emnapi/runtime are pinned only to keep package-lock.json valid for `npm ci` on both npm 10 (node:22 image, CI) and npm 11: they are bundled deps of the @tailwindcss/oxide wasm32 fallback that npm 11 otherwise prunes from the lock."
+}

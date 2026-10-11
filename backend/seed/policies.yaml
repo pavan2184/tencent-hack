@@ -1,0 +1,185 @@
+# Freshness policies (freshness.FreshnessPolicy), loaded by `make seed` into freshness_policies.
+# One active `critical` and one active `standard` policy per freshness ConnectorKind.
+# NOTE: connector_kind uses the freshness vocabulary (`google_drive`); sources/pages use the
+# access_control vocabulary (`gdrive`). The app maps gdrive -> google_drive when choosing a policy.
+#
+# Budgets (seconds):  critical = index 3600 / verification 300, live verification required, omit;
+#                     standard = index 86400 / verification 3600, no live check, allow_with_warning.
+# Sync-path SLA targets (logical time, not policy fields): webhook 60 s, delta 300 s, reconcile 3600 s.
+# effective_at is required for active policies (CHECK in 0100_freshness_init.sql).
+
+- policy_id: confluence-critical
+  schema_version: 1
+  connector_kind: confluence
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: confluence-standard
+  schema_version: 1
+  connector_kind: confluence
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: jira-critical
+  schema_version: 1
+  connector_kind: jira
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: jira-standard
+  schema_version: 1
+  connector_kind: jira
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: slack-critical
+  schema_version: 1
+  connector_kind: slack
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: slack-standard
+  schema_version: 1
+  connector_kind: slack
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: google-drive-critical
+  schema_version: 1
+  connector_kind: google_drive
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: google-drive-standard
+  schema_version: 1
+  connector_kind: google_drive
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: email-critical
+  schema_version: 1
+  connector_kind: email
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: email-standard
+  schema_version: 1
+  connector_kind: email
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: upload-critical
+  schema_version: 1
+  connector_kind: upload
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: upload-standard
+  schema_version: 1
+  connector_kind: upload
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: gbrain-import-critical
+  schema_version: 1
+  connector_kind: gbrain_import
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: gbrain-import-standard
+  schema_version: 1
+  connector_kind: gbrain_import
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: mcp-external-critical
+  schema_version: 1
+  connector_kind: mcp_external
+  evidence_class: critical
+  max_index_age_seconds: 3600
+  max_verification_age_seconds: 300
+  require_live_verification: true
+  failure_action: omit
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"
+
+- policy_id: mcp-external-standard
+  schema_version: 1
+  connector_kind: mcp_external
+  evidence_class: standard
+  max_index_age_seconds: 86400
+  max_verification_age_seconds: 3600
+  require_live_verification: false
+  failure_action: allow_with_warning
+  status: active
+  effective_at: "2026-10-01T00:00:00Z"

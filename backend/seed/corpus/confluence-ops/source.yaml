@@ -1,0 +1,4 @@
+id: confluence-ops
+name: Confluence — OPS space
+kind: confluence
+description: Example Harbor Finance operations space (policies and runbooks). Space- and page-level view restrictions.
