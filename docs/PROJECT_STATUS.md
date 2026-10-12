@@ -98,3 +98,37 @@ Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; im
 Open integration items: confirm the Tencent ADP non-streaming response shape against the console
 (`backend/app/providers/real/tencent_adp_app.py`); unhandled 500s carry no `request_id` because
 the generic handler runs outside the request-id middleware; upload cap numbers are still TBD.
+
+## Chai's access-control delivery (12 October 2026)
+
+Branch: `PinZheng/access-control`, integrated with latest `origin/main` at
+`fc0bdf6c`. The new foundation merge was incorporated before final verification.
+
+Delivered: ac-v2 source ceiling, query-time validated authority service, live-read
+verifier seam, Slack/Drive capture helpers, permission fingerprints, corpus
+visibility/revocation demo, primary-source research and security review. Updated
+API expectations retain native restrictions after local grant approval and prove
+local upload grants still work. Existing foundation docs, migrations and CI were
+preserved. All changes remain local, with no push or PR.
+
+Verification: 174 library tests; 549 offline backend tests passed, 11 database
+tests skipped without a database; all 135 Python files pass Ruff lint/format.
+The editable architecture deck contains five reviewed slides with native
+connectors, an editable permissions table and source notes. File:
+`output/presentations/tencent-internal-brain-architecture-delivery.pptx`.
+
+See [handoff](ACCESS_CONTROL_HANDOFF.md). Native live-provider checks and verified
+authentication still require integration. The existing pure-policy read paths
+automatically use ac-v2 and passed the core REST scenario tests. Deployment and
+credentialed enterprise/Tencent calls have not been verified by this work.
+
+### SQL verification follow-up
+
+The 11 SQL integration tests passed against a disposable local Postgres 17
+instance, including the access snapshot round-trip with Drive expiry, deleted
+subjects and discovery fields. Combined with the 549 passing offline tests,
+all 560 distinct backend tests passed. Postgres 17 was used because pulling the
+configured Postgres 16 image was blocked by registry authentication. No shared
+database or existing containers were modified. The temporary instance was
+removed after the run. The configured Postgres 16 deployment and credentialed
+source/Tencent calls were not tested by this work.

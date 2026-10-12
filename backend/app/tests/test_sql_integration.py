@@ -687,8 +687,14 @@ _RAW_BY_KIND: dict[str, dict[str, object]] = {
         "kind": "gdrive",
         "file_id": "f1",
         "acl": [
-            {"type": "domain", "role": "reader", "email_or_domain": "example.test"},
-            {"type": "anyone", "role": "reader", "inherited": True},
+            {
+                "type": "domain",
+                "role": "reader",
+                "email_or_domain": "example.test",
+                "expiration_time": "2099-01-01T00:00:00Z",
+                "allow_file_discovery": False,
+            },
+            {"type": "anyone", "role": "reader", "inherited": True, "deleted": True},
         ],
     },
     "email": {"kind": "email", "message_id": "m1", "from": "vendor@x.test", "to": ["priya"]},

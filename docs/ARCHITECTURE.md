@@ -357,3 +357,24 @@ Owner: **Pavan**. Phased infrastructure: single box first.
 - Should index age for critical evidence be measured from the last successful reconcile or
   verification rather than from `indexed_at`, so unchanged critical pages do not go stale an hour
   after seeding? (Freshness lib decision, Pavan.)
+
+## Access-control update (12 October 2026)
+
+Latest integrated baseline: `fc0bdf6c`. The app now supplies REST/MCP, SQL adapters,
+Celery and a governed retrieval pipeline. Its `filter_pages`/`visible_page` calls
+use the pure library policy and reload grants/snapshots per read. `ac-v2` enforces
+native source permissions before local owner/admin/grant allows. Upload sharing
+remains local. Denied duplicate ids, wrong-kind/stale snapshots and uncaptured
+Confluence ancestor restrictions fail closed.
+
+The library also supplies `AccessControlService`, which reloads and validates
+principal/groups/grants/snapshots, and an optional `SourcePermissionVerifier`.
+This is an available orchestration seam, not a claim that a live provider check
+is already wired into the app. Slack/Drive normalisers preserve guest, expiry
+and discovery restrictions; deterministic fingerprints track ACL-only changes.
+
+The five-slide editable PPT is
+`output/presentations/tencent-internal-brain-architecture-delivery.pptx`.
+It shows implemented code and marks the remaining live platform/authentication
+boundaries. See [handoff](ACCESS_CONTROL_HANDOFF.md) and
+[research](ACCESS_CONTROL_RESEARCH.md).

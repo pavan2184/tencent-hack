@@ -837,3 +837,23 @@ missing one.
 - Do we expose `url` deep links for synthetic sources, or leave them `null` until real connectors
   exist?
 - Final caps and their `details.limit` values depend on the upload numbers that are still TBD.
+
+## Access library ac-v2 (12 October 2026)
+
+The existing `DefaultAccessPolicy.decide/filter` and store interfaces remain
+compatible. Native source permissions now cap local owner/admin/allow grants.
+Creating or approving a local grant does not grant native Confluence/Jira/Slack/Drive
+access. The API's existing visible-page checks still apply to grant creation.
+App-managed upload grants can extend sharing and revocation removes that access.
+
+`AccessControlService(directory=..., grants=..., snapshots=..., policy=None,
+verifier=None)` supplies `await filter(principal_id, contexts, now=...)` for
+query-time authority refresh. Its optional live verifier returns exactly True,
+False or None. True cannot widen policy access; False denies; unknown/error denies.
+Provider transport, timeouts and verified source identity are app obligations.
+The current app uses the compatible pure policy path, not a credentialed live
+verifier. Full API examples above remain the network contract.
+
+Only `allowed_ids` select evidence. `decisions` remain private audit data. Recheck
+long-running/cached answers and final citations before publishing. Detailed
+connector contracts are in [research](ACCESS_CONTROL_RESEARCH.md).

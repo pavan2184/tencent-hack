@@ -438,3 +438,15 @@ entries → `timeline_entries`; the whole frontmatter → `pages.frontmatter`.
 - Do we persist a freshness receipt for every ask or only for demo/audit flows? The MVP persists
   every ask's receipt so audit reconstruction always has one.
 - Final upload cap numbers (TBD by Raphael).
+
+## Access-control schema compatibility (12 October 2026)
+
+Drive entries add optional `expiration_time`, `deleted` and
+`allow_file_discovery` fields within `source_permissions.raw` JSON. Legacy seed
+shapes still parse. Expiry is checked against the query clock. No migration or
+lockfile change is needed. Bound platform identity replaces the local id/email
+fallback. Conflicting duplicate candidate ids cannot enter `allowed_ids`.
+
+`permission_fingerprint(raw)` hashes typed ACL content independently of capture
+time/run id. Connectors must atomically update the page's expected revision and
+the matching snapshot when permissions or parents change. A stale revision denies.

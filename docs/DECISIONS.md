@@ -238,3 +238,19 @@ statement migration files run through psycopg's simple query protocol in one tra
 **Consequences.** One dependency (`psycopg[binary,pool]`), consistent type handling for `jsonb`,
 `uuid` and `vector`. Celery tasks bridge into async services only through
 `tasks/common.run_async`.
+
+### D-013 - Native source permissions cap local application grants
+
+Status: Accepted
+Date: 2026-10-12
+
+The challenge requires preserving source permissions. Policy `ac-v2` therefore
+checks native read access before local owner/admin/grant allows for imported
+content. App-managed uploads retain local sharing. Existing signatures and deny
+reasons stay compatible. Calls that relied on bypassing a native ACL intentionally
+stop allowing access. Local approval does not change a source platform's ACL.
+
+A query-time service supplies current validated store reads and an optional live
+verifier that can only tighten access. No cached allow exists. Native API transport
+and complete source-scoped group resolution belong in app adapters. The diagram
+marks live-provider/authentication boundaries separately from implemented code.
