@@ -238,3 +238,25 @@ statement migration files run through psycopg's simple query protocol in one tra
 **Consequences.** One dependency (`psycopg[binary,pool]`), consistent type handling for `jsonb`,
 `uuid` and `vector`. Celery tasks bridge into async services only through
 `tasks/common.run_async`.
+
+### D-014 — Stored answers are re-authorised when served
+
+Status: Accepted
+Date: 2026-10-13
+
+**Context.** The challenge requires revoked access to apply on subsequent queries, including
+cached answers. `GET /api/queries` and `GET /api/queries/{id}` served the stored answer text,
+citations and quotes with no access check, so after a revocation the board deck figures stayed
+readable in query history (and on the Ask page) while the document itself returned `404`.
+
+**Decision.** An answer is only as visible as its least visible evidence document, evaluated for
+the viewer at read time (`access.readable_query_records`). The `ask` audit payload records
+`evidence_document_ids`; older events fall back to the receipt's `safe_to_use` pages, then to
+every document allowed at ask time. Undeterminable evidence withholds. A withheld row keeps the
+question and replaces answer, citations, grounding report and receipt id with a fixed notice.
+Answers are never cached by question; any future cache must apply the same check on serve.
+
+**Consequences.** One audit-event read per history row plus one batched policy evaluation per
+request. Access restored means history restored. Auditors read originals only through the
+audit trail.
+

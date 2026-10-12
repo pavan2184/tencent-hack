@@ -1,4 +1,8 @@
-"""`POST /api/ask` (governed pipeline) and the asker's query history."""
+"""`POST /api/ask` (governed pipeline) and the asker's query history.
+
+History is re-authorised on every read: a stored answer whose evidence the viewer can no longer
+read is served as `status: "withheld"` with no answer text, citations or grounding report.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +14,7 @@ from app.api.deps import ServicesDep
 from app.core.auth import CurrentPrincipal, has_role
 from app.core.errors import Forbidden, NotFound
 from app.schemas.ask import AnswerEnvelope, AskRequest
-from app.services import retrieval
+from app.services import access, retrieval
 
 router = APIRouter(tags=["ask"])
 
@@ -43,6 +47,7 @@ async def list_queries(
             raise Forbidden()
         target = actor_id
     rows = await services.repo.list_queries(target, limit=limit, offset=offset)
+    rows = await access.readable_query_records(services, principal, rows)
     return {
         "items": [
             r.model_dump(
@@ -67,11 +72,10 @@ async def list_queries(
 async def get_query(
     query_id: str, services: ServicesDep, principal: CurrentPrincipal
 ) -> dict[str, Any]:
-    from app.services.access import is_uuid
-
-    record = await services.repo.get_query(query_id) if is_uuid(query_id) else None
+    record = await services.repo.get_query(query_id) if access.is_uuid(query_id) else None
     if record is None or (
         record.actor_id != principal.id and not has_role(principal, *AUDIT_ROLES)
     ):
         raise NotFound("Query not found.")
-    return record.model_dump(mode="json")
+    (readable,) = await access.readable_query_records(services, principal, [record])
+    return readable.model_dump(mode="json")

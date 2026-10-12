@@ -639,6 +639,13 @@ provider only; the audit event is still written with `status: failed`).
 `grounding_report`, `freshness_receipt_id` and `access_summary`; other actors' queries are `404`
 unless the caller is an auditor or admin.
 
+Both endpoints re-authorise every stored answer for the **viewer, at read time**. If the viewer
+cannot read every document behind the answer right now (revoked, deleted, or evidence that cannot
+be traced), the row is served with `"status": "withheld"`, a fixed `answer_text` ("This answer
+used sources you can no longer access. …"), `"citations": []`, `"grounding_report": null` and
+`"freshness_receipt_id": null`. The question is kept; which document changed is never disclosed.
+Restoring access restores the row. Auditors reach the original through `/api/audit/events/{id}`.
+
 ### GET /api/audit/events · GET /api/audit/events/{id} · GET /api/audit/verify
 
 Auth: `auditor` or `admin`; everyone else `403`.
@@ -733,7 +740,8 @@ The `ask` payload keys are fixed (the audit UI reads them in `frontend/lib/audit
 `question`, `query_id`, `retrieved_document_ids[]`, `access_decisions[]` (`{document_id,
 decision, reason, matched_rule, permission_version}`, one per retrieved document including
 denied ones), `freshness_receipt` (`{receipt_id, overall_status, receipt_hash,
-evidence_items[]}`), `answer_text`, `abstained`, `abstain_reason`, `cited_document_ids[]`,
+evidence_items[]}`), `evidence_document_ids[]` (the documents behind the evidence spans the
+composer saw; used to re-authorise stored answers), `answer_text`, `abstained`, `abstain_reason`, `cited_document_ids[]`,
 `grounding` (`{verdict, coverage_ratio}`), `started_at`, `completed_at`. The copies of the event
 columns (`schema_version`, `actor_id`, `action`, `occurred_at`, `request_id`, `subject_type`,
 `subject_id`) are recommended so the chain hash covers them. Denied decisions appear in audit
