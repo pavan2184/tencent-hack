@@ -114,5 +114,9 @@ No-payment preview verification (2026-10-13, isolated staging copy): Docker buil
 `/healthz` reported database and Redis healthy; the seeded synthetic corpus loaded; REST smoke
 passed 12/12 steps; Chrome showed a cited answer and freshness receipt at
 `http://127.0.0.1:8080/ask`. Provider-selection test: 2 passed; backend suite: 570 passed,
-11 skipped; Ruff lint and format: pass. The running stack is still in mock mode pending ADP
-publication and AppKey access. The temporary public link has not been opened.
+11 skipped; Ruff lint and format: pass; all seven checks on draft PR #8 passed. Current local
+URLs: `http://127.0.0.1:8080` (Caddy), `http://127.0.0.1:8000` (API), and
+`http://127.0.0.1:3000` (frontend). The running stack is still in mock mode pending ADP
+publication and AppKey access. The temporary public link has not been opened. `npm audit
+--omit=dev` reported a high PostCSS advisory and a moderate Next.js dependency advisory; these
+remain unresolved in the existing lockfile.
