@@ -295,7 +295,7 @@ and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
 
 ### Tencent Cloud ADP facts
 
-Researched on 2026-10-12. "Verified" means read in Tencent's own documentation or Tencent's own
+Researched on 2026-10-12 and 2026-10-13. "Verified" means read in Tencent's own documentation or Tencent's own
 repository; nothing below has been exercised against our account yet.
 
 | Item                     | Value                                                                                                                                                           | Status                                                                                                      |
@@ -306,12 +306,21 @@ repository; nothing below has been exercised against our account yet.
 | Error codes              | `460011` QPM limit, `460031` QPS limit, `460032` insufficient balance                                                                                           | Verified (official docs); map 460011/460031 → `RetryableError`, 460032 → `FatalError`                       |
 | OpenAI-compatible models | `base_url=https://api.lkeap.cloud.tencent.com/v1`, `model=deepseek-v3`, `chat.completions` format                                                               | Verified as used by Tencent's `TencentCloudADP/youtu-agent`; not yet called with our key                    |
 | Alternative endpoint     | `https://api.adp.cloud.tencent.com/chat/completions`                                                                                                            | **Unverified** (third-party report only)                                                                    |
-| Embeddings               | ADP custom vector models must be **1024-dim** → `EMBEDDING_DIM=1024`; adapter is OpenAI-compatible `/embeddings`                                                | Dimension verified; **no official embedding endpoint found** — URL and model to be confirmed in the console |
+| Embeddings               | ADP custom vector models must be **1024-dim** → `EMBEDDING_DIM=1024`. Tencent TokenHub offers OpenAI-compatible `POST https://tokenhub-intl.tencentcloudmaas.com/v1/embeddings` with `kinfra-text-embedding-0.6b` (1024 dimensions). | Documented by Tencent; separate TokenHub activation and API key required; not yet called with our account |
 | Quotas for our account   | QPM/QPS, free-trial balance                                                                                                                                     | **Unknown**; caps in `.env.example` exist to stay inside the trial                                          |
 
 `EMBEDDING_DIM` is baked into `content_chunks.embedding vector(__EMBEDDING_DIMS__)` at migration
 time. If the real model's dimension differs, change `EMBEDDING_DIM` and `make reset` before the
 first real ingest.
+
+For a live trial, keep `LLM_PROVIDER=tencent_adp_app` and configure the existing embedding adapter
+with `EMBEDDING_BASE_URL=https://tokenhub-intl.tencentcloudmaas.com/v1`,
+`EMBEDDING_MODEL=kinfra-text-embedding-0.6b`, `EMBEDDING_DIM=1024`, and a TokenHub key in
+`EMBEDDING_API_KEY`. The ADP AppKey remains in `TENCENT_ADP_APP_KEY`; it is not a TokenHub key.
+Tencent documents the [embedding API](https://intl.cloud.tencent.com/pt/document/product/1300/81297),
+[key management](https://intl.cloud.tencent.com/document/product/1300/78949?lang=en), and
+[trial and billing rules](https://intl.cloud.tencent.com/ko/document/product/1300/80423).
+Account eligibility, available quota, and actual responses still need console and live-call checks.
 
 ## Deployment Assumptions
 
@@ -362,8 +371,8 @@ Owner: **Pavan**. Phased infrastructure: single box first.
 
 ## Open Architecture Questions
 
-- Which Tencent ADP embedding endpoint and model do we use, and is it really 1024-dim for our
-  account? (Blocks the first real ingest.)
+- Can our account activate TokenHub and call `kinfra-text-embedding-0.6b` with a 1024-dimensional
+  response under an acceptable quota? (Blocks the first real ingest.)
 - Final upload cap numbers (`UPLOAD_MAX_FILE_BYTES`, `UPLOAD_MAX_FILES_TOTAL`,
   `UPLOAD_MAX_FILES_PER_ACTOR_PER_DAY`, `EMBEDDING_DAILY_CALL_BUDGET`): TBD by Raphael.
 - Does `mcp>=2.0` expose the HTTP request on `ctx.request_context.request`, or do we need the
