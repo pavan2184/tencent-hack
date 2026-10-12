@@ -163,6 +163,9 @@ class AccessDecision(BaseModel):
     reason: DenyReason | None = None
     matched_rule: str
     permission_version: str | None = None
+    # When the permission snapshot behind this decision was captured, so an auditor can see how
+    # current the system's knowledge of the source's permissions was. None when no snapshot.
+    permission_captured_at: datetime | None = None
     policy_version: str
     evaluated_at: datetime
 

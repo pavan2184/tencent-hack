@@ -143,6 +143,7 @@ def test_audit_reconstruction(seeded: Any, client: Any) -> None:
             "reason",
             "matched_rule",
             "permission_version",
+            "permission_captured_at",
         }
     receipt = payload["freshness_receipt"]
     assert receipt["receipt_id"] == env["freshness_receipt"]["receipt_id"]

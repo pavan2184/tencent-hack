@@ -133,6 +133,7 @@ def test_denied_decisions_reveal_nothing_beyond_ids_given(policy, people, corpus
             "reason",
             "matched_rule",
             "permission_version",
+            "permission_captured_at",
             "policy_version",
             "evaluated_at",
         }

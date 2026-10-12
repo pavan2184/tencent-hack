@@ -731,8 +731,9 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
 
 The `ask` payload keys are fixed (the audit UI reads them in `frontend/lib/auditPayload.ts`):
 `question`, `query_id`, `retrieved_document_ids[]`, `access_decisions[]` (`{document_id,
-decision, reason, matched_rule, permission_version}`, one per retrieved document including
-denied ones), `freshness_receipt` (`{receipt_id, overall_status, receipt_hash,
+decision, reason, matched_rule, permission_version, permission_captured_at}`, one per retrieved
+document including denied ones; `permission_captured_at` is when the permission snapshot used was
+read from the source, or `null` without one), `freshness_receipt` (`{receipt_id, overall_status, receipt_hash,
 evidence_items[]}`), `answer_text`, `abstained`, `abstain_reason`, `cited_document_ids[]`,
 `grounding` (`{verdict, coverage_ratio}`), `started_at`, `completed_at`. The copies of the event
 columns (`schema_version`, `actor_id`, `action`, `occurred_at`, `request_id`, `subject_type`,

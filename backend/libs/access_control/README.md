@@ -27,6 +27,26 @@ content even for an admin.
 | Upload | Local owner and explicit sharing. Local grants can extend sharing. |
 | External MCP | Explicit principal/group allow-list. |
 
+### Permission snapshots expire
+
+Native source access is judged from a captured snapshot, so the snapshot must be recent. An
+imported document's snapshot older than its classification's maximum age denies with
+`R9:permission_snapshot_stale` until a sync refreshes it:
+
+| Classification | Maximum snapshot age |
+| --- | --- |
+| public | 24 hours |
+| internal | 1 hour |
+| confidential, restricted | 5 minutes |
+
+This bounds how long a revocation at the source can go unnoticed: at most the maximum age, even
+if a webhook is missed. The app re-reads every page's permissions on each delta sync (every
+60 seconds by default), and a failed read keeps the old snapshot, which then ages out. Snapshots
+stamped more than 60 seconds in the future are not trusted. Uploads are exempt because their
+permissions are local. Each decision records `permission_captured_at` for the audit trail.
+Override with `DefaultAccessPolicy(max_permission_age={...})`; `None` disables the check for
+offline tools only.
+
 A bound external identity takes precedence over local id/email. Group ids must
 be resolved server-side and scoped to the native source. Synthetic fixture groups
 are not a production identity provider.

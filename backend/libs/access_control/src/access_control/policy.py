@@ -6,12 +6,18 @@ Uploads are managed locally, so owner/admin/grant rules may allow them without a
 Existing R1–R10 audit labels are retained; labels identify the rule, not execution order.
 Only matching document/read grants count. Revoked allows explain a subsequent denial when no
 active matching allow remains, but never override inactivity, explicit denies or errors.
+
+Permission snapshots go stale. A snapshot of an imported document older than the maximum age
+for the document's classification (``DEFAULT_MAX_PERMISSION_AGE``) no longer counts as knowledge
+of the source's permissions, so the source check denies (``R9:permission_snapshot_stale``) until a
+sync refreshes it. This bounds how long a revocation at the source can go unnoticed. Uploads are
+exempt: their permissions are managed locally and cannot drift from an external source.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from datetime import UTC, datetime
+from collections.abc import Iterable, Mapping
+from datetime import UTC, datetime, timedelta
 from email.utils import parseaddr
 
 from access_control.models import (
@@ -54,15 +60,44 @@ RULE_SOURCE_PREFIX = "R8:"
 RULE_UNKNOWN_PERMISSIONS = "R9:unknown_permissions"
 RULE_PERMISSION_VERSION_MISMATCH = "R9:permission_version_mismatch"
 RULE_SOURCE_KIND_MISMATCH = "R9:source_kind_mismatch"
+RULE_PERMISSION_SNAPSHOT_STALE = "R9:permission_snapshot_stale"
 RULE_DEFAULT_DENY = "R10:default_deny"
 RULE_EVALUATION_ERROR = "ERR:evaluation_error"
 
 
-class DefaultAccessPolicy:
-    """Fail-closed source-ceiling policy. Synchronous and deterministic, with no I/O."""
+# How old a permission snapshot may be before it stops counting, by classification. The sync
+# must refresh snapshots well within these windows (the app re-reads them on every delta sync).
+DEFAULT_MAX_PERMISSION_AGE: Mapping[Classification, timedelta] = {
+    Classification.public: timedelta(hours=24),
+    Classification.internal: timedelta(hours=1),
+    Classification.confidential: timedelta(minutes=5),
+    Classification.restricted: timedelta(minutes=5),
+}
+# A snapshot stamped further in the future than this is not trusted to be fresh.
+MAX_CLOCK_SKEW = timedelta(seconds=60)
 
-    def __init__(self, policy_version: str = DEFAULT_POLICY_VERSION) -> None:
+
+class DefaultAccessPolicy:
+    """Fail-closed source-ceiling policy. Synchronous and deterministic, with no I/O.
+
+    ``max_permission_age`` maps every classification to the oldest permission snapshot the
+    policy still trusts; ``None`` disables the age check (tests and offline tools only)."""
+
+    def __init__(
+        self,
+        policy_version: str = DEFAULT_POLICY_VERSION,
+        *,
+        max_permission_age: Mapping[Classification, timedelta] | None = DEFAULT_MAX_PERMISSION_AGE,
+    ) -> None:
+        if max_permission_age is not None:
+            missing = set(Classification) - set(max_permission_age)
+            if missing:
+                raise ValueError(f"max_permission_age lacks {sorted(missing)}")
+            if any(age <= timedelta(0) for age in max_permission_age.values()):
+                raise ValueError("max_permission_age values must be positive")
+            max_permission_age = dict(max_permission_age)
         self.policy_version = policy_version
+        self.max_permission_age = max_permission_age
 
     # ------------------------------------------------------------------ public API
 
@@ -118,6 +153,7 @@ class DefaultAccessPolicy:
                 reason=reason,
                 matched_rule=rule,
                 permission_version=permission_version,
+                permission_captured_at=snapshot.captured_at if snapshot is not None else None,
                 policy_version=self.policy_version,
                 evaluated_at=now,
             )
@@ -147,7 +183,7 @@ class DefaultAccessPolicy:
         if any(g.effect == Effect.deny for g in active):
             return decision(RULE_EXPLICIT_DENY, DenyReason.explicit_deny)
 
-        source_rule, source_reason = _source_access(principal, doc, now)
+        source_rule, source_reason = _source_access(principal, doc, now, self.max_permission_age)
         if source_reason is not None and (
             doc.source_kind != SourceKind.upload
             or (snapshot is not None and source_reason != DenyReason.no_source_membership)
@@ -184,7 +220,10 @@ def _subject_matches(grant: Grant, principal: Principal) -> bool:
 
 
 def _source_access(
-    principal: Principal, doc: DocumentAccessContext, now: datetime
+    principal: Principal,
+    doc: DocumentAccessContext,
+    now: datetime,
+    max_age: Mapping[Classification, timedelta] | None = None,
 ) -> tuple[str, DenyReason | None]:
     snapshot = doc.source_permissions
     if snapshot is None:
@@ -195,6 +234,8 @@ def _source_access(
         return RULE_SOURCE_KIND_MISMATCH, DenyReason.unknown_permissions
     if not snapshot.permission_version:
         return RULE_UNKNOWN_PERMISSIONS, DenyReason.unknown_permissions
+    if max_age is not None and _is_stale(doc, snapshot.captured_at, now, max_age):
+        return RULE_PERMISSION_SNAPSHOT_STALE, DenyReason.unknown_permissions
     if isinstance(snapshot.raw, ConfluencePermissions) and any(
         not isinstance(ancestor, ConfluenceAncestor) for ancestor in snapshot.raw.ancestors
     ):
@@ -205,6 +246,21 @@ def _source_access(
         return RULE_DEFAULT_DENY, DenyReason.policy_default
     rule = f"{RULE_SOURCE_PREFIX}{snapshot.raw.kind}"
     return (rule, None) if member else (rule, DenyReason.no_source_membership)
+
+
+def _is_stale(
+    doc: DocumentAccessContext,
+    captured_at: datetime,
+    now: datetime,
+    max_age: Mapping[Classification, timedelta],
+) -> bool:
+    """True when an imported document's snapshot is too old (or implausibly new) to trust."""
+    if doc.source_kind == SourceKind.upload:
+        return False
+    if captured_at.tzinfo is None or captured_at.utcoffset() is None:
+        return True
+    age = now - captured_at
+    return age > max_age[doc.classification] or age < -MAX_CLOCK_SKEW
 
 
 # ---------------------------------------------------------------------- R8 per platform

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current phase
 
@@ -41,6 +41,13 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 | Celery, MCP server, webhooks, Dockerfile                               | Raphael (foundation), Pavan (connectors) | Done: six tasks + beat, 18 MCP tools over streamable HTTP, webhook acceptance route, one image with `ROLE` dispatch                      |
 | Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                  |
 | Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                       |
+
+## Permission snapshot expiry (Chai, 2026-10-13, branch `feat/permission-max-age`)
+
+Built on the access-control v2 work. Snapshots of source permissions now expire by
+classification (confidential 5 min) and every delta sync refreshes them, so a revocation at the
+source is enforced within 5 minutes for confidential documents (D-015). **The demo stack must run
+the Celery worker and beat**, or confidential documents go dark after 5 minutes.
 
 ## Next
 

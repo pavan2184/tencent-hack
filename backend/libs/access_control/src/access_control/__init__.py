@@ -54,6 +54,7 @@ from access_control.permissions import (
 )
 from access_control.policy import (
     ADMIN_ROLE,
+    DEFAULT_MAX_PERMISSION_AGE,
     DEFAULT_POLICY_VERSION,
     DefaultAccessPolicy,
     has_source_membership,
@@ -77,6 +78,7 @@ __version__ = "0.1.0"
 
 __all__ = [
     "ADMIN_ROLE",
+    "DEFAULT_MAX_PERMISSION_AGE",
     "DEFAULT_POLICY_VERSION",
     "SCHEMA_VERSION",
     "AccessControlError",

@@ -294,6 +294,9 @@ async def ask(
             "reason": str(d.reason) if d.reason else None,
             "matched_rule": d.matched_rule,
             "permission_version": d.permission_version,
+            "permission_captured_at": (
+                d.permission_captured_at.isoformat() if d.permission_captured_at else None
+            ),
         }
         for d in ev.filter_result.decisions
     ]

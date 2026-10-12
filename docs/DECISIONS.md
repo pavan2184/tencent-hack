@@ -254,3 +254,26 @@ A query-time service supplies current validated store reads and an optional live
 verifier that can only tighten access. No cached allow exists. Native API transport
 and complete source-scoped group resolution belong in app adapters. The diagram
 marks live-provider/authentication boundaries separately from implemented code.
+
+### D-015 — Permission snapshots expire by classification
+
+Status: Proposed (needs Pavan for the sync change)
+Date: 2026-10-13
+
+**Context.** Access decisions for imported content use a stored snapshot of each source's
+permissions. Syncs only rewrote a snapshot when content changed, so a revocation at the source
+(for example a Drive share removed) could go unnoticed indefinitely. Enterprise products document
+delays from minutes up to 24 hours (Microsoft's Confluence connector picks up permission changes
+only on its daily full crawl).
+
+**Decision.** The policy refuses a snapshot older than a per-classification maximum age
+(confidential/restricted 5 min, internal 1 h, public 24 h), denying with
+`R9:permission_snapshot_stale`. Every delta sync re-reads all pages' permissions, independent of
+content changes. A failed read keeps the old snapshot so it ages out. Uploads are exempt. Each
+audit decision records `permission_captured_at`.
+
+**Consequences.** A source-side revocation is enforced within the maximum age, by construction,
+not by best effort. If the sync stops (worker or beat down), confidential documents become
+unavailable after 5 minutes: availability is traded for safety. Each sync makes one permission
+read per page; real connectors will need batching or change feeds at scale.
+
