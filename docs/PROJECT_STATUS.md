@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current phase
 
@@ -16,6 +16,10 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 ## Completed
 
+- **No-payment deployment preparation (2026-10-13):** `EMBEDDING_PROVIDER=local_hash` permits
+  real ADP answer generation with local deterministic retrieval vectors. The synthetic full stack
+  runs privately on Pavan's Mac; Caddy, API, frontend, Postgres and Redis are bound to loopback in
+  an allowlisted staging copy outside the repository. No paid service was activated.
 - Research and setup (September): track selected, handbook requirements captured in
   `docs/HACKATHON_REQUIREMENTS.md`, freshness design approved (now the reference for the
   `freshness` library).
@@ -52,8 +56,8 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   injection-pattern corpus; groundedness evals; decide the upload cap numbers.
 - **Pavan (freshness + ingestion + deploy):** delta and reconcile algorithms, backoff and parking,
   Confluence and Slack probes or simulations, port the TS eval fixtures to Python tests; own the
-  Celery/connector pipeline; deploy the single box on Tencent Cloud; confirm the ADP embedding
-  endpoint, model and dimension.
+  Celery/connector pipeline; finish the no-payment local preview with ADP chat. TokenHub activation
+  and paid cloud hosting are excluded.
 - **Chai (access control):** real platform-permission ingestion, group resolution, a
   permission-drift hook shared with freshness, final deny wording; review the corpus visibility
   matrix in `backend/seed/corpus/README.md`.
@@ -67,8 +71,9 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 - Four days to the deadline; the library stubs are the demo floor, so the five scenario tests must
   pass on stubs alone.
-- Tencent ADP embedding endpoint and model are unconfirmed; `EMBEDDING_DIM` must match before the
-  first real ingest (otherwise `make reset`).
+- Local hash vectors are deterministic and mostly lexical, so semantic retrieval quality is
+  lower than a learned embedding model. The ADP chat integration and public tunnel are not yet
+  verified end to end.
 - Critical evidence goes `stale` once its index age exceeds 3,600 s. The seed loader live-verifies
   every object at seed time so the age basis is the seed time, but an hour later the KYC runbook
   ages out until reconciliation or verification runs (beat triggers delta/reconcile; Pavan owns
@@ -104,3 +109,10 @@ Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; im
 Open integration items: confirm the Tencent ADP non-streaming response shape against the console
 (`backend/app/providers/real/tencent_adp_app.py`); unhandled 500s carry no `request_id` because
 the generic handler runs outside the request-id middleware; upload cap numbers are still TBD.
+
+No-payment preview verification (2026-10-13, isolated staging copy): Docker build succeeded;
+`/healthz` reported database and Redis healthy; the seeded synthetic corpus loaded; REST smoke
+passed 12/12 steps; Chrome showed a cited answer and freshness receipt at
+`http://127.0.0.1:8080/ask`. Provider-selection test: 2 passed; backend suite: 570 passed,
+11 skipped; Ruff lint and format: pass. The running stack is still in mock mode pending ADP
+publication and AppKey access. The temporary public link has not been opened.
