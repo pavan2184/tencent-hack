@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current phase
 
@@ -41,6 +41,14 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 | Celery, MCP server, webhooks, Dockerfile                               | Raphael (foundation), Pavan (connectors) | Done: six tasks + beat, 18 MCP tools over streamable HTTP, webhook acceptance route, one image with `ROLE` dispatch                      |
 | Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                  |
 | Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                       |
+
+## Architecture deck (Chai, 2026-10-13)
+
+`docs/presentations/internal-brain-architecture.pptx`: case study, problem, four guarantees, the
+end-to-end architecture with trust boundaries and the model-context boundary, native permission
+handling per platform, the access-control demo, the five scenarios mapped to tests, answer
+receipts, trade-offs and stack. Slides 6 and 10 assume the access-control v2 rules (native
+permissions cap local grants), which still need team agreement.
 
 ## Next
 
