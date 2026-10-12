@@ -1,0 +1,7 @@
+-- 0300_groundedness_init.sql
+-- Owner: groundedness (Raphael) · range 0300-0399.
+-- Placeholder: intentionally creates nothing. Grounding reports are stored as JSONB in
+-- queries.grounding_report (core, 0001) and inside the `ask` audit event payload, so the
+-- groundedness lib needs no tables yet. If it later needs persistence (e.g. an eval-run table or
+-- an injection-pattern corpus), add 0301_*.sql here. Same rules as every range: idempotent,
+-- one transaction, no psql meta-commands, no CONCURRENTLY, reference only this range or lower.

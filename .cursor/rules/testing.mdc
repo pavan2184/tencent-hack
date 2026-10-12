@@ -12,4 +12,3 @@ alwaysApply: false
 - Core user flows should have integration or end-to-end coverage where practical.
 - Do not skip failing tests unless the skip documents a real external blocker.
 - Update `docs/TESTING.md` when test strategy changes.
-

@@ -72,11 +72,16 @@ export function listDocuments(params: DocumentQuery = {}): Promise<Document[]> {
 }
 
 /** multipart: `file` (required), `title` and `classification` (optional). */
-export function uploadDocument(formData: FormData): Promise<Document> {
-  return apiFetch<Document>("/documents/upload", {
-    method: "POST",
-    body: formData,
-  });
+// The API returns {upload_id, document, ingest}; callers only need the document.
+export async function uploadDocument(formData: FormData): Promise<Document> {
+  const res = await apiFetch<{ upload_id: string; document: Document }>(
+    "/documents/upload",
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+  return res.document;
 }
 
 export function getDocument(documentId: string): Promise<DocumentDetail> {
@@ -153,16 +158,18 @@ export function listAccessRequests(): Promise<AccessRequest[]> {
   return list<AccessRequest>("/access/requests");
 }
 
-export function decideAccessRequest(
+export async function decideAccessRequest(
   requestId: string,
   decision: AccessDecisionAction,
 ): Promise<AccessRequest> {
-  return apiFetch<AccessRequest>(
+  // The API returns {request, grant}; approve also creates a grant.
+  const res = await apiFetch<{ request: AccessRequest }>(
     `/access/requests/${id(requestId)}/${decision}`,
     {
       method: "POST",
     },
   );
+  return res.request;
 }
 
 // --- Audit ---------------------------------------------------------------

@@ -14,4 +14,3 @@ alwaysApply: true
 - Update `docs/PROJECT_STATUS.md` after meaningful changes.
 - Update `docs/DECISIONS.md` after architectural decisions.
 - Preserve protected files unless explicitly asked.
-

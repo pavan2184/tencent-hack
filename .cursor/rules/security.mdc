@@ -13,4 +13,3 @@ alwaysApply: false
 - Use allowlists over blocklists for risky input.
 - Avoid logging sensitive data.
 - For LLM features, consider prompt injection, data leakage, unsafe output reliance, and auditability.
-

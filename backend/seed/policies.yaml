@@ -1,7 +1,8 @@
 # Freshness policies (freshness.FreshnessPolicy), loaded by `make seed` into freshness_policies.
 # One active `critical` and one active `standard` policy per freshness ConnectorKind.
 # NOTE: connector_kind uses the freshness vocabulary (`google_drive`); sources/pages use the
-# access_control vocabulary (`gdrive`). The app maps gdrive -> google_drive when choosing a policy.
+# access_control vocabulary (`gdrive`). freshness.ConnectorKind accepts `gdrive` as an input alias
+# and always emits `google_drive`, so a page's source_kind can be passed straight through.
 #
 # Budgets (seconds):  critical = index 3600 / verification 300, live verification required, omit;
 #                     standard = index 86400 / verification 3600, no live check, allow_with_warning.

@@ -24,4 +24,3 @@ case "$FILE_PATH" in
 esac
 
 exit 0
-

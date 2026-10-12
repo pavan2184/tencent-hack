@@ -30,8 +30,8 @@ corpus/
 | `uploads`        | `upload`     | none (filled by uploads, `put_page` and `capture`)                                               |
 
 `source.yaml.kind` ∈ `confluence | jira | slack | gdrive | email | upload` (the access_control
-`SourceKind` vocabulary). The freshness lib calls Google Drive `google_drive`; the app maps
-`gdrive` → `google_drive` when it picks a freshness policy or writes freshness rows.
+`SourceKind` vocabulary). The freshness lib's `ConnectorKind` accepts `gdrive` as an input alias
+and always emits `google_drive`, which is what freshness tables and `policies.yaml` store.
 
 ## Page format (gbrain two-layer page)
 

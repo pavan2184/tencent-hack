@@ -1,0 +1,19 @@
+# Edge proxy (compose profile "edge": `docker compose --profile edge up -d`).
+# One origin on :80 for the single-box Tencent Cloud deploy: API, MCP and health go to FastAPI,
+# everything else to the Next.js frontend. Build the frontend with
+# NEXT_PUBLIC_API_BASE_URL=http://<host>/api and NEXT_PUBLIC_MCP_URL=http://<host>/mcp for this mode.
+:80 {
+	encode gzip
+
+	@backend path /api/* /mcp* /healthz
+	handle @backend {
+		reverse_proxy api:8000 {
+			# MCP streamable HTTP may stream (SSE); never buffer responses.
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

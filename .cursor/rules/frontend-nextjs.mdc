@@ -16,4 +16,3 @@ alwaysApply: false
 - Handle loading, empty, error, and success states.
 - Keep client/server boundaries explicit.
 - Align frontend API assumptions with `docs/API_CONTRACT.md`.
-

@@ -1,0 +1,19 @@
+# Keep the build context small and secret-free. Tests stay in (the image can run them).
+.venv
+**/.venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+**/.pytest_cache
+.ruff_cache
+**/.ruff_cache
+.mypy_cache
+**/.mypy_cache
+*.egg-info
+**/*.egg-info
+build
+dist
+.env
+.env.*
+**/.DS_Store
+celerybeat-schedule*

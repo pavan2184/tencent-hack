@@ -113,4 +113,3 @@ First, run the project starter workflow:
 Create or update the files in docs/.
 After that, ask me to confirm before implementation.
 ```
-
