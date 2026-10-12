@@ -66,13 +66,14 @@ tencent-hack/
 │   │   ├── api/routers/  health  principals  documents  sources  access  ask  audit  webhooks
 │   │   ├── mcp/server.py
 │   │   ├── services/   wiring.py  documents.py  ingestion.py  retrieval.py (governed pipeline)  audit.py  sources.py
+│   │   │               compose.py (ModelComposer: generate with deadline, then ground)
 │   │   ├── providers/  base.py  mock.py  factory.py  real/openai_compatible.py  real/tencent_adp_app.py
 │   │   ├── connectors/ base.py  upload.py  gbrain_import.py  stubs.py  registry.py
-│   │   ├── adapters/   freshness_store.py (Pavan)  access_stores.py (Chai)  llm_port.py (Raphael)
+│   │   ├── adapters/   freshness_store.py (Pavan)  access_stores.py (Chai)
 │   │   ├── tasks/      common.py (run_async)  ingest.py  sync.py  verify.py  watchdog.py
 │   │   └── tests/      conftest.py + test_* (five scenarios in test_ask_pipeline.py)
 │   └── libs/
-│       ├── groundedness/    src/groundedness/{models,protocols,sanitize,compose,verify,abstain,memory}.py  tests/
+│       ├── groundedness/    src/groundedness/{models,protocols,sanitize,compose,ground,numeric,verify,abstain}.py  tests/
 │       ├── freshness/       src/freshness/{enums,models,protocols,service,policy,versioning,receipt,memory}.py  tests/
 │       └── access_control/  src/access_control/{models,permissions,protocols,policy,memory}.py  tests/
 └── frontend/
@@ -87,12 +88,14 @@ tencent-hack/
 - **Libraries (`backend/libs/*`) are pure.** No I/O, no `app` imports (each lib has a test that
   fails if `src/` mentions `import app`/`from app`), dependency `pydantic>=2.9` only. Each
   exposes models, `@runtime_checkable` Protocols with documented invariants, stub
-  implementations, and `memory.py` in-memory stores used by the lib's own tests **and** by the
-  app's test fixtures. `SCHEMA_VERSION = 1` is re-exported from each `__init__.py`.
+  implementations, and (`freshness`, `access_control`) `memory.py` in-memory stores used by the
+  lib's own tests **and** by the app's test fixtures. `SCHEMA_VERSION = 1` is re-exported from
+  each `__init__.py`.
 - **App adapters implement the lib Protocols.** `app/adapters/freshness_store.py`
-  (`FreshnessStore`), `app/adapters/access_stores.py` (`GrantStore`, `PermissionSnapshotStore`,
-  `PrincipalDirectory`, `AccessRequestStore`) and `app/adapters/llm_port.py` (`LLMPort` over the
-  `ChatProvider`) are each owned by the matching library owner.
+  (`FreshnessStore`) and `app/adapters/access_stores.py` (`GrantStore`, `PermissionSnapshotStore`,
+  `PrincipalDirectory`, `AccessRequestStore`) are each owned by the matching library owner. The
+  `groundedness` lib is model-free (D-013), so it has no port for the app to implement; generation
+  lives in `app/services/compose.py`, owned with core.
 - **Thin API, heavy workers.** Routers and MCP tools validate input, resolve the principal and call
   one service. Ingestion, sync, live verification and watchdog sweeps run in Celery.
   `tasks/common.run_async` is the only bridge from Celery into async services.
@@ -168,12 +171,17 @@ tencent-hack/
    provider through the connector's `head()`. Unsafe evidence (critical and not fresh, or anything
    not fresh when `require_fresh=true`) is dropped. `freshness_receipt` records every evaluated
    item, safe or not, in input order.
-5. **Groundedness.** `sanitize` (never drops; quarantines high-severity injection) → `compose`
-   (every claim cites non-quarantined evidence; no usable evidence → abstained) → `verify`
-   (per-claim support labels, coverage, verdict, report hash) → `should_abstain`
-   (`GROUNDING_MIN_COVERAGE`, contradictions).
+5. **Groundedness.** `sanitize` (never drops; quarantines high-severity injection) → generate
+   (app `ModelComposer`: one model call inside `ASK_GENERATION_DEADLINE_S`, extractive fallback on
+   timeout or provider error; `ExtractiveComposer` alone in mock mode) → `ground` (deterministic
+   claim/citation attachment; auto-cites unmarked sentences; every claim cites non-quarantined
+   evidence; no usable evidence → abstained) → `verify` (`lexical-v2`: token overlap, negation
+   cues, numeric/date gate; per-claim support labels, coverage, verdict, report hash; no model
+   call, D-013) → `should_abstain` (`GROUNDING_MIN_COVERAGE`, contradictions). A model failure
+   never fails the ask.
 6. **Audit.** `audit.record("ask", …)` appends one hash-chained event with the question, every
-   candidate's decision, the receipt id and hash, the cited evidence, the answer and timings.
+   candidate's decision, the receipt id and hash, the cited evidence, the answer, the composer id
+   and timings.
 7. **Envelope.** `AnswerEnvelope` with `access_summary.allowed_count` only; there is no denied
    count anywhere in an asker-visible payload.
 
@@ -281,7 +289,9 @@ and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
   `LLM_MODEL`) and `/embeddings` (`EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`).
 - **`tencent_adp_app`.** The ADP application Chat API over SSE (`TENCENT_ADP_APP_KEY`,
   `TENCENT_ADP_CHAT_URL`): concatenates `text.delta` events and surfaces `reference.added`.
-- `app/adapters/llm_port.py` adapts the `ChatProvider` to the groundedness `LLMPort`.
+- `app/services/compose.py` (`ModelComposer`) calls the `ChatProvider` directly, once per ask,
+  inside `ASK_GENERATION_DEADLINE_S` (`LLM_TIMEOUT_S` stays the per-phase HTTP timeout). The
+  groundedness lib never sees a model.
 
 ### Tencent Cloud ADP facts
 
@@ -342,8 +352,13 @@ Owner: **Pavan**. Phased infrastructure: single box first.
 - **Hash chain in the same database.** Detects modification and deletion of audit rows but not a
   wholesale rewrite by someone with full database control; external anchoring of the head hash is
   out of MVP scope.
-- **Extractive mock composer.** Deterministic and offline, so tests are stable; answers read
-  mechanically until the LLM composer lands.
+- **Extractive composer.** Deterministic and offline, so tests are stable. It is the mock-mode
+  answer source and the real-mode fallback when the model times out or fails; its answers read
+  mechanically. The LLM composer is the app's `ModelComposer` (`PROVIDER_MODE=real`).
+- **Lexical verification vs an LLM judge (D-013).** No extra model calls, so an ask stays at one
+  call and every grounding report is reproducible; wrong numbers, dates and times cannot be
+  `supported`. In exchange, paraphrase recall is bounded by lexical overlap, so the generation
+  prompt must keep the model's wording close to the evidence.
 
 ## Open Architecture Questions
 
