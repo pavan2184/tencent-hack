@@ -732,7 +732,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       ],
       [
         "③ Access gate",
-        "Allow/deny per document on native permissions",
+        "Allow/deny per document; permissions under 5 min old",
         HEX.tealT,
         S.teal,
       ],
@@ -913,7 +913,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         2.35,
         I.gears,
         "Connectors + workers",
-        "Celery: webhooks, delta sync, reconcile. Captures content and native permissions.",
+        "Celery: webhooks and syncs. Re-reads every page's permissions each minute.",
       ],
       [
         5.25,
@@ -997,7 +997,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
 
     text(
       s,
-      "Teal path: only authorised evidence.   Red dashed line: nothing denied crosses it.   Dashed boxes: untrusted or external.   Connectors to live tenants are stubbed; the demo uses a synthetic corpus.",
+      "Teal path: only authorised evidence.  Red dashed line: nothing denied crosses it.  Dashed boxes: untrusted or external.  Demo uses a synthetic corpus; in production Slack is searched live as the user and never stored.",
       {
         x: 0.32,
         y: 6.75,
@@ -1032,8 +1032,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         S.teal,
         "What they may see",
-        "Every candidate document is checked against its native platform permissions before any model call.",
-        "Missing, stale or unreadable permissions: deny",
+        "Every candidate document is checked against its native platform permissions before any model call. Permissions over 5 minutes old no longer count.",
+        "Missing, unreadable or expired permissions: deny",
       ],
       [
         S.coral,
@@ -1135,7 +1135,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         I.slack,
         "Slack",
-        "Channel membership; public channels for full workspace members only",
+        "Channel membership; public channels for full members only. In production, searched live as the user; nothing stored",
         "Guests, bots and other workspaces never inherit public access",
       ],
       [
@@ -1268,20 +1268,20 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         I.userClock,
         S.amber,
-        "Access revoked",
-        "Admin revokes the Leadership grant",
+        "Revoked at the source",
+        "Drive owner removes Leadership from the share",
         "Priya asks again, then reopens her earlier answer",
         [
           {
-            text: "New answer no longer uses the deck",
+            text: "Next sync (each minute): the deck is gone",
             options: { bold: true, breakLine: true },
           },
           {
-            text: "Saved answer: “This answer used sources you can no longer access”",
+            text: "Her saved answer is withheld too",
             options: { fontSize: 11, color: S.slate },
           },
         ],
-        "Enforced on the next query, including saved answers",
+        "Enforced within 5 minutes, even if a sync is missed",
         HEX.amberT,
       ],
     ];
@@ -1370,7 +1370,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     text(
       s,
-      "Synthetic company and figures. Each scene is an automated test: test_ask_pipeline.py and test_query_history_access.py.",
+      "Synthetic company and figures. Each scene is an automated test: test_ask_pipeline.py, test_permission_freshness.py and test_query_history_access.py.",
       {
         x: 0.6,
         y: 6.78,
@@ -1432,8 +1432,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "4",
           "Live revocation",
-          "The Leadership grant is revoked; Priya's next answer excludes the board deck and her saved answer is withheld",
-          "test_live_revocation_changes_next_answer, test_query_history_access",
+          "Leadership is removed from the Drive share (or the in-app grant revoked): Priya's next answer drops the board deck and her saved answer is withheld",
+          "test_permission_freshness, test_live_revocation_changes_next_answer, test_query_history_access",
         ),
         row(
           "5",
@@ -1597,6 +1597,168 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
   }
 
+  // ============================================================ 9b. How we compare
+  {
+    const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
+    s.addText("Same foundation as Glean and Copilot, plus what they don't document", {
+      placeholder: "title",
+    });
+    const H = (t, ours = false) => ({
+      text: t,
+      options: {
+        bold: true,
+        color: S.white,
+        fill: { color: ours ? S.teal : S.navy },
+        fontSize: 12,
+        align: "center",
+      },
+    });
+    const yes = (t = "Yes") => ({ text: t, options: { color: S.teal, bold: true, align: "center" } });
+    const no = (t) => ({ text: t, options: { color: S.coral, bold: true, align: "center" } });
+    const nd = (t = "Not documented") => ({ text: t, options: { color: S.slate, align: "center" } });
+    const ours = (t) => ({
+      text: t,
+      options: { color: S.teal, bold: true, align: "center", fill: { color: HEX.tealT } },
+    });
+    const row = (label, cells, o) => [
+      { text: label, options: { bold: true, color: S.navy } },
+      ...cells,
+      ours(o),
+    ];
+    s.addTable(
+      [
+        [
+          { text: "", options: { fill: { color: S.navy } } },
+          H("Glean"),
+          H("Microsoft 365 Copilot"),
+          H("Gemini Enterprise"),
+          H("Amazon Q Business"),
+          H("Internal Brain", true),
+        ],
+        row("Filters evidence before the model", [yes(), yes(), yes(), yes()], "Yes"),
+        row(
+          "Missing permissions mean no access",
+          [nd(), yes("Yes (Confluence connector)"), nd(), no("No: treated as public")],
+          "Yes",
+        ),
+        row("Saved answers re-checked after revocation", [nd(), nd(), nd(), nd()], "Yes"),
+        row(
+          "Audit logs every allow/deny, including filtered-out documents",
+          [nd("Events only"), nd("Accessed items only"), nd("Prompts and grounding, opt-in"), nd("Conversation logs")],
+          "Yes",
+        ),
+        row("Tamper-evident audit log", [nd(), nd(), nd(), nd()], "Hash chain"),
+        row(
+          "Delay before a permission change applies",
+          [nd("Drive: 1 h default"), nd("Confluence: daily full crawl"), nd("Identity sync: 30 min to 7 days"), nd("Each crawl: hourly or slower")],
+          "5 min maximum, enforced",
+        ),
+      ],
+      {
+        x: 0.6,
+        y: 1.45,
+        w: 12.1,
+        colW: [2.9, 1.7, 1.95, 1.85, 1.85, 1.85],
+        fontSize: 11.5,
+        color: S.ink,
+        border: { type: "solid", pt: 0.75, color: HEX.line },
+        fill: { color: S.white },
+        valign: "middle",
+        margin: [0.05, 0.08, 0.05, 0.08],
+        rowH: [0.5, 0.62, 0.62, 0.62, 0.72, 0.62, 0.72],
+        objectName: nm("comparison-table"),
+      },
+    );
+    text(
+      s,
+      "From each vendor's public documentation as of 13 Oct 2026. “Not documented” means we found nothing in their docs, not that the feature is absent. Sources: docs/ACCESS_CONTROL_INDUSTRY_REVIEW.md.",
+      { x: 0.6, y: 6.15, w: 12.1, h: 0.5, size: 10.5, italic: true, color: S.slate },
+    );
+    s.addNotes(
+      "We did not invent a new access model: the foundation is the one Glean, Microsoft and Google document. What we add is accountability: saved answers re-checked, every allow and deny logged in a tamper-evident chain, and a hard five-minute limit on stale permissions. Sources: Glean docs (security principles, crawl refresh rates), Microsoft Learn (Confluence Cloud connector, Purview Copilot audit), Google Cloud (Gemini Enterprise connectors), AWS Amazon Q Business connector concepts.",
+    );
+  }
+
+  // ============================================================ 9c. Revocation delay chart
+  {
+    const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
+    s.addText("A revocation at the source is enforced within 5 minutes", {
+      placeholder: "title",
+    });
+    s.addChart(
+      pres.charts.BAR,
+      [
+        {
+          name: "Minutes until a permission change applies",
+          labels: [
+            "Microsoft 365 Copilot, Confluence connector",
+            "Glean, Google Drive identity refresh",
+            "Gemini Enterprise, fastest identity sync",
+            "Internal Brain, confidential documents",
+          ],
+          values: [1440, 60, 30, 5],
+        },
+      ],
+      {
+        x: 0.6,
+        y: 1.45,
+        w: 7.7,
+        h: 4.75,
+        barDir: "bar",
+        catAxisOrientation: "maxMin",
+        valAxisLogScaleBase: 10,
+        valAxisMinVal: 1,
+        valAxisMaxVal: 10000,
+        valAxisHidden: true,
+        valGridLine: { style: "none" },
+        catGridLine: { style: "none" },
+        catAxisLabelColor: HEX.ink,
+        catAxisLabelFontSize: 12,
+        catAxisLabelFontFace: "+mn-lt",
+        catAxisLineShow: false,
+        chartColors: ["475569", "475569", "475569", HEX.teal],
+        barGapWidthPct: 60,
+        showValue: true,
+        dataLabelPosition: "outEnd",
+        dataLabelFormatCode: '#,##0" min"',
+        dataLabelColor: HEX.ink,
+        dataLabelFontSize: 13,
+        dataLabelFontBold: true,
+        dataLabelFontFace: "+mn-lt",
+        showLegend: false,
+        showTitle: false,
+        objectName: nm("revocation-chart"),
+      },
+    );
+    text(s, "Minutes until a permission change applies (log scale)", {
+      x: 0.6,
+      y: 6.2,
+      w: 7.7,
+      h: 0.3,
+      size: 11,
+      color: S.slate,
+    });
+    card(s, { x: 8.7, y: 1.55, w: 4.0, h: 3.45, fill: S.mist, line: null, name: "chart-notes" });
+    text(
+      s,
+      [
+        { text: "Their numbers are sync intervals.", options: { bold: true, color: S.navy, breakLine: true } },
+        { text: "Until the next sync, the old permissions still grant access.", options: { breakLine: true } },
+        { text: " ", options: { fontSize: 8, breakLine: true } },
+        { text: "Ours is a hard limit.", options: { bold: true, color: S.teal, breakLine: true } },
+        { text: "Permissions older than 5 minutes are refused, so access fails closed even if a sync or webhook is missed.", options: { breakLine: true } },
+        { text: " ", options: { fontSize: 8, breakLine: true } },
+        { text: "In-app grants apply on the next query.", options: { bold: true, color: S.navy } },
+      ],
+      { x: 8.95, y: 1.8, w: 3.5, h: 4.2, size: 15 },
+    );
+    text(
+      s,
+      "Vendor figures are documented defaults or minimums for one connector each (Microsoft Learn, Glean docs, Google Cloud docs, Oct 2026). Ours: DefaultAccessPolicy max age plus a per-minute permission refresh (PR #9).",
+      { x: 0.6, y: 6.5, w: 12.1, h: 0.42, size: 9.5, italic: true, color: S.slate },
+    );
+  }
+
   // ============================================================ 10. Trade-offs
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
@@ -1646,6 +1808,11 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
           "No external anchor yet against a full database rewrite",
         ),
         r(
+          "Permission snapshots expire (5 min for confidential)",
+          "A revocation at the source is enforced within 5 minutes",
+          "If syncing stops, confidential documents become unavailable",
+        ),
+        r(
           "Persona header in the demo",
           "Fast to film and to test",
           "Spoofable; one swap point for SSO before real data",
@@ -1662,7 +1829,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         fill: { color: S.white },
         valign: "middle",
         margin: [0.06, 0.12, 0.06, 0.12],
-        rowH: [0.45, 0.78, 0.78, 0.7, 0.7, 0.7, 0.7],
+        rowH: [0.45, 0.7, 0.7, 0.64, 0.64, 0.64, 0.64, 0.64],
         objectName: nm("tradeoff-table"),
       },
     );
@@ -1676,14 +1843,14 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     const stats = [
       [
-        "555",
+        "573",
         "automated tests pass with no network, using mock providers and in-memory stores",
         S.teal,
       ],
       ["0", "restricted documents in the contractor's model context", S.coral],
       [
-        "Next query",
-        "revocation applies on the very next request, including saved answers",
+        "5 min",
+        "longest a revocation at the source goes unnoticed for confidential documents; in-app grants apply on the next query",
         S.amber,
       ],
     ];
@@ -1743,7 +1910,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     text(
       s,
-      "Test count: access-control v2 plus the saved-answer fix, 13 Oct 2026 (11 SQL tests run separately against Postgres).",
+      "Test count: PRs #6 and #9 merged locally, 13 Oct 2026 (11 SQL tests run separately against Postgres).",
       {
         x: 0.6,
         y: 6.55,
@@ -1819,8 +1986,9 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         [
           "Access-control library v2: native permission ceiling, fail-closed checks, Slack/Drive normalisers",
           "Research note with primary sources for all four platforms",
-          "Saved-answer revocation fix with 6 tests (PR #6)",
-          "This deck: architecture and trust boundaries",
+          "Saved-answer revocation fix (PR #6)",
+          "Permission expiry: source revocation enforced within 5 min (PR #9)",
+          "Industry review: Glean, Copilot, Gemini, Rovo, MAS rules",
         ],
       ],
       [
@@ -1828,7 +1996,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         HEX.amberT,
         "Needs team agreement",
         [
-          "Adopt v2 rules: admins no longer see everything; grants cannot widen source access (Raphael, Pavan)",
+          "Adopt v2 rules and permission expiry, PR #9: admins no longer see everything (Raphael, Pavan)",
+          "Demo stack must run Celery worker and beat, or confidential docs go dark after 5 min (Pavan)",
           "Access-request approval when the source still blocks the requester (Raphael)",
           "Wire the query-time access service into the app (Pavan)",
         ],
@@ -1838,7 +2007,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         HEX.blueT,
         "Next, before filming 14 Oct",
         [
-          "Demo source-side revocation: remove Priya from the Drive share, sync, ask again",
+          "Store the audit chain's latest hash outside the app database (Raphael)",
+          "Log model and prompt-template version per answer (Raphael)",
           "Signed demo sessions instead of the spoofable persona header (Raphael)",
           "CodeBuddy / WorkBuddy screenshots: at least three (everyone)",
           "Submit 16 Oct: URL, video, this PPT, GitHub",
