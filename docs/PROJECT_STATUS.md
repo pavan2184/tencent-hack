@@ -19,7 +19,8 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 - Research and setup (September): track selected, handbook requirements captured in
   `docs/HACKATHON_REQUIREMENTS.md`, freshness design approved (now the reference for the
   `freshness` library).
-- Pivot decisions recorded: D-001 to D-012 in `docs/DECISIONS.md`.
+- Decisions recorded in `docs/DECISIONS.md`: D-001 to D-012 (pivot) and D-013 (deterministic
+  grounding and verification, no LLM judge).
 - Foundation docs: brief with team plan, architecture with trust-boundary diagram, data model,
   API contract, testing plan, security review, decisions, GBrain mapping, this status page.
 - Infrastructure: `docker-compose.yml` (postgres, redis, migrate, api, worker, beat, frontend,
@@ -32,22 +33,23 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 ## Skeleton delivered (PR #1, `feat/foundation-skeleton`, 2026-10-12)
 
-| Workstream                                                             | Owner                                    | State                                                                                                                                    |
-| ---------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `groundedness` library                                                 | Raphael                                  | Done: interfaces, regex sanitizer, extractive + LLM composer, lexical verifier, abstention policy, 185 tests                             |
-| `freshness` library                                                    | Pavan                                    | Done: faithful port of the approved spec (enums, models, service, policy, versioning, receipts, in-memory stores), 121 tests             |
-| `access_control` library                                               | Chai                                     | Done: principals, raw per-platform permissions, ordered policy R1–R10, stores, 100 tests                                                 |
-| App core (config, core, db, services, routers, providers, seed loader) | Raphael                                  | Done: governed pipeline, memory + SQL repos, providers (mock, OpenAI-compatible, Tencent ADP app), connectors, seed loader, 68 app tests |
-| Celery, MCP server, webhooks, Dockerfile                               | Raphael (foundation), Pavan (connectors) | Done: six tasks + beat, 18 MCP tools over streamable HTTP, webhook acceptance route, one image with `ROLE` dispatch                      |
-| Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                  |
-| Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                       |
+| Workstream                                                             | Owner                                    | State                                                                                                                                                                                               |
+| ---------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groundedness` library                                                 | Raphael                                  | Done: interfaces, regex sanitizer, extractive composer, deterministic `ground`, lexical verifier v2 (numeric/date gate, negation cues), abstention policy; the lib is model-free (D-013), 274 tests |
+| `freshness` library                                                    | Pavan                                    | Done: faithful port of the approved spec (enums, models, service, policy, versioning, receipts, in-memory stores), 121 tests                                                                        |
+| `access_control` library                                               | Chai                                     | Done: principals, raw per-platform permissions, ordered policy R1–R10, stores, 100 tests                                                                                                            |
+| App core (config, core, db, services, routers, providers, seed loader) | Raphael                                  | Done: governed pipeline, memory + SQL repos, providers (mock, OpenAI-compatible, Tencent ADP app), connectors, seed loader, 68 app tests                                                            |
+| Celery, MCP server, webhooks, Dockerfile                               | Raphael (foundation), Pavan (connectors) | Done: six tasks + beat, 18 MCP tools over streamable HTTP, webhook acceptance route, one image with `ROLE` dispatch                                                                                 |
+| Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                                                                             |
+| Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                                                                                  |
 
 ## Next
 
 - **Raphael (groundedness + foundation):** integrate waves 1–2; make `make test`, `make up`,
-  `make seed`, `make smoke` and CI green; then the LLM composer prompt with `[E#]` markers, the
-  entailment verifier, the injection-pattern corpus and groundedness evals; decide the upload cap
-  numbers.
+  `make seed`, `make smoke` and CI green. Done on `feat/groundedness-deterministic`: verifier
+  hardening (`lexical-v2`) and the model-free lib, with generation moved to the app's
+  `ModelComposer` (D-013). Next: tune the app's generation prompt against the demo questions; the
+  injection-pattern corpus; groundedness evals; decide the upload cap numbers.
 - **Pavan (freshness + ingestion + deploy):** delta and reconcile algorithms, backoff and parking,
   Confluence and Slack probes or simulations, port the TS eval fixtures to Python tests; own the
   Celery/connector pipeline; deploy the single box on Tencent Cloud; confirm the ADP embedding
@@ -77,6 +79,9 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 - The persona header is spoofable; never load real data.
 - Frontend `/queries` panel shows only the current actor's questions; the API enforces it.
 - Upload cap numbers are placeholders (TBD).
+- Lexical verification bounds paraphrase recall (D-013): with `PROVIDER_MODE=real`, a faithful but
+  reworded model answer can fall below `GROUNDING_MIN_COVERAGE` and abstain, so the generation
+  prompt must keep wording close to the evidence. Not yet measured on the demo questions.
 - Missing CodeBuddy/WorkBuddy usage evidence makes the project ineligible for scoring.
 
 ## Verification
@@ -86,8 +91,9 @@ Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; im
 | Check                              | Command                                                     | Result                                                                                                                                                                        |
 | ---------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Compose file valid                 | `docker compose --env-file .env.example config -q`          | pass                                                                                                                                                                          |
-| Backend + library tests (offline)  | `make test`                                                 | 474 passed, 11 skipped (integration tests need `DATABASE_URL`)                                                                                                                |
-| Lint                               | `make lint`                                                 | ruff clean (128 files), eslint clean                                                                                                                                          |
+| Backend + library tests (offline)  | `make test`                                                 | 565 passed, 11 skipped (integration tests need `DATABASE_URL`)                                                                                                                |
+| Deterministic groundedness (D-013) | `make test-lib LIB=groundedness` and `make test`            | lib 274 passed (58 in `test_numeric`, 30 in `test_ground`); app 70 passed, 11 skipped (timeout-fallback and unmarked-reply tests in `test_pipeline_invariants.py`)            |
+| Lint                               | `make lint`                                                 | ruff clean (131 files), eslint clean                                                                                                                                          |
 | Frontend typecheck and build       | `make typecheck` and `cd frontend && npm run build`         | pass                                                                                                                                                                          |
 | Stack up, migrations applied       | `make up`                                                   | postgres, redis healthy; migrate applied 5 files; api `/healthz` `{db: ok, redis: ok, provider_mode: mock}`; worker registered 6 tasks; beat running                          |
 | Seed loaded                        | `make seed`                                                 | 6 principals, 6 sources, 11 pages; verified 10 fresh, 1 stale (failover runbook)                                                                                              |

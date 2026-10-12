@@ -1,16 +1,42 @@
-"""Pipeline invariants named in docs/TESTING.md: access before any LLM; injection quarantine."""
+"""Pipeline invariants named in docs/TESTING.md: access before any LLM; injection quarantine;
+the model composer's deadline fallback and deterministic grounding of unmarked replies."""
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
-from groundedness import FakeLLM, LLMComposer
-
+from app.providers.base import ChatProvider, ChatResult
 from app.services import retrieval
+from app.services.compose import ModelComposer
 from app.tests.conftest import run
 
 DECK = ("gdrive-finance", "files/board-deck-q3")
 INJECTION = ("slack-ops", "channels/general/2026-10-11")
+
+
+class RecordingChat(ChatProvider):
+    """A `ChatProvider` fake: records every `messages` list and returns a canned reply."""
+
+    name = "fake-chat"
+
+    def __init__(self, reply: str = "ABSTAIN", *, delay_s: float = 0.0) -> None:
+        self.reply = reply
+        self.delay_s = delay_s
+        self.calls: list[list[dict[str, Any]]] = []
+
+    async def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        json_mode: bool = False,
+        temperature: float = 0.0,
+        max_tokens: int = 1024,
+    ) -> ChatResult:
+        self.calls.append(messages)
+        if self.delay_s:
+            await asyncio.sleep(self.delay_s)
+        return ChatResult(text=self.reply, usage={})
 
 
 class RecordingSanitizer:
@@ -25,9 +51,8 @@ class RecordingSanitizer:
 
 def test_pipeline_order_access_before_llm(seeded: Any) -> None:
     deck = run(seeded.repo.get_page_by_slug(*DECK))
-    fake = FakeLLM(default="ABSTAIN")
-    seeded.llm_port = fake
-    seeded.composer = LLMComposer(fake, fallback="extractive")
+    fake = RecordingChat("ABSTAIN")
+    seeded.composer = ModelComposer(fake, deadline_s=5)
     recorder = RecordingSanitizer(seeded.sanitizer)
     seeded.sanitizer = recorder
     alex = run(seeded.repo.get_principal("alex.tan"))
@@ -43,8 +68,9 @@ def test_pipeline_order_access_before_llm(seeded: Any) -> None:
     assert all(span.document_id != deck.id for span in recorder.seen)
     assert fake.calls, "the LLM composer was invoked"
     for call in fake.calls:
-        assert "48.6" not in call.user
-        assert deck.title not in call.user
+        for user in [m["content"] for m in call if m["role"] == "user"]:
+            assert "48.6" not in user
+            assert deck.title not in user
     assert deck.id not in {item.page_id for item in env.freshness_receipt.evidence_items}
 
 
@@ -69,3 +95,38 @@ def test_injection_fixture_quarantined(seeded: Any, client: Any) -> None:
     )
     flagged = [s for s in bundle.spans if s.document_id == page.id and s.quarantined]
     assert flagged and all(s.text == "" for s in flagged)
+
+
+def test_model_composer_timeout_falls_back(seeded: Any) -> None:
+    fake = RecordingChat("The Rail-B cutover is cancelled. [E1]", delay_s=0.5)
+    seeded.composer = ModelComposer(fake, deadline_s=0.05)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(retrieval.ask(seeded, priya, "What is the plan for the Rail-B cutover?"))
+
+    assert fake.calls, "the model was called before the deadline expired"
+    assert not env.answer.abstained
+    assert env.claims
+    assert "cancelled" not in env.answer.text
+    event = run(seeded.repo.get_audit_event(env.audit_id))
+    assert event.payload["composer"] == "model-v1->extractive-v1"
+
+
+def test_model_composer_unmarked_reply_is_grounded(seeded: Any) -> None:
+    sentence = "Rollback must complete within 10 minutes."
+    fake = RecordingChat(sentence)
+    seeded.composer = ModelComposer(fake, deadline_s=5)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(retrieval.ask(seeded, priya, "How quickly must the Rail-B rollback complete?"))
+
+    assert not env.answer.abstained
+    assert len(env.claims) == 1
+    assert env.claims[0].text == sentence
+    assert len(env.citations) == 1
+    citation = env.citations[0]
+    assert citation.claim_id == env.claims[0].id
+    assert citation.support == "supported"
+    assert citation.quote
+    event = run(seeded.repo.get_audit_event(env.audit_id))
+    assert event.payload["composer"] == "model-v1+ground-v1"
