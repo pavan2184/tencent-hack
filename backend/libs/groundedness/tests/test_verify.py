@@ -8,17 +8,14 @@ from groundedness import (
     Claim,
     DefaultAbstentionPolicy,
     ExtractiveComposer,
-    FakeLLM,
     GroundedAnswer,
     LexicalOverlapVerifier,
-    LLMComposer,
-    LLMEntailmentVerifier,
     SanitizedEvidence,
     SupportLabel,
     Verdict,
-    build_entailment_prompt,
     build_grounding_report,
     claim_label,
+    unsupported_numeric_facts,
 )
 
 S = SupportLabel
@@ -165,6 +162,31 @@ async def test_quote_match_ignores_case_and_whitespace(clean) -> None:
         ),
         ("The payment was not approved.", "The payment was not approved.", S.SUPPORTED),
         ("Never visit the golf club.", "alpha bravo charlie", S.UNSUPPORTED),
+        (
+            "None of the vendor payments were approved.",
+            "The vendor payments were approved.",
+            S.CONTRADICTED,
+        ),
+        (
+            "Neither finance nor treasury approved the vendor payment.",
+            "Finance and treasury approved the vendor payment.",
+            S.CONTRADICTED,
+        ),
+        (
+            "Refunds are issued without CFO approval.",
+            "Refunds are issued with CFO approval.",
+            S.CONTRADICTED,
+        ),
+        (
+            "The vendor payment workflow no longer routes approvals through finance-ops.",
+            "The vendor payment workflow routes approvals through finance-ops.",
+            S.CONTRADICTED,
+        ),
+        (
+            "Refunds are issued without CFO approval.",
+            "Refunds are issued without CFO approval.",
+            S.SUPPORTED,
+        ),
     ],
 )
 async def test_negation_contradiction_heuristic(
@@ -172,6 +194,123 @@ async def test_negation_contradiction_heuristic(
 ) -> None:
     citation, _ = await verify_one(claim, [clean(evidence_text, id="E1")], quote=evidence_text)
     assert citation.support is label
+
+
+# ---------------------------------------------------------------------------- numeric gate
+
+POLICY_TEXT = "Payments above SGD 10,000 require CFO approval."
+
+
+async def test_wrong_number_is_unsupported_despite_overlap(clean) -> None:
+    claim = "Payments above SGD 20,000 require CFO approval."
+    citation, report = await verify_one(claim, [clean(POLICY_TEXT, id="E1")], quote=POLICY_TEXT)
+    assert citation.support is S.UNSUPPORTED
+    assert citation.score == 0.75, "the overlap is kept for the audit"
+    assert citation.quote == POLICY_TEXT, "the quote shows the evidence's real value"
+    assert report.unsupported == 1
+    assert report.verdict is Verdict.UNGROUNDED
+
+
+async def test_right_number_in_another_format_keeps_its_label(clean) -> None:
+    claim = "Payments above SGD 10k require CFO approval."
+    citation, _ = await verify_one(claim, [clean(POLICY_TEXT, id="E1")])
+    assert citation.support is S.SUPPORTED
+    assert citation.score == 0.625
+
+
+async def test_gate_checks_the_whole_evidence_text(clean) -> None:
+    claim = "The CFO signs payment requests above 10,000."
+    best = "The CFO signs every payment request."
+    citation, _ = await verify_one(claim, [clean(f"{POLICY_TEXT} {best}", id="E1")])
+    assert citation.support is S.PARTIALLY_SUPPORTED, "10,000 is elsewhere in the evidence"
+    assert citation.score == 0.5714
+    assert citation.quote == best
+
+    other = "Payments above SGD 5,000 require CFO approval."
+    citation, _ = await verify_one(claim, [clean(f"{other} {best}", id="E1")])
+    assert citation.support is S.UNSUPPORTED, "10,000 is nowhere in the evidence"
+    assert citation.score == 0.5714
+    assert citation.quote == best
+
+
+async def test_word_number_evidence_demotes_a_digit_claim(clean) -> None:
+    evidence = [clean("The CFO limit is SGD one million.", id="E1")]
+    citation, _ = await verify_one("The CFO limit is SGD 1 million.", evidence)
+    assert citation.support is S.UNSUPPORTED
+    assert citation.score == 0.6667
+
+
+@pytest.mark.parametrize(
+    ("claim", "label", "score"),
+    [
+        ("Revenue grew 21% year on year.", S.UNSUPPORTED, 0.6),
+        ("Revenue grew 18% year on year.", S.SUPPORTED, 1.0),
+    ],
+)
+async def test_percentage_gate(clean, claim: str, label: SupportLabel, score: float) -> None:
+    citation, _ = await verify_one(claim, [clean("Revenue grew 18% year on year.", id="E1")])
+    assert citation.support is label
+    assert citation.score == score
+
+
+@pytest.mark.parametrize(
+    ("claim", "label", "score"),
+    [
+        ("The cutover is on 18 October at 02:00.", S.UNSUPPORTED, 0.4),
+        ("The cutover is on 17 October at 03:00.", S.UNSUPPORTED, 0.4),
+        ("The cutover is on 17 October at 02:00.", S.PARTIALLY_SUPPORTED, 0.5556),
+    ],
+)
+async def test_date_and_time_gate(clean, claim: str, label: SupportLabel, score: float) -> None:
+    evidence = [clean("The cutover runs on Saturday 17 October, 02:00 to 04:00 SGT.", id="E1")]
+    citation, _ = await verify_one(claim, evidence)
+    assert citation.support is label
+    assert citation.score == score
+
+
+async def test_negation_takes_precedence_over_the_gate(clean) -> None:
+    claim = "Payments above SGD 10.000 do not require CFO approval."
+    assert unsupported_numeric_facts(claim, POLICY_TEXT) == {"10"}, "the gate would fire"
+    citation, _ = await verify_one(claim, [clean(POLICY_TEXT, id="E1")], quote=POLICY_TEXT)
+    assert citation.support is S.CONTRADICTED
+    assert citation.score == 1.0
+
+
+BOARD_DECK = (
+    "## Headline results\n\n"
+    "- **Q3 2026 revenue: SGD 48.6 million**, up **18% year on year** "
+    "(Q3 2025: SGD 41.2 million).\n"
+    "- Operating expenses: SGD 38.8 million. **EBITDA: SGD 9.8 million**, a 20.2% margin.\n"
+    "- Total payment volume: **SGD 12.4 billion** across 3.1 million transactions.\n"
+    "- Active business accounts: 41,300, up 9% on the previous quarter."
+)
+
+
+async def test_extractive_claims_over_numeric_evidence_stay_grounded(clean, fixed_clock) -> None:
+    evidence = [clean(BOARD_DECK, id="E1", document_id="doc-board-deck")]
+    answer = await ExtractiveComposer().compose(
+        "What were Q3 revenue, EBITDA, payment volume and active accounts?", evidence
+    )
+    assert len(answer.claims) >= 3
+    report = await LexicalOverlapVerifier(clock=fixed_clock).verify(answer, evidence)
+    assert [c.score for c in report.per_claim] == [1.0] * len(answer.claims)
+    assert {c.support for c in report.per_claim} == {S.SUPPORTED}
+    assert report.verdict is Verdict.GROUNDED
+
+
+async def test_wrong_number_answer_is_withheld_deterministically(clean, fixed_clock) -> None:
+    evidence = [clean(POLICY_TEXT, id="E1")]
+    answer = answer_for(("Payments above SGD 20,000 require CFO approval.", [("E1", None)]))
+    first = await LexicalOverlapVerifier(clock=fixed_clock).verify(answer, evidence)
+    second = await LexicalOverlapVerifier(clock=fixed_clock).verify(answer, evidence)
+    assert first.model_dump() == second.model_dump()
+    assert first.hash_is_valid()
+    assert first.verifier == "lexical-v2"
+    assert first.unsupported == 1
+    assert first.verdict is Verdict.UNGROUNDED
+    abstain, reason = DefaultAbstentionPolicy().should_abstain(first, min_coverage=0.6)
+    assert abstain
+    assert reason is not None and "20,000" not in reason and "10,000" not in reason
 
 
 # ---------------------------------------------------------------------------- coverage & verdict
@@ -270,7 +409,7 @@ async def test_report_metadata_and_determinism(treasury_evidence, fixed_clock) -
     first = await verifier.verify(answer, treasury_evidence)
     second = await LexicalOverlapVerifier(clock=fixed_clock).verify(answer, treasury_evidence)
     assert first.model_dump() == second.model_dump()
-    assert first.verifier == "lexical-v1"
+    assert first.verifier == "lexical-v2"
     assert first.created_at == fixed_clock()
     assert first.hash_is_valid()
     assert first.quarantined_evidence_ids == ["E2"]
@@ -293,26 +432,6 @@ async def test_verify_does_not_mutate_answer(treasury_evidence) -> None:
     assert answer.model_dump() == before
 
 
-# ---------------------------------------------------------------------------- LLM entailment
-
-
-async def test_llm_entailment_verifier_is_a_skeleton(treasury_evidence) -> None:
-    answer = GroundedAnswer.abstention("x", composer="test")
-    with pytest.raises(NotImplementedError, match="Raphael: implement the entailment judge"):
-        await LLMEntailmentVerifier(FakeLLM()).verify(answer, treasury_evidence)
-
-
-def test_entailment_prompt() -> None:
-    system, user = build_entailment_prompt(
-        "CFO approves  payments.", "Payments need CFO approval.", title="Treasury"
-    )
-    for label in ("SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED", "UNSUPPORTED"):
-        assert label in system
-    assert "untrusted" in system
-    assert "CLAIM: CFO approves payments." in user
-    assert "EVIDENCE (Treasury):\nPayments need CFO approval." in user
-
-
 # ---------------------------------------------------------------------------- end to end
 
 
@@ -327,16 +446,3 @@ async def test_pipeline_extractive_end_to_end(sanitizer, treasury_spans, fixed_c
     assert (abstain, reason) == (False, None)
     assert "E2" not in {c.evidence_id for c in answer.citations}
     assert "E2" in report.quarantined_evidence_ids
-
-
-async def test_pipeline_hallucinated_llm_claim_is_withheld(
-    sanitizer, treasury_spans, fixed_clock
-) -> None:
-    sanitized = sanitizer.sanitize(treasury_spans)
-    llm = FakeLLM(default="The CFO limit is SGD 1 million [E1].")
-    answer = await LLMComposer(llm).compose("What is the CFO limit?", sanitized)
-    report = await LexicalOverlapVerifier(clock=fixed_clock).verify(answer, sanitized)
-    abstain, reason = DefaultAbstentionPolicy().should_abstain(report, min_coverage=0.6)
-    assert report.verdict is Verdict.UNGROUNDED
-    assert abstain
-    assert reason is not None and "1 million" not in reason

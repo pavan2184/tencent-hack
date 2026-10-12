@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     ASK_TOP_K: int = 8
     ASK_OVERFETCH_FACTOR: int = 4
     ASK_MAX_CONTEXT_CHARS: int = 12000
+    # Total wall-clock for the one model call per ask; LLM_TIMEOUT_S stays the per-phase httpx
+    # timeout. On expiry the extractive composer answers instead.
+    ASK_GENERATION_DEADLINE_S: float = 20.0
     GROUNDING_MIN_COVERAGE: float = 0.6
     FRESHNESS_LIVE_VERIFY_CRITICAL: bool = True
     DEFAULT_POLICY_ID: str = "default"
@@ -103,6 +106,7 @@ class Settings(BaseSettings):
             "UPLOAD_MAX_FILES_PER_ACTOR_PER_DAY",
             "EMBEDDING_DAILY_CALL_BUDGET",
             "EMBEDDING_DIM",
+            "ASK_GENERATION_DEADLINE_S",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be > 0")
