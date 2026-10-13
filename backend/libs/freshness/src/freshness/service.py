@@ -29,6 +29,7 @@ from freshness.enums import (
     VerificationResult,
 )
 from freshness.models import (
+    DEFAULT_SCOPE,
     AcceptResult,
     ConnectorCheckpoint,
     ConnectorSyncRequest,
@@ -70,6 +71,7 @@ ProbeFor = Callable[[EvidenceRef], ProviderProbe | None]
 MAX_ATTEMPTS: Final = 3
 RETRY_BASE_SECONDS: Final = 60
 LEDGER_BATCH_LIMIT: Final = 500
+RECONCILE_OBJECT_LIMIT: Final = 10_000
 _NON_CURRENT: Final = (
     FreshnessStatus.stale,
     FreshnessStatus.unknown,
@@ -344,9 +346,7 @@ class FreshnessService:
         tally: _Tally,
     ) -> _Drain:
         reconcile = req.trigger_kind is SyncPath.reconcile
-        # TODO(Pavan): slim reconciliation — diff the full listing against ``list_objects`` to
-        # synthesise deletes/tombstones for vanished objects and flag permission-version drift.
-        # Today a reconcile run trusts the listing (explicit delete changes only).
+        seen_objects: set[str] = set()
         cursor = None if reconcile else checkpoint.cursor_value
         for _ in range(req.max_pages):
             if req.deadline_at is not None and self._now() >= req.deadline_at:
@@ -367,6 +367,8 @@ class FreshnessService:
                         f"{req.source_id}/{req.connector_kind} sync"
                     )
                 scoped = change.evolve(scope_key=req.scope_key)
+                if reconcile:
+                    seen_objects.add(scoped.external_object_id)
                 await self._process(scoped, run, apply, tally)
             # Every change on this page is now applied or durably parked: the cursor may move.
             next_cursor = page.next_cursor
@@ -376,6 +378,44 @@ class FreshnessService:
                     expected_version=checkpoint.cursor_version,
                 )
             if not page.has_more:
+                if reconcile:
+                    # Objects are keyed by source, not scope. A scoped listing cannot prove
+                    # that objects in other scopes vanished from the provider.
+                    if req.scope_key != DEFAULT_SCOPE:
+                        return _Drain(
+                            checkpoint, complete=False, error="scoped_reconciliation_unsupported"
+                        )
+                    # The store has no object pagination. A full result at the cap could be
+                    # truncated, so a missing id cannot safely mean a provider deletion.
+                    stored_objects = await self._store.list_objects(
+                        req.source_id, limit=RECONCILE_OBJECT_LIMIT
+                    )
+                    if len(stored_objects) >= RECONCILE_OBJECT_LIMIT:
+                        return _Drain(
+                            checkpoint, complete=False, error="object_listing_limit_exceeded"
+                        )
+                    for stored in stored_objects:
+                        if (
+                            stored.external_object_id in seen_objects
+                            or stored.freshness_status is FreshnessStatus.deleted
+                        ):
+                            continue
+                        await self._process(
+                            NormalizedChange(
+                                source_id=req.source_id,
+                                scope_key=req.scope_key,
+                                connector_kind=req.connector_kind,
+                                provider_event_id="",
+                                external_object_id=stored.external_object_id,
+                                change_kind=ChangeKind.delete,
+                                provider_version=stored.provider_version,
+                                version_order=stored.version_order,
+                                observed_at=self._now(),
+                            ),
+                            run,
+                            apply,
+                            tally,
+                        )
                 return _Drain(checkpoint, complete=True)
             if next_cursor is None or next_cursor == cursor:
                 return _Drain(checkpoint, complete=False, error="cursor_not_advancing")
