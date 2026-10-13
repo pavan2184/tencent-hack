@@ -1438,8 +1438,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "5",
           "Audit inquiry",
-          "Sam, an auditor, reconstructs the question, retrieved IDs, each allow/deny and the answer, and verifies the hash chain",
-          "test_audit_reconstruction",
+          "Sam, an auditor, reconstructs the question, retrieved IDs and each allow/deny; the answer needs a recorded reveal with a reason. The hash chain verifies",
+          "test_audit_reconstruction, test_audit_need_to_know",
         ),
       ],
       {
@@ -1520,7 +1520,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [3.85, 3.8, S.amber, "Freshness: fresh · verified at source"],
       [3.85, 4.3, S.teal, "Grounded: 2/2 claims supported"],
       [3.85, 4.8, S.teal, "Access: allowed count only, no denials shown"],
-      [3.85, 5.3, S.violet, "Audit event a3f9…  ·  chain verified"],
+      [3.85, 5.3, S.violet, "Audit event a3f9…  ·  chain verified  ·  answer by reveal only"],
     ];
     parts.forEach(([, y, col, label]) => {
       card(s, {
@@ -1578,7 +1578,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         S.violet,
         "Audit ID",
-        "Opens the hash-chained record a compliance officer can replay.",
+        "Opens the hash-chained record. Auditors see every decision; answer text they can't open needs a recorded reveal.",
       ],
     ];
     notes.forEach(([col, h, b], i) => {
@@ -1998,7 +1998,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         [
           "Adopt v2 rules and permission expiry, PR #9: admins no longer see everything (Raphael, Pavan)",
           "Demo stack must run Celery worker and beat, or confidential docs go dark after 5 min (Pavan)",
-          "Access-request approval when the source still blocks the requester (Raphael)",
+          "Audit need-to-know with recorded reveal, and approval feedback, PR #10 (Raphael)",
           "Wire the query-time access service into the app (Pavan)",
         ],
       ],
