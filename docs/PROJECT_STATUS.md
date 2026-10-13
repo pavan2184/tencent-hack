@@ -42,6 +42,13 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 | Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                  |
 | Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                       |
 
+## Fixed 2026-10-13: query history bypassed revocation (Chai)
+
+`GET /api/queries` and `GET /api/queries/{id}` returned stored answers without an access check,
+so a revoked user could still read the board deck figures from history and the Ask page. Stored
+answers are now re-authorised for the viewer on every read and withheld when any evidence
+document is no longer readable (D-014). Regression tests: `app/tests/test_query_history_access.py`.
+
 ## Permission snapshot expiry (Chai, 2026-10-13, branch `feat/permission-max-age`)
 
 Built on the access-control v2 work. Snapshots of source permissions now expire by

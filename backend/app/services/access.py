@@ -3,7 +3,8 @@
 Every document read goes through `visible_page` / `filter_pages`, which evaluate the
 `access_control` policy fresh on every call (never cached), so a revocation applies to the very
 next request. A denied document raises exactly the same `NotFound("Document not found.")` as a
-missing one.
+missing one. Stored answers are re-authorised the same way each time they are served
+(`readable_query_records`), so query history cannot replay evidence after a revocation.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ from access_control import (
 
 from app.core.auth import has_role
 from app.core.errors import Conflict, Forbidden, NotFound
-from app.schemas.domain import Page
+from app.schemas.domain import Page, QueryRecord
 from app.services import audit
 
 if TYPE_CHECKING:
@@ -109,6 +110,93 @@ async def visible_page(
 
 def can_manage(principal: Principal, page: Page) -> bool:
     return page.owner_principal_id == principal.id or has_role(principal, *MANAGE_ROLES)
+
+
+# ---------------------------------------------------------------------------- stored answers
+QUERY_WITHHELD_STATUS = "withheld"
+QUERY_WITHHELD_TEXT = (
+    "This answer used sources you can no longer access. Ask again to get an answer from the "
+    "sources you can read now."
+)
+
+
+def _evidence_document_ids(record: QueryRecord, payload: dict[str, Any]) -> set[str] | None:
+    """Documents whose content may appear in a stored answer, from its `ask` audit payload.
+
+    `evidence_document_ids` lists exactly the documents behind the spans the composer saw. Older
+    events lack it: spans are drawn only from receipt items marked `safe_to_use`, so those page
+    ids are a safe superset, and without a receipt every document allowed at ask time is. Cited
+    ids are always included. `None` means the evidence cannot be determined."""
+    receipt = payload.get("freshness_receipt")
+    if isinstance(payload.get("evidence_document_ids"), list):
+        ids = {i for i in payload["evidence_document_ids"] if isinstance(i, str) and i}
+    elif isinstance(receipt, dict) and isinstance(receipt.get("evidence_items"), list):
+        ids = {
+            item["page_id"]
+            for item in receipt["evidence_items"]
+            if isinstance(item, dict) and item.get("safe_to_use") and item.get("page_id")
+        }
+    elif isinstance(payload.get("access_decisions"), list):
+        ids = {
+            d["document_id"]
+            for d in payload["access_decisions"]
+            if isinstance(d, dict) and d.get("decision") == Effect.allow and d.get("document_id")
+        }
+    else:
+        return None
+    return ids | {c["document_id"] for c in record.citations if c.get("document_id")}
+
+
+def _withheld(record: QueryRecord) -> QueryRecord:
+    return record.model_copy(
+        update={
+            "status": QUERY_WITHHELD_STATUS,
+            "answer_text": QUERY_WITHHELD_TEXT,
+            "citations": [],
+            "grounding_report": None,
+            "freshness_receipt_id": None,
+        }
+    )
+
+
+async def readable_query_records(
+    services: Services, principal: Principal, records: Sequence[QueryRecord]
+) -> list[QueryRecord]:
+    """Re-authorise stored answers for the viewer, now.
+
+    A stored answer is only as visible as its least visible evidence document: if the viewer
+    cannot read every one of them at this moment (revoked, deleted, or undeterminable), the
+    answer text, citations, grounding report and receipt id are withheld. Only the viewer's own
+    question and the fact of withholding remain; which document changed is never disclosed.
+    Auditors still reach the original through the audit trail."""
+    evidence: dict[str, set[str] | None] = {}
+    for record in records:
+        if record.answer_text is None and not record.citations and not record.grounding_report:
+            evidence[record.id] = set()  # failed ask: nothing derived from any document
+            continue
+        event = (
+            await services.repo.get_audit_event(record.audit_event_id)
+            if record.audit_event_id
+            else None
+        )
+        evidence[record.id] = (
+            _evidence_document_ids(record, event.payload)
+            if event is not None and event.subject_id == record.id
+            else None
+        )
+    wanted = set().union(*(ids for ids in evidence.values() if ids))
+    readable: set[str] = set()
+    if wanted:
+        pages = await services.repo.get_pages(sorted(wanted))
+        live = [p for p in pages.values() if p.deleted_at is None]
+        _, allowed = await filter_pages(services, principal, live)
+        readable = {p.id for p in allowed}
+    return [
+        record
+        if (ids := evidence[record.id]) is not None and ids <= readable
+        else _withheld(record)
+        for record in records
+    ]
 
 
 # ---------------------------------------------------------------------------- grants

@@ -371,6 +371,7 @@ async def ask(
             "access_decisions": decisions,
             "freshness_receipt": _receipt_summary(ev.receipt),
             "evidence_ids": [span.id for span in ev.spans],
+            "evidence_document_ids": list(dict.fromkeys(span.document_id for span in ev.spans)),
             "answer_text": answer_text,
             "abstained": abstain,
             "abstain_reason": abstain_reason,
