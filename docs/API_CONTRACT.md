@@ -405,7 +405,11 @@ documents. Items: `{"id", "document_id", "document_title", "principal_id", "reas
 "created_at", "decided_at", "decided_by"}`.
 
 `approve` creates an `allow` grant for the requester (`subject_type: principal`) and returns
-`200 {"request": {…}, "grant": {…}}`; `deny` returns `200 {"request": {…}}`. Both audited.
+`200 {"request": {…}, "grant": {…}, "effective": bool, "note": str | null}`; `deny` returns
+`200 {"request": {…}}`. Both audited. A local grant cannot widen what the source platform allows,
+so `effective` is `false` when the requester still cannot read the document, and `note` tells
+the approver why (for example "Google Drive doesn't share it with them") so they can fix it at
+the source.
 Errors: `404`, `403`, `409` (already decided).
 
 ### POST /api/ask
@@ -751,6 +755,19 @@ events and nowhere else.
 
 `reconstruction` is present for `ask` and `mcp.query` events and `null` otherwise; it embeds the
 stored `queries` row and the full persisted receipt. Errors: `403`, `404`.
+
+**Need-to-know.** Every event in a list or detail response carries `content_withheld`. Auditors
+always see metadata (asker, question, retrieved and cited ids, every access decision, the receipt
+and the grounding verdict). Answer content (`payload.answer_text`, and in `reconstruction.query`
+the `answer_text`, `citations` and `grounding_report`) is `null`/empty with
+`content_withheld: true` unless the viewer can currently read every evidence document. The stored
+event and its hash are unchanged.
+
+`POST /api/audit/events/{id}/reveal` with `{"reason": "…"}` (10-500 characters) returns the full
+event and reconstruction. When content was withheld it first records an `audit.reveal` event
+(`subject_type: audit_event`, `subject_id`: the revealed event, `payload: {revealed_event_id,
+revealed_seq, reason}`), so every break-glass read is itself in the chain. Errors: `403`, `404`,
+`422`.
 
 `GET /api/audit/verify` →
 `{"ok": true, "length": 1204, "head_hash": "a9b8…1f2e", "first_broken_seq": null}`. A modified

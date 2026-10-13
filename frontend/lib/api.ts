@@ -1,6 +1,7 @@
 import { apiFetch, type ApiFetchInit } from "./apiClient";
 import type {
   AccessDecisionAction,
+  AccessDecisionResult,
   AccessRequest,
   AnswerEnvelope,
   AskRequest,
@@ -161,15 +162,20 @@ export function listAccessRequests(): Promise<AccessRequest[]> {
 export async function decideAccessRequest(
   requestId: string,
   decision: AccessDecisionAction,
-): Promise<AccessRequest> {
-  // The API returns {request, grant}; approve also creates a grant.
-  const res = await apiFetch<{ request: AccessRequest }>(
-    `/access/requests/${id(requestId)}/${decision}`,
-    {
-      method: "POST",
-    },
-  );
-  return res.request;
+): Promise<AccessDecisionResult> {
+  // Approve returns {request, grant, effective, note}; deny returns {request}.
+  const res = await apiFetch<{
+    request: AccessRequest;
+    effective?: boolean;
+    note?: string | null;
+  }>(`/access/requests/${id(requestId)}/${decision}`, {
+    method: "POST",
+  });
+  return {
+    request: res.request,
+    effective: res.effective ?? null,
+    note: res.note ?? null,
+  };
 }
 
 // --- Audit ---------------------------------------------------------------
@@ -182,6 +188,17 @@ export function listAuditEvents(
 
 export function getAuditEvent(eventId: string): Promise<AuditEvent> {
   return apiFetch<AuditEvent>(`/audit/events/${id(eventId)}`);
+}
+
+/** Break-glass: show withheld answer content. The server records who, what and why. */
+export function revealAuditEvent(
+  eventId: string,
+  reason: string,
+): Promise<AuditEvent> {
+  return apiFetch<AuditEvent>(`/audit/events/${id(eventId)}/reveal`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
 }
 
 export function verifyAuditChain(): Promise<AuditVerify> {

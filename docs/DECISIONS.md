@@ -298,3 +298,23 @@ not by best effort. If the sync stops (worker or beat down), confidential docume
 unavailable after 5 minutes: availability is traded for safety. Each sync makes one permission
 read per page; real connectors will need batching or change feeds at scale.
 
+### D-016 — Auditors get need-to-know answer content; approvals report source blocks
+
+Status: Proposed (Raphael: audit router, Access and Audit pages)
+Date: 2026-10-13
+
+**Context.** Under `ac-v2` (D-013) admins no longer read everything, but auditors still saw full
+answer text and quotes in the audit trail for documents they could not open, which undercuts
+least privilege (MAS TRM 9.1.1) and PDPC guidance to restrict prompt logs. Separately, approving
+an access request created a grant that could not take effect when the source withheld access,
+while the approver saw "approved".
+
+**Decision.** Audit responses always show metadata but withhold answer content unless the viewer
+can read every evidence document now (the same rule as saved answers, D-014). A break-glass
+`POST /api/audit/events/{id}/reveal` with a reason shows it and records `audit.reveal` in the
+chain. Approval responses add `effective` and an actionable `note` naming the source platform.
+
+**Consequences.** The audit inquiry demo needs one recorded reveal to show the answer, which is
+also evidence that access to the log is itself logged. The response copy differs from the stored
+payload, so clients cannot re-hash a withheld event themselves; `/api/audit/verify` still does.
+

@@ -78,9 +78,15 @@ def test_history_reauthorises_the_viewer_not_the_original_asker(seeded: Any, cli
     # An auditor without access to the deck cannot read its content through query history...
     viewed = client.get(f"/api/queries/{asked['query_id']}", headers=AUDITOR).json()
     _assert_withheld(viewed, deck_id)
-    # ...the original stays in the protected audit trail.
+    # ...nor through the audit trail, except by a recorded break-glass reveal.
     event = client.get(f"/api/audit/events/{asked['audit_id']}", headers=AUDITOR).json()
-    assert DECK_FIGURE in event["payload"]["answer_text"]
+    assert event["content_withheld"] is True and DECK_FIGURE not in str(event)
+    revealed = client.post(
+        f"/api/audit/events/{asked['audit_id']}/reveal",
+        json={"reason": "Investigating board deck access"},
+        headers=AUDITOR,
+    ).json()
+    assert DECK_FIGURE in revealed["payload"]["answer_text"]
 
 
 def test_restored_access_restores_history(seeded: Any, client: Any) -> None:
