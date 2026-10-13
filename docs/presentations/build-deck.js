@@ -622,7 +622,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       sectionTitle: "Architecture",
     });
     s.addText(
-      "Restricted evidence is removed before the model sees anything",
+      "Restricted evidence never reaches the language model",
       { placeholder: "title" },
     );
 
@@ -1009,7 +1009,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       },
     );
     s.addNotes(
-      "Walk left to right. Identity is resolved by the server, never trusted from the client. Search over-fetches candidates. The access gate evaluates each document against native permissions reloaded on every query. Only then does anything reach freshness checks, prompt-injection screening and the Tencent ADP model. The red line is the key trust boundary: denied text never crosses it. Verification drops unsupported claims; one hash-chained audit event records the whole decision trail.",
+      "Walk left to right. Identity is resolved by the server, never trusted from the client. Search over-fetches candidates. The access gate evaluates each document against native permissions reloaded on every query. Only then does anything reach freshness checks, prompt-injection screening and the Tencent ADP model. The red line is the key trust boundary: denied text never crosses it. Verification drops unsupported claims; one hash-chained audit event records the whole decision trail. Precision for questions: ingestion does embed every document so search works, so the embedding provider processes all content and the vector store is protected like the source data. The gate protects the language model that writes the answer.",
     );
   }
 
