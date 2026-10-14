@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Current phase
 
@@ -20,9 +20,44 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   generation with local deterministic retrieval vectors. The synthetic full stack runs on Pavan's
   Mac from an allowlisted staging copy outside the repository; Caddy, API, frontend, Postgres and
   Redis stay bound to loopback. The ADP agent is published on the $0 free plan, and a free
-  Cloudflare Quick Tunnel exposes the demo at
-  `https://grammar-adds-eau-classics.trycloudflare.com/ask` while this computer and tunnel remain
-  running. No paid service was activated.
+  Cloudflare Quick Tunnel exposes the demo while this computer and tunnel remain running. The
+  temporary hostname changes on restart; the current verified link is maintained in PR #11's
+  handoff. No paid service was activated.
+- **Partial answer fix (draft, 2026-10-14):** A real-model candidate with unsupported or off-topic
+  claims, or weak procedural claims or citations, can retain only directly relevant, fully
+  supported claims and citations after a second deterministic verification. The 60% threshold is
+  unchanged; no second model call is made. One public Jordan replay began at 33.33% coverage,
+  dropped two claims, and returned only a cited 17-minute hold fact from source version 2 with a
+  partial notice. After the final rebuild, another public replay returned only fully supported
+  version-2 hold citations and the notice. Its audit confirmed real ADP composition and status
+  `partial`. The five public REST scenarios passed, and the synthetic leadership grant was restored.
+  The backend suite (587 passed, 11 skipped), frontend typecheck, lint, build, and Compose config
+  check passed in the draft branch. Browser replay showed the notice with no console errors. ADP
+  output and the free tunnel can vary between runs; a provider timeout still uses the existing
+  extractive fallback.
+
+## Temporary demo recovery
+
+On Pavan's Mac, start Docker Desktop and run the existing `proof_demo` Compose project from
+`/private/tmp/proof-knowledge-demo/docker-compose.yml`, preserving its named volumes and private
+`.env`. Check `http://127.0.0.1:8080/api/healthz` for healthy database, Redis, and
+`provider_mode=real`. Start a free `cloudflared` Quick Tunnel to `http://127.0.0.1:8080`,
+keep the Mac awake while its process runs, and verify the new public `/ask` and `/api/healthz`
+before sharing the new URL. Recheck it before the rehearsal and final submission. Never activate
+a paid service or add a payment method.
+
+```sh
+docker compose -p proof_demo -f /private/tmp/proof-knowledge-demo/docker-compose.yml --profile edge up -d
+curl -fsS http://127.0.0.1:8080/api/healthz
+caffeinate -di &
+cloudflared tunnel --url http://127.0.0.1:8080
+# Use the new hostname printed by cloudflared:
+curl -I https://NEW-HOST.trycloudflare.com/ask
+curl -fsS https://NEW-HOST.trycloudflare.com/api/healthz
+```
+
+Keep the tunnel terminal and Mac running; the hostname changes if the tunnel restarts. Verify
+`provider_mode=real` in the health response and record the new URL in the team handoff.
 - Research and setup (September): track selected, handbook requirements captured in
   `docs/HACKATHON_REQUIREMENTS.md`, freshness design approved (now the reference for the
   `freshness` library).
@@ -88,8 +123,9 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 - Frontend `/queries` panel shows only the current actor's questions; the API enforces it.
 - Upload cap numbers are placeholders (TBD).
 - Lexical verification bounds paraphrase recall (D-013): with `PROVIDER_MODE=real`, a faithful but
-  reworded model answer can fall below `GROUNDING_MIN_COVERAGE` and abstain, so the generation
-  prompt must keep wording close to the evidence. Not yet measured on the demo questions.
+  reworded model answer can fall below `GROUNDING_MIN_COVERAGE`. The broad settlement-drill question
+  produced 33% candidate coverage on 14 October; the partial-answer fix retains only fully
+  supported, question-relevant facts and still abstains when none can be verified.
 - Missing CodeBuddy/WorkBuddy usage evidence makes the project ineligible for scoring.
 
 ## Verification

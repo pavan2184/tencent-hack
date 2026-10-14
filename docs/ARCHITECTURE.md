@@ -177,7 +177,13 @@ tencent-hack/
    claim/citation attachment; auto-cites unmarked sentences; every claim cites non-quarantined
    evidence; no usable evidence → abstained) → `verify` (`lexical-v2`: token overlap, negation
    cues, numeric/date gate; per-claim support labels, coverage, verdict, report hash; no model
-   call, D-013) → `should_abstain` (`GROUNDING_MIN_COVERAGE`, contradictions). A model failure
+   call, D-013) → `should_abstain` (`GROUNDING_MIN_COVERAGE`, contradictions). A low-coverage,
+   non-contradicted model answer with unsupported or off-topic claims, or partially supported
+   procedural claims, may retain only directly relevant,
+   fully supported claims;
+   the subset is verified again and must pass the same gate before a partial answer is shown
+   (D-015). A drill or procedure answer with fully supported facts also receives a cautious
+   partial notice; the cited subset cannot establish that all steps were verified. A model failure
    never fails the ask.
 6. **Audit.** `audit.record("ask", …)` appends one hash-chained event with the question, every
    candidate's decision, the receipt id and hash, the cited evidence, the answer, the composer id

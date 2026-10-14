@@ -130,3 +130,93 @@ def test_model_composer_unmarked_reply_is_grounded(seeded: Any) -> None:
     assert citation.quote
     event = run(seeded.repo.get_audit_event(env.audit_id))
     assert event.payload["composer"] == "model-v1+ground-v1"
+    assert "candidate_grounding" not in event.payload
+
+
+def test_low_coverage_model_answer_keeps_only_verified_relevant_fact(seeded: Any) -> None:
+    fake = RecordingChat(
+        "Rollback must complete within 10 minutes. "
+        "The cafeteria serves pineapple tacos. "
+        "The maintenance robots wear purple hats."
+    )
+    seeded.composer = ModelComposer(fake, deadline_s=5)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(
+        retrieval.ask(seeded, priya, "How quickly must the Rail-B rollback procedure complete?")
+    )
+
+    assert not env.answer.abstained
+    assert env.answer.text == "Rollback must complete within 10 minutes. [E1]"
+    assert "procedure steps" in (env.answer.partial_notice or "")
+    assert len(fake.calls) == 1
+    assert [claim.text for claim in env.claims] == ["Rollback must complete within 10 minutes."]
+    assert all(citation.support == "supported" for citation in env.citations)
+    assert env.grounding.coverage_ratio == 1.0
+    record = run(seeded.repo.get_query(env.query_id))
+    assert record.status == "partial"
+    event = run(seeded.repo.get_audit_event(env.audit_id))
+    assert event.payload["composer"] == "model-v1+ground-v1"
+    assert event.payload["candidate_grounding"]["coverage_ratio"] == 0.3333
+    assert event.payload["dropped_claim_count"] == 2
+    assert "pineapple" not in str(event.payload)
+    assert "purple" not in str(event.payload)
+
+
+def test_above_threshold_mixed_answer_drops_unrelated_and_weak_claims(seeded: Any) -> None:
+    fake = RecordingChat(
+        "Rollback must complete within 10 minutes. "
+        "Merged and deployed to staging before the cutover rehearsal on Thursday 15 October 2026. "
+        "The maintenance robots wear purple hats."
+    )
+    seeded.composer = ModelComposer(fake, deadline_s=5)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(
+        retrieval.ask(seeded, priya, "How quickly must the Rail-B rollback procedure complete?")
+    )
+
+    event = run(seeded.repo.get_audit_event(env.audit_id))
+    assert event.payload["candidate_grounding"]["coverage_ratio"] >= 0.6
+    assert env.answer.text == "Rollback must complete within 10 minutes. [E1]"
+    assert env.answer.partial_notice is not None
+    assert env.grounding.coverage_ratio == 1.0
+    assert event.payload["dropped_claim_count"] == 2
+
+
+def test_no_supported_relevant_claim_still_abstains(seeded: Any) -> None:
+    fake = RecordingChat(
+        "The cafeteria serves pineapple tacos. The maintenance robots wear purple hats."
+    )
+    seeded.composer = ModelComposer(fake, deadline_s=5)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(retrieval.ask(seeded, priya, "How quickly must the Rail-B rollback complete?"))
+
+    assert env.answer.abstained
+    assert env.answer.partial_notice is None
+    assert not env.claims
+    assert not env.citations
+
+
+def test_single_supported_drill_fact_gets_procedure_notice(seeded: Any) -> None:
+    fake = RecordingChat("Rollback must complete within 10 minutes.")
+    seeded.composer = ModelComposer(fake, deadline_s=5)
+    priya = run(seeded.repo.get_principal("priya.nair"))
+
+    env = run(
+        retrieval.ask(
+            seeded,
+            priya,
+            "What's the Rail-B rollback drill, and how quickly must rollback complete?",
+        )
+    )
+
+    assert env.answer.text == "Rollback must complete within 10 minutes. [E1]"
+    assert "procedure steps" in (env.answer.partial_notice or "")
+    assert env.grounding.coverage_ratio == 1.0
+    record = run(seeded.repo.get_query(env.query_id))
+    assert record.status == "partial"
+    event = run(seeded.repo.get_audit_event(env.audit_id))
+    assert event.payload["candidate_grounding"]["coverage_ratio"] == 1.0
+    assert event.payload["dropped_claim_count"] == 0

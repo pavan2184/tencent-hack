@@ -433,7 +433,8 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   "answer": {
     "text": "The production cutover is on Saturday 17 October, 02:00 to 04:00 SGT [E1]. A rehearsal runs in staging on Thursday 15 October [E2], and the Rail-B settlement parser must be merged and on staging before that rehearsal [E3].",
     "abstained": false,
-    "abstain_reason": null
+    "abstain_reason": null,
+    "partial_notice": null
   },
   "claims": [
     {
@@ -625,10 +626,15 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
 ```
 
 Receipt items cover only evidence that passed the access filter, in evaluation order, including
-unsafe items (the failover runbook above is `stale` and was omitted from composition). Abstention
-looks like `"answer": {"text": "", "abstained": true, "abstain_reason": "no_usable_evidence"}`
-with empty `claims` and `citations`; abstain reasons include `no_usable_evidence`,
-`low_coverage` and `contradicted_claim`. Errors: `401`, `422`. A model timeout or provider error
+unsafe items (the failover runbook above is `stale` and was omitted from composition). A
+non-contradicted model answer with unsupported or off-topic claims, or partially supported procedural
+claims, may return only directly relevant, fully
+supported claims after the subset passes verification and the unchanged abstention gate. In that case
+`answer.partial_notice` explains that the remaining details could not be verified, the saved
+query status is `partial`, and the audit includes `candidate_grounding` and
+`dropped_claim_count` without dropped claim text. An otherwise fully supported drill or procedure
+answer also uses a cautious `partial_notice` and a zero dropped-claim count. Other abstentions have empty `claims` and
+`citations`. Errors: `401`, `422`. A model timeout or provider error
 does not fail the ask (D-013): with `PROVIDER_MODE=real` the app's `ModelComposer` gets one call
 within `ASK_GENERATION_DEADLINE_S` and otherwise falls back to the extractive answer, recorded as
 `composer: "model-v1->extractive-v1"` in the audit payload.

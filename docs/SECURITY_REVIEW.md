@@ -69,12 +69,16 @@ provider payloads are used anywhere in the repository.
   only with `PROVIDER_MODE=real`. With the Tencent ADP app API, the app's own knowledge base must
   stay empty, otherwise ADP could answer from content our access filter never saw
   (`reference.added` events are surfaced so this is detectable).
-- **Unsafe output reliance:** every claim must cite evidence; unsupported, contradicted or
-  low-coverage answers abstain (`GROUNDING_MIN_COVERAGE=0.6`); the grounding report travels with
-  the answer.
+- **Unsafe output reliance:** every delivered claim must cite evidence. Contradicted candidates
+  abstain. A real-model candidate with unsupported or off-topic claims may expose only directly
+  relevant, fully supported claims after the subset is reverified against the unchanged
+  `GROUNDING_MIN_COVERAGE=0.6` gate;
+  otherwise it abstains. The final grounding report travels with the answer. A separate partial
+  notice never cites or quotes discarded text.
 - **Logging exposure:** application logs record request ids, actor ids, action names and timings,
   not questions, evidence text or answers; those live only in `queries` and audit events. Provider
-  request and response bodies are never logged.
+  request and response bodies are never logged. Partial-answer audit metadata records the
+  candidate's aggregate score and dropped-claim count, never the dropped claim text.
 - **Restricted inference:** the model is never told that denied documents exist, so it cannot hint
   at them; abstention text is the same whether evidence was missing or denied.
 
