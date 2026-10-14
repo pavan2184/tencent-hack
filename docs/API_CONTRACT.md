@@ -53,19 +53,19 @@ Every non-2xx response uses one envelope (FastAPI's 422 is rewritten into it):
 }
 ```
 
-| Code                   | HTTP | When                                                                                                   |
-| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------ |
-| `unauthenticated`      | 401  | no actor supplied; webhook secret missing or wrong                                                     |
-| `unknown_actor`        | 401  | actor id not found or inactive                                                                         |
-| `forbidden`            | 403  | role check failed on a resource the actor can see, or a route-level role requirement                   |
-| `not_found`            | 404  | resource does not exist **or the actor may not see it** (identical bodies, see below)                  |
-| `validation_error`     | 422  | body/query validation failed, disallowed upload extension; `details.errors[]` lists fields             |
-| `payload_too_large`    | 413  | upload larger than `UPLOAD_MAX_FILE_BYTES`; `details {limit_bytes}`                                    |
-| `cap_exceeded`         | 429  | a usage cap is exhausted; `details {cap, limit, window}`                                               |
-| `conflict`             | 409  | duplicate source id/name, duplicate active grant, request already decided, receipt conflict            |
-| `provider_unavailable` | 503  | the real model provider failed after retries (never used for freshness probes, which return `unknown`) |
-| `not_implemented`      | 501  | stub connector (webhook or sync on a stub source)                                                      |
-| `internal_error`       | 500  | anything unexpected; details are never leaked                                                          |
+| Code                   | HTTP | When                                                                                                                                                                                 |
+| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `unauthenticated`      | 401  | no actor supplied; webhook secret missing or wrong                                                                                                                                   |
+| `unknown_actor`        | 401  | actor id not found or inactive                                                                                                                                                       |
+| `forbidden`            | 403  | role check failed on a resource the actor can see, or a route-level role requirement                                                                                                 |
+| `not_found`            | 404  | resource does not exist **or the actor may not see it** (identical bodies, see below)                                                                                                |
+| `validation_error`     | 422  | body/query validation failed, disallowed upload extension; `details.errors[]` lists fields                                                                                           |
+| `payload_too_large`    | 413  | upload larger than `UPLOAD_MAX_FILE_BYTES`; `details {limit_bytes}`                                                                                                                  |
+| `cap_exceeded`         | 429  | a usage cap is exhausted; `details {cap, limit, window}`                                                                                                                             |
+| `conflict`             | 409  | duplicate source id/name, duplicate active grant, request already decided, receipt conflict                                                                                          |
+| `provider_unavailable` | 503  | the real model provider failed after retries (never returned by `POST /api/ask`, which falls back to the extractive answer; never used for freshness probes, which return `unknown`) |
+| `not_implemented`      | 501  | stub connector (webhook or sync on a stub source)                                                                                                                                    |
+| `internal_error`       | 500  | anything unexpected; details are never leaked                                                                                                                                        |
 
 Cap names: `uploads_total` (window `total`), `uploads_per_actor_per_day` (window `day`),
 `embedding_daily_call_budget` (window `day`). `UPLOAD_MAX_FILE_BYTES` uses `413`, not `429`.
@@ -441,19 +441,19 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   },
   "claims": [
     {
-      "id": "c1",
+      "id": "C1",
       "text": "The production cutover is on Saturday 17 October, 02:00 to 04:00 SGT.",
       "position": 0,
       "kind": "fact"
     },
     {
-      "id": "c2",
+      "id": "C2",
       "text": "A rehearsal runs in staging on Thursday 15 October.",
       "position": 1,
       "kind": "fact"
     },
     {
-      "id": "c3",
+      "id": "C3",
       "text": "The Rail-B settlement parser must be merged and on staging before the rehearsal.",
       "position": 2,
       "kind": "fact"
@@ -461,7 +461,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   ],
   "citations": [
     {
-      "claim_id": "c1",
+      "claim_id": "C1",
       "evidence_id": "E1",
       "document_id": "1d2c3b4a-5968-4776-8a5b-4c3d2e1f0a9b",
       "slug": "messages/2026-10-10-vendor-cutover",
@@ -475,7 +475,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
       "url": null
     },
     {
-      "claim_id": "c2",
+      "claim_id": "C2",
       "evidence_id": "E2",
       "document_id": "2e3d4c5b-6a79-4887-9b6c-5d4e3f2a1b0c",
       "slug": "channels/general/2026-10-10",
@@ -489,7 +489,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
       "url": null
     },
     {
-      "claim_id": "c3",
+      "claim_id": "C3",
       "evidence_id": "E3",
       "document_id": "3f4e5d6c-7b8a-4998-8c7d-6e5f4a3b2c1d",
       "slug": "issues/pay-150",
@@ -575,27 +575,27 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   },
   "grounding": {
     "schema_version": 1,
-    "verifier": "lexical-overlap-v1",
+    "verifier": "lexical-v2",
     "created_at": "2026-10-12T09:15:02Z",
     "claims_total": 3,
     "supported": 2,
     "partially_supported": 1,
     "unsupported": 0,
     "contradicted": 0,
-    "coverage_ratio": 0.83,
+    "coverage_ratio": 1.0,
     "verdict": "grounded",
     "injection_flags": 2,
     "quarantined_evidence_ids": ["E5"],
     "per_claim": [
       {
-        "claim_id": "c1",
+        "claim_id": "C1",
         "evidence_id": "E1",
         "quote": "Production cutover: Saturday 17 October, 02:00 to 04:00 SGT.",
         "support": "supported",
         "score": 0.83
       },
       {
-        "claim_id": "c2",
+        "claim_id": "C2",
         "evidence_id": "E2",
         "quote": "Rehearsal is on Thursday 15 October in staging.",
         "support": "supported",
@@ -632,8 +632,10 @@ Receipt items cover only evidence that passed the access filter, in evaluation o
 unsafe items (the failover runbook above is `stale` and was omitted from composition). Abstention
 looks like `"answer": {"text": "", "abstained": true, "abstain_reason": "no_usable_evidence"}`
 with empty `claims` and `citations`; abstain reasons include `no_usable_evidence`,
-`low_coverage` and `contradicted_claim`. Errors: `401`, `422`, `503 provider_unavailable` (real
-provider only; the audit event is still written with `status: failed`).
+`low_coverage` and `contradicted_claim`. Errors: `401`, `422`. A model timeout or provider error
+does not fail the ask (D-013): with `PROVIDER_MODE=real` the app's `ModelComposer` gets one call
+within `ASK_GENERATION_DEADLINE_S` and otherwise falls back to the extractive answer, recorded as
+`composer: "model-v1->extractive-v1"` in the audit payload.
 
 ### GET /api/queries · GET /api/queries/{id}
 
@@ -720,7 +722,8 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
     "abstained": false,
     "abstain_reason": null,
     "cited_document_ids": ["1d2c…", "2e3d…", "3f4e…"],
-    "grounding": { "verdict": "grounded", "coverage_ratio": 0.83 },
+    "composer": "model-v1+ground-v1",
+    "grounding": { "verdict": "grounded", "coverage_ratio": 1.0 },
     "started_at": "2026-10-12T09:15:01.950Z",
     "completed_at": "2026-10-12T09:15:02.000Z"
   },
@@ -747,8 +750,10 @@ document including denied ones; `permission_captured_at` is when the permission 
 read from the source, or `null` without one), `freshness_receipt` (`{receipt_id, overall_status,
 receipt_hash, evidence_items[]}`), `evidence_document_ids[]` (the documents behind the evidence
 spans the composer saw; used to re-authorise stored answers), `answer_text`, `abstained`,
-`abstain_reason`, `cited_document_ids[]`,
-`grounding` (`{verdict, coverage_ratio}`), `started_at`, `completed_at`. The copies of the event
+`abstain_reason`, `cited_document_ids[]`, `composer`, `grounding` (`{verdict, coverage_ratio}`),
+`started_at`, `completed_at`. `composer` is `extractive-v1` in mock mode, `model-v1+ground-v1`
+when the model answered (the example above), and `model-v1->extractive-v1` after a timeout or
+provider error. The copies of the event
 columns (`schema_version`, `actor_id`, `action`, `occurred_at`, `request_id`, `subject_type`,
 `subject_id`) are recommended so the chain hash covers them. Denied decisions appear in audit
 events and nowhere else.

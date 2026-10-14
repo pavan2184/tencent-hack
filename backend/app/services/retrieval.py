@@ -28,16 +28,10 @@ from freshness import (
     ProviderProbe,
     ReceiptRequest,
 )
-from groundedness import (
-    ABSTAIN_ANSWER_TEXT,
-    EvidenceSpan,
-    GroundednessProviderError,
-    SanitizedEvidence,
-)
+from groundedness import ABSTAIN_ANSWER_TEXT, EvidenceSpan, SanitizedEvidence
 
 from app.connectors.registry import get_connector
 from app.core.context import get_request_id
-from app.core.errors import ProviderUnavailable
 from app.schemas.ask import (
     AnswerEnvelope,
     AnswerOut,
@@ -267,19 +261,12 @@ async def ask(
     )
 
     # 5b. compose -> verify -> abstain (only allowed, fresh-enough, sanitized evidence)
-    failure: str | None = None
-    try:
-        t = time.perf_counter()
-        answer = await services.composer.compose(
-            question, ev.sanitized, llm=services.llm_port, max_claims=top_k
-        )
-        ev.timing["compose_ms"] = _ms(t)
-        t = time.perf_counter()
-        report = await services.verifier.verify(answer, ev.sanitized, llm=services.llm_port)
-        ev.timing["verify_ms"] = _ms(t)
-    except GroundednessProviderError as exc:
-        failure = str(exc) or type(exc).__name__
-        answer = report = None  # type: ignore[assignment]
+    t = time.perf_counter()
+    answer = await services.composer.compose(question, ev.sanitized, max_claims=top_k)
+    ev.timing["compose_ms"] = _ms(t)
+    t = time.perf_counter()
+    report = await services.verifier.verify(answer, ev.sanitized)
+    ev.timing["verify_ms"] = _ms(t)
 
     access_summary = AccessSummary.from_filter_result(
         ev.filter_result,
@@ -300,12 +287,6 @@ async def ask(
         }
         for d in ev.filter_result.decisions
     ]
-
-    if failure is not None:
-        await _record_failed_ask(
-            services, principal, question, query_id, request_id, ev, decisions, failure, started_at
-        )
-        raise ProviderUnavailable()
 
     abstain, abstain_reason = services.abstention.should_abstain(
         report, min_coverage=s.GROUNDING_MIN_COVERAGE
@@ -376,7 +357,9 @@ async def ask(
             "abstained": abstain,
             "abstain_reason": abstain_reason,
             "cited_document_ids": cited_ids,
+            "composer": answer.composer,
             "grounding": {
+                "verifier": report.verifier,
                 "verdict": str(report.verdict),
                 "coverage_ratio": report.coverage_ratio,
                 "report_hash": report.report_hash,
@@ -400,55 +383,6 @@ async def ask(
         access_summary=access_summary,
         timing=timing,
     )
-
-
-async def _record_failed_ask(
-    services: Services,
-    principal: Principal,
-    question: str,
-    query_id: str,
-    request_id: str | None,
-    ev: GovernedEvidence,
-    decisions: list[dict[str, Any]],
-    failure: str,
-    started_at: Any,
-) -> None:
-    await services.repo.create_query(
-        QueryRecord(
-            id=query_id,
-            actor_id=principal.id,
-            request_id=request_id,
-            question=question,
-            status="failed",
-            freshness_receipt_id=ev.receipt.receipt_id,
-        )
-    )
-    event = await audit.record(
-        services,
-        actor_id=principal.id,
-        action="ask",
-        subject_type="query",
-        subject_id=query_id,
-        request_id=request_id,
-        payload={
-            "question": question,
-            "query_id": query_id,
-            "retrieved_document_ids": [p.id for p in ev.retrieved],
-            "access_decisions": decisions,
-            "freshness_receipt": _receipt_summary(ev.receipt),
-            "answer_text": None,
-            "abstained": False,
-            "abstain_reason": None,
-            "cited_document_ids": [],
-            "grounding": None,
-            "status": "failed",
-            "error": "provider_unavailable",
-            "started_at": started_at.isoformat(),
-            "completed_at": utcnow().isoformat(),
-        },
-    )
-    await services.repo.set_query_audit_event(query_id, event.id)
-    _ = failure  # provider error text is logged by the provider, never audited verbatim
 
 
 async def search(
