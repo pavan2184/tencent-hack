@@ -239,7 +239,7 @@ statement migration files run through psycopg's simple query protocol in one tra
 `uuid` and `vector`. Celery tasks bridge into async services only through
 `tasks/common.run_async`.
 
-### D-013 - Native source permissions cap local application grants
+### D-014 - Native source permissions cap local application grants
 
 Status: Accepted
 Date: 2026-10-12
@@ -255,7 +255,7 @@ verifier that can only tighten access. No cached allow exists. Native API transp
 and complete source-scoped group resolution belong in app adapters. The diagram
 marks live-provider/authentication boundaries separately from implemented code.
 
-### D-014 — Stored answers are re-authorised when served
+### D-015 — Stored answers are re-authorised when served
 
 Status: Accepted
 Date: 2026-10-13
@@ -276,7 +276,7 @@ Answers are never cached by question; any future cache must apply the same check
 request. Access restored means history restored. Auditors read originals only through the
 audit trail.
 
-### D-015 — Permission snapshots expire by classification
+### D-016 — Permission snapshots expire by classification
 
 Status: Proposed (needs Pavan for the sync change)
 Date: 2026-10-13
