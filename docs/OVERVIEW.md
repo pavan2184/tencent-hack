@@ -44,7 +44,7 @@ that the app implements in `backend/app/adapters/`.
 
 | Workstream | Owner | Package | Entry points the app calls | Migration range |
 | --- | --- | --- | --- | --- |
-| Groundedness | Raphael | `groundedness` | `sanitize → compose → verify → should_abstain` | 0300–0399 |
+| Groundedness | Raphael | `groundedness` | `sanitize → ground → verify → should_abstain` | 0300–0399 |
 | Data freshness + ingestion pipeline + Tencent Cloud deploy | Pavan | `freshness` | `FreshnessService.connector_sync / evaluate / verify_freshness / freshness_receipt`; connectors + Celery tasks in `backend/app/connectors`, `backend/app/tasks` | 0100–0199 |
 | Access control | Chai | `access_control` | `AccessPolicy.filter` (pre-LLM), `GrantStore`, `PermissionSnapshotStore`, `PrincipalDirectory` | 0200–0299 |
 
@@ -56,7 +56,7 @@ are shared; coordinate changes there in the group chat.
 
 ```
 principal (X-Actor-Id) → hybrid search over-fetch → access_control.filter (drop denied BEFORE any LLM)
-→ freshness.evaluate / verify (drop stale critical, build receipt) → groundedness.sanitize → compose
+→ freshness.evaluate / verify (drop stale critical, build receipt) → groundedness.sanitize → generate (app, deadline) → ground
 → verify → abstain? → audit.record (hash chain) → AnswerEnvelope {answer, citations, freshness_receipt,
 grounding, access_summary (no denied counts), audit_id}
 ```

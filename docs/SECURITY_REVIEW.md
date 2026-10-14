@@ -119,8 +119,9 @@ All are required before the demo; status is pending integration.
 | `test_negative_permission_no_existence_leak`    | `backend/app/tests/test_ask_pipeline.py`                   |
 | `test_live_revocation_changes_next_answer`      | `backend/app/tests/test_ask_pipeline.py`                   |
 | `test_bounded_freshness_stale_omitted`          | `backend/app/tests/test_ask_pipeline.py`                   |
-| `test_pipeline_order_access_before_llm`         | `backend/app/tests/test_ask_pipeline.py`                   |
-| `test_injection_fixture_quarantined`            | `backend/app/tests/test_ask_pipeline.py`                   |
+| `test_pipeline_order_access_before_llm`         | `backend/app/tests/test_pipeline_invariants.py`            |
+| `test_injection_fixture_quarantined`            | `backend/app/tests/test_pipeline_invariants.py`            |
+| `test_model_composer_timeout_falls_back`        | `backend/app/tests/test_pipeline_invariants.py`            |
 | `test_denied_document_404_identical_to_missing` | `backend/app/tests/test_documents_and_caps.py`             |
 | `test_access_request_always_202`                | `backend/app/tests/test_documents_and_caps.py`             |
 | `test_upload_too_large_413`                     | `backend/app/tests/test_documents_and_caps.py`             |

@@ -239,6 +239,47 @@ statement migration files run through psycopg's simple query protocol in one tra
 `uuid` and `vector`. Celery tasks bridge into async services only through
 `tasks/common.run_async`.
 
+### D-013 — Deterministic grounding and verification on the ask path; no LLM judge
+
+Status: Accepted
+Date: 2026-10-12
+
+**Context.** With `PROVIDER_MODE=real` an ask already makes one model call, to generate the
+answer. An LLM judge that checks each cited claim would add up to 8 more sequential calls per ask
+(one per claim at the default `ASK_TOP_K`), spent against the Tencent trial quota and the demo's
+latency budget. GBrain's own query-time citation check is mechanical: it confirms that citations
+are present and well-formed (see [GBrain mapping](GBRAIN_MAPPING.md)). The per-claim judge in
+cu-hackthelaw-26 (one Claude call per cited claim, no batching, no timeout) is the slow path we
+are avoiding. Two gaps remained in our lib. The model call lived inside it (an LLM composer
+behind a model port that the app adapted to its `ChatProvider`), and that composer dropped every
+sentence without an `[E#]` marker, replacing the whole answer with the extractive one when nothing
+parsed. And the lexical verifier did not check numbers, dates or times, so "SGD 20,000" scored
+`supported` against "SGD 10,000".
+
+**Decision.** The `groundedness` lib is model-free. Its contract is
+`sanitize → ground(text, evidence) → verify → should_abstain`, all deterministic pure Python.
+`ground` turns any generator's text into claims and citations: it honours `[E#]` markers,
+auto-cites unmarked sentences to the best-matching usable evidence, and never drops or rewrites a
+sentence. The verifier becomes `lexical-v2`: content-token overlap as before, wider negation cues
+for contradiction, and a numeric/date gate that demotes a citation to `unsupported` when its claim
+mentions a number, percentage, date or time the cited evidence does not. Generation moves to the
+app (`app/services/compose.py`, `ModelComposer`): one `ChatProvider` call inside
+`ASK_GENERATION_DEADLINE_S` (default 20 s), falling back to the extractive composer on timeout or
+provider error. The composer id (`model-v1+ground-v1`, or `model-v1->extractive-v1` after a
+fallback) is recorded in the audit `ask` payload. The lib's LLM composer, its model port, the
+app adapter for that port and the unused entailment-verifier skeleton are removed.
+
+**Consequences.** Grounding and verification make zero model calls and are fully deterministic, so
+an ask costs at most one model call and its grounding report is reproducible. Any LLM's output can
+be verified, with or without markers. A wrong number, date or time cannot be `supported`. The ask
+path no longer returns `503 provider_unavailable`: a failed or slow model degrades to the
+extractive answer, visibly in the audit log. Paraphrase recall is bounded by lexical overlap, so a
+faithful paraphrase can score below `supported` and the generation prompt must keep the model's
+wording close to the evidence. Counting `without` as a negation cue may cause a false
+contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and no report field
+changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
+eval set for the verifier.
+
 ### D-014 - Native source permissions cap local application grants
 
 Status: Accepted
@@ -297,4 +338,3 @@ audit decision records `permission_captured_at`.
 not by best effort. If the sync stops (worker or beat down), confidential documents become
 unavailable after 5 minutes: availability is traded for safety. Each sync makes one permission
 read per page; real connectors will need batching or change feeds at scale.
-

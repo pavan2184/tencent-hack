@@ -35,12 +35,12 @@ Before writing code, always read:
 
 ## Workstream boundaries
 
-| Workstream     | Owner   | You may change                                                                                                | Entry points other code relies on                                                                                        |
-| -------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Groundedness   | Raphael | `backend/libs/groundedness/**`, `backend/app/adapters/llm_port.py`, `infra/postgres/migrations/03xx_*`        | `sanitize → compose → verify → should_abstain`, called from `app/services/retrieval.py`                                  |
-| Data freshness | Pavan   | `backend/libs/freshness/**`, `backend/app/adapters/freshness_store.py`, `infra/postgres/migrations/01xx_*`    | `FreshnessService` (`accept`, `connector_sync`, `freshness_status`, `evaluate`, `verify_freshness`, `freshness_receipt`) |
-| Access control | Chai    | `backend/libs/access_control/**`, `backend/app/adapters/access_stores.py`, `infra/postgres/migrations/02xx_*` | `DefaultAccessPolicy.decide/filter`, store Protocols, `Principal`                                                        |
-| Foundation     | Raphael | everything else (`backend/app/**`, `frontend/**`, `infra/**`, docs, compose, CI, core migrations `00xx_*`)    | `get_principal`, the repo, the governed pipeline, the error envelope                                                     |
+| Workstream     | Owner   | You may change                                                                                                | Entry points other code relies on                                                                                             |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Groundedness   | Raphael | `backend/libs/groundedness/**`, `infra/postgres/migrations/03xx_*`                                            | `sanitize → ground → verify → should_abstain`; `ground` runs inside the composer called from `app/services/retrieval.py`      |
+| Data freshness | Pavan   | `backend/libs/freshness/**`, `backend/app/adapters/freshness_store.py`, `infra/postgres/migrations/01xx_*`    | `FreshnessService` (`accept`, `connector_sync`, `freshness_status`, `evaluate`, `verify_freshness`, `freshness_receipt`)      |
+| Access control | Chai    | `backend/libs/access_control/**`, `backend/app/adapters/access_stores.py`, `infra/postgres/migrations/02xx_*` | `DefaultAccessPolicy.decide/filter`, store Protocols, `Principal`                                                             |
+| Foundation     | Raphael | everything else (`backend/app/**`, `frontend/**`, `infra/**`, docs, compose, CI, core migrations `00xx_*`)    | `get_principal`, the repo, the governed pipeline, `ModelComposer` (`app/services/compose.py`, generation), the error envelope |
 
 Ownership rules:
 
