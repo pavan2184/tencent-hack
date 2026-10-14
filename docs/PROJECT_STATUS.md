@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current phase
 
@@ -52,8 +52,8 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   injection-pattern corpus; groundedness evals; decide the upload cap numbers.
 - **Pavan (freshness + ingestion + deploy):** delta and reconcile algorithms, backoff and parking,
   Confluence and Slack probes or simulations, port the TS eval fixtures to Python tests; own the
-  Celery/connector pipeline; deploy the single box on Tencent Cloud; confirm the ADP embedding
-  endpoint, model and dimension.
+  Celery/connector pipeline; deploy the single box on Tencent Cloud; activate and test the
+  documented TokenHub embedding model against our account.
 - **Chai (access control):** real platform-permission ingestion, group resolution, a
   permission-drift hook shared with freshness, final deny wording; review the corpus visibility
   matrix in `backend/seed/corpus/README.md`.
@@ -67,8 +67,9 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 - Four days to the deadline; the library stubs are the demo floor, so the five scenario tests must
   pass on stubs alone.
-- Tencent ADP embedding endpoint and model are unconfirmed; `EMBEDDING_DIM` must match before the
-  first real ingest (otherwise `make reset`).
+- Tencent documents a TokenHub OpenAI-compatible endpoint and 1024-dimensional text model that
+  match the existing adapter and schema (see `ARCHITECTURE.md`). Account activation, quota, key,
+  and a live 1024-dimensional response remain unverified before the first real ingest.
 - Critical evidence goes `stale` once its index age exceeds 3,600 s. The seed loader live-verifies
   every object at seed time so the age basis is the seed time, but an hour later the KYC runbook
   ages out until reconciliation or verification runs (beat triggers delta/reconcile; Pavan owns
