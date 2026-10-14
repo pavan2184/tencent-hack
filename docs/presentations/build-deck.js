@@ -559,7 +559,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         S.blue,
         HEX.blueT,
         "Grounded",
-        "Every claim cites its evidence. Unsupported claims are dropped, and the system abstains rather than guesses.",
+        "Every claim is checked against its cited evidence, numbers and dates included. Below the bar, the system abstains rather than guesses.",
       ],
       [
         I.chain,
@@ -748,7 +748,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         S.white,
         S.violet,
       ],
-      ["⑥ Verify", "Check every claim; cite or abstain", S.white, S.blue],
+      ["⑥ Verify", "Deterministic check of every claim, numbers included; no LLM judge", S.white, S.blue],
     ];
     boxes.forEach(([h, b, fill, col], i) => {
       card(s, {
@@ -1843,7 +1843,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     const stats = [
       [
-        "573",
+        "674",
         "automated tests pass with no network, using mock providers and in-memory stores",
         S.teal,
       ],
@@ -1888,13 +1888,13 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     const stack = [
       [
         "Model",
-        "Tencent Cloud ADP (chat + embeddings) behind a provider factory",
+        "Tencent Cloud ADP chat; the demo uses local vectors, so no text goes to an embedding service",
       ],
       ["API", "FastAPI + Pydantic v2; MCP server for AI agents"],
       ["Data", "Postgres 16 + pgvector hybrid search"],
       ["Jobs", "Redis + Celery: ingest, sync, verify, watchdog"],
       ["Web", "Next.js 15 + Tailwind"],
-      ["Deploy", "One Docker Compose stack on a Tencent Cloud server"],
+      ["Deploy", "One Docker Compose stack, ready for a single Tencent Cloud server"],
     ];
     stack.forEach(([k, v], i) => {
       const y = 2.25 + i * 0.72;
@@ -1910,7 +1910,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     text(
       s,
-      "Test count: PRs #6 and #9 merged locally, 13 Oct 2026 (11 SQL tests run separately against Postgres).",
+      "Test count: main plus PRs #9 and #10, 15 Oct 2026 (11 SQL tests run separately against Postgres).",
       {
         x: 0.6,
         y: 6.55,
