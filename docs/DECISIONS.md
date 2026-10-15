@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 Architectural and product decisions, newest last. Each entry is immutable once accepted; a change
 of mind is a new entry that supersedes the old one.
@@ -279,3 +279,57 @@ wording close to the evidence. Counting `without` as a negation cue may cause a 
 contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and no report field
 changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
 eval set for the verifier.
+
+### D-014 — No-payment demo uses local retrieval vectors with ADP generation
+
+Status: Accepted
+Date: 2026-10-13
+
+**Context.** The demo needs an actual Tencent ADP model and a public link, but Pavan forbids all
+payments. TokenHub's embedding service requires payment-based activation, and the account has no
+Tencent VM. The existing deterministic embedding provider already supports the app's 1024-dimension
+pgvector index and synthetic corpus.
+
+**Decision.** Keep `PROVIDER_MODE=real` for ADP chat while allowing
+`EMBEDDING_PROVIDER=local_hash` to select the existing local vector implementation. The default
+`openai_compatible` embedding path continues to require its endpoint and model. Run the stack
+locally and use only a free temporary tunnel for a public preview, after checking public exposure.
+Do not activate TokenHub, add a paid cloud host, or enable any postpaid service.
+
+**Consequences.** ADP performs real answer generation while retrieval remains deterministic and
+mostly lexical; the demo must describe that distinction accurately. The local host and temporary
+tunnel have no uptime guarantee. The free ADP plan has a finite prepaid credit pool and no paid
+overage path is enabled; calls may fail when that pool is exhausted.
+
+### D-015 — Partial answers contain only reverified supported claims
+
+Status: Proposed
+Date: 2026-10-14
+
+**Context.** A real ADP reply to the broad settlement-hold drill question contained one supported
+17-minute fact and two unsupported claims. The 33% coverage correctly triggered the 60%
+abstention gate, but hid the safe fact. A later live reply contained more unrelated claims,
+including partially supported ones, and passed the aggregate gate at 71% despite those weak claims.
+
+**Decision.** Only after the initial access, freshness, composition, and verification path, a
+model candidate with unsupported or off-topic claims and without a contradiction may retain
+claims that have a fully supported citation and overlap the question by two substantive content
+tokens (one for a one-token question). Single-letter suffixes such as the B in Rail-B do not count
+as a separate subject match. For a drill or procedure request, a matching claim must also concern
+the duration or a procedure action; sharing only subject words is not enough. A candidate with a
+A partially supported procedural claim or weak procedural citation is pruned even if the
+aggregate coverage passes 60%.
+This selection applies only to a real-model candidate.
+All other claims and citations are discarded. Reverify the subset and apply the unchanged
+abstention threshold. If no relevant supported subset passes, abstain. Show a partial notice
+separately from cited answer text. Preserve the candidate score and dropped-claim count in the
+audit without dropped claim text. Any otherwise fully supported answer to a drill or procedure
+request also shows a cautious notice with zero dropped claims when nothing needs pruning, because
+the cited facts do not establish that all requested steps were verified.
+
+**Consequences.** A safe subset can answer without another model call, while contradicted,
+off-topic, unsupported, stale, and denied content stays withheld. A candidate containing only
+on-topic supported or partially supported claims to a nonprocedural question continues through the
+existing 60% gate.
+The query status is `partial`; `answer.partial_notice` is an additive response field. The final
+grounding report describes only delivered claims, while the audit retains the candidate summary.

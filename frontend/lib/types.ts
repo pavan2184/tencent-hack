@@ -68,6 +68,7 @@ export interface Answer {
   text: string;
   abstained: boolean;
   abstain_reason: string | null;
+  partial_notice: string | null;
 }
 
 export interface Claim {

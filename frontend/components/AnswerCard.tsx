@@ -47,9 +47,16 @@ export function AnswerCard({
             </div>
           </div>
         ) : (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-800">
-            {answer.text}
-          </p>
+          <>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-800">
+              {answer.text}
+            </p>
+            {answer.partial_notice && (
+              <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Partial answer: {answer.partial_notice}
+              </p>
+            )}
+          </>
         )}
         <GroundingStats grounding={grounding} />
         <p className="text-xs text-slate-400">

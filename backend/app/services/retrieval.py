@@ -28,7 +28,16 @@ from freshness import (
     ProviderProbe,
     ReceiptRequest,
 )
-from groundedness import ABSTAIN_ANSWER_TEXT, EvidenceSpan, SanitizedEvidence
+from groundedness import (
+    ABSTAIN_ANSWER_TEXT,
+    GROUND_ID,
+    EvidenceSpan,
+    GroundingReport,
+    SanitizedEvidence,
+    needs_partial_selection,
+    procedure_requested,
+    select_supported_relevant_claims,
+)
 
 from app.connectors.registry import get_connector
 from app.core.context import get_request_id
@@ -43,6 +52,7 @@ from app.schemas.ask import (
 from app.schemas.domain import Page, QueryRecord, SearchHit, new_id, utcnow
 from app.services import audit
 from app.services.access import filter_pages
+from app.services.compose import MODEL_COMPOSER_ID
 from app.services.ingestion import embed_texts
 
 if TYPE_CHECKING:
@@ -51,6 +61,30 @@ if TYPE_CHECKING:
 
 def _ms(start: float) -> int:
     return max(0, int((time.perf_counter() - start) * 1000))
+
+
+def _partial_notice(question: str) -> str:
+    if procedure_requested(question):
+        return (
+            "I could verify the cited facts, but no additional procedure steps "
+            "were verified from the available evidence."
+        )
+    return (
+        "I could verify the cited details, but not the rest of the request "
+        "from the available evidence."
+    )
+
+
+def _grounding_summary(report: GroundingReport) -> dict[str, Any]:
+    return {
+        "claims_total": report.claims_total,
+        "supported": report.supported,
+        "partially_supported": report.partially_supported,
+        "unsupported": report.unsupported,
+        "contradicted": report.contradicted,
+        "coverage_ratio": report.coverage_ratio,
+        "report_hash": report.report_hash,
+    }
 
 
 @dataclass
@@ -290,6 +324,41 @@ async def ask(
     )
     if answer.abstained:
         abstain, abstain_reason = True, answer.abstain_reason or abstain_reason
+    partial_notice: str | None = None
+    candidate_grounding: dict[str, Any] | None = None
+    dropped_claim_count = 0
+    if (
+        not answer.abstained
+        and report.contradicted == 0
+        and answer.composer == f"{MODEL_COMPOSER_ID}+{GROUND_ID}"
+        and needs_partial_selection(question, answer, report)
+    ):
+        selected = select_supported_relevant_claims(question, answer, report)
+        if selected is not None:
+            t = time.perf_counter()
+            selected_report = await services.verifier.verify(selected, ev.sanitized)
+            ev.timing["verify_ms"] += _ms(t)
+            selected_abstains, _ = services.abstention.should_abstain(
+                selected_report, min_coverage=s.GROUNDING_MIN_COVERAGE
+            )
+            if not selected_abstains:
+                candidate_grounding = _grounding_summary(report)
+                dropped_claim_count = report.claims_total - len(selected.claims)
+                answer, report = selected, selected_report
+                abstain, abstain_reason = False, None
+                partial_notice = _partial_notice(question)
+        if partial_notice is None:
+            abstain = True
+            abstain_reason = abstain_reason or "insufficient_grounding"
+    if (
+        not abstain
+        and partial_notice is None
+        and answer.composer == f"{MODEL_COMPOSER_ID}+{GROUND_ID}"
+        and report.supported == report.claims_total
+        and procedure_requested(question)
+    ):
+        candidate_grounding = _grounding_summary(report)
+        partial_notice = _partial_notice(question)
     spans_by_id = {span.id: span for span in ev.spans}
     citations: list[CitationOut] = []
     claims = [] if abstain else list(answer.claims)
@@ -318,7 +387,7 @@ async def ask(
     cited_ids = list(dict.fromkeys(c.document_id for c in citations))
     total_ms = _ms(t_total)
     timing = Timing(total_ms=total_ms, **ev.timing)
-    status = "abstained" if abstain else "answered"
+    status = "abstained" if abstain else "partial" if partial_notice else "answered"
 
     await services.repo.create_query(
         QueryRecord(
@@ -352,6 +421,15 @@ async def ask(
             "answer_text": answer_text,
             "abstained": abstain,
             "abstain_reason": abstain_reason,
+            **(
+                {
+                    "partial_notice": partial_notice,
+                    "candidate_grounding": candidate_grounding,
+                    "dropped_claim_count": dropped_claim_count,
+                }
+                if partial_notice is not None
+                else {}
+            ),
             "cited_document_ids": cited_ids,
             "composer": answer.composer,
             "grounding": {
@@ -371,7 +449,12 @@ async def ask(
     return AnswerEnvelope(
         query_id=query_id,
         audit_id=event.id,
-        answer=AnswerOut(text=answer_text, abstained=abstain, abstain_reason=abstain_reason),
+        answer=AnswerOut(
+            text=answer_text,
+            abstained=abstain,
+            abstain_reason=abstain_reason,
+            partial_notice=partial_notice,
+        ),
         claims=claims,
         citations=citations,
         freshness_receipt=ev.receipt,

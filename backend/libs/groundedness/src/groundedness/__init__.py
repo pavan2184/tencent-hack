@@ -53,6 +53,12 @@ from groundedness.models import (
     sha256_hex,
 )
 from groundedness.numeric import numeric_facts, unsupported_numeric_facts
+from groundedness.partial import (
+    has_off_topic_claims,
+    needs_partial_selection,
+    procedure_requested,
+    select_supported_relevant_claims,
+)
 from groundedness.protocols import (
     AbstentionPolicy,
     AnswerComposer,
@@ -117,6 +123,10 @@ __all__ = [
     "parse_marked_answer",
     "report_hash",
     "sha256_hex",
+    "select_supported_relevant_claims",
+    "has_off_topic_claims",
+    "needs_partial_selection",
+    "procedure_requested",
     "split_sentences",
     "tokenize",
     "unsupported_numeric_facts",

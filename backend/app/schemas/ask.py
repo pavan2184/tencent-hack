@@ -25,6 +25,7 @@ class AnswerOut(BaseModel):
     text: str
     abstained: bool
     abstain_reason: str | None = None
+    partial_notice: str | None = None
 
 
 class CitationOut(BaseModel):
