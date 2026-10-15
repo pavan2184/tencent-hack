@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Overview
 
@@ -279,8 +279,9 @@ permissions: SourcePermissions, evidence_class, classification, owner_principal_
 
 `providers/base.py`: `ChatProvider.complete(messages, *, json_mode=False) -> ChatResult(text,
 usage)`, `EmbeddingProvider.embed(texts) -> list[list[float]]`, errors `ProviderError`,
-`RetryableError`, `FatalError`. `providers/factory.py` chooses by `PROVIDER_MODE` (`mock` default)
-and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
+`RetryableError`, `FatalError`. `providers/factory.py` chooses by `PROVIDER_MODE` (`mock` default),
+`LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`), and `EMBEDDING_PROVIDER`
+(`openai_compatible` | `local_hash`).
 
 - **Mock (default).** `MockChatProvider` returns a deterministic extractive stub;
   `MockEmbeddingProvider` returns seeded hash vectors of `EMBEDDING_DIM`. Mock vectors are
@@ -289,6 +290,9 @@ and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
   `LLM_MODEL`) and `/embeddings` (`EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`).
 - **`tencent_adp_app`.** The ADP application Chat API over SSE (`TENCENT_ADP_APP_KEY`,
   `TENCENT_ADP_CHAT_URL`): concatenates `text.delta` events and surfaces `reference.added`.
+- **`local_hash` embeddings.** Reuses the deterministic 1024-dimensional token-hash vectors with
+  `PROVIDER_MODE=real`, so ADP can generate answers without a separately billable embedding API.
+  Retrieval is primarily lexical; this is not a learned semantic embedding model.
 - `app/services/compose.py` (`ModelComposer`) calls the `ChatProvider` directly, once per ask,
   inside `ASK_GENERATION_DEADLINE_S` (`LLM_TIMEOUT_S` stays the per-phase HTTP timeout). The
   groundedness lib never sees a model.
@@ -313,13 +317,22 @@ repository; nothing below has been exercised against our account yet.
 time. If the real model's dimension differs, change `EMBEDDING_DIM` and `make reset` before the
 first real ingest.
 
+On 2026-10-13, Raphael's ADP console showed a $0 Free Edition Package valid through 2026-11-12,
+10,000 credits available and no add-on packages. Tencent's subscription billing documentation
+says plans and add-ons are prepaid, with no postpaid billing, and free-plan users cannot buy
+credit top-ups. The ADP agent's own knowledge base remains empty; the backend supplies filtered
+evidence. TokenHub activation requests payment-based billing, so it is excluded from the no-payment
+demo.
+
 ## Deployment Assumptions
 
-Owner: **Pavan**. Phased infrastructure: single box first.
+Owner: **Pavan**. Phased infrastructure: single box first. No payments or paid service activation
+are allowed for this demo.
 
-- One Tencent Cloud VM (CVM or Lighthouse; Linux with Docker Engine and the compose plugin) runs
-  the whole `docker-compose.yml`: `postgres`, `redis`, one-shot `migrate`, `api`, `worker`,
-  `beat`, `frontend`, and `caddy` via `docker compose --profile edge up -d`.
+- The no-payment preview runs the whole `docker-compose.yml` on Pavan's Mac: `postgres`, `redis`,
+  one-shot `migrate`, `api`, `worker`, `beat`, `frontend`, and `caddy`. A free Cloudflare Quick Tunnel
+  can expose Caddy temporarily after the public-access check. Its URL changes when restarted and
+  stops working when the Mac or tunnel stops. A paid Tencent VM is not part of this plan.
 - Caddy serves one origin on `:80`: `/api/*`, `/mcp*` and `/healthz` go to `api:8000`; everything
   else goes to `frontend:3000`. Build the frontend for that origin
   (`NEXT_PUBLIC_API_BASE_URL=http://<host>/api`, `NEXT_PUBLIC_MCP_URL=http://<host>/mcp`). Add a
