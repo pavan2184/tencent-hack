@@ -48,19 +48,19 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 `GET /api/queries` and `GET /api/queries/{id}` returned stored answers without an access check,
 so a revoked user could still read the board deck figures from history and the Ask page. Stored
 answers are now re-authorised for the viewer on every read and withheld when any evidence
-document is no longer readable (D-015). Regression tests: `app/tests/test_query_history_access.py`.
+document is no longer readable (D-017). Regression tests: `app/tests/test_query_history_access.py`.
 
 ## Permission snapshot expiry (Chai, 2026-10-13, branch `feat/permission-max-age`)
 
 Built on the access-control v2 work. Snapshots of source permissions now expire by
 classification (confidential 5 min) and every delta sync refreshes them, so a revocation at the
-source is enforced within 5 minutes for confidential documents (D-016). **The demo stack must run
+source is enforced within 5 minutes for confidential documents (D-018). **The demo stack must run
 the Celery worker and beat**, or confidential documents go dark after 5 minutes.
 
 ## Audit need-to-know and approval feedback (Chai, 2026-10-13, branch `feat/audit-need-to-know`)
 
 Auditors see every decision but only the answer content they could read themselves; a recorded
-"reveal with reason" shows the rest (D-017). Approving a request now tells the approver when the
+"reveal with reason" shows the rest (D-019). Approving a request now tells the approver when the
 source platform still withholds the document. **Demo scenario 5 now includes one reveal.**
 
 ## Next

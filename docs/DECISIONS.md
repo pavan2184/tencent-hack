@@ -280,7 +280,7 @@ contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and 
 changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
 eval set for the verifier.
 
-### D-014 - Native source permissions cap local application grants
+### D-016 - Native source permissions cap local application grants
 
 Status: Accepted
 Date: 2026-10-12
@@ -296,7 +296,7 @@ verifier that can only tighten access. No cached allow exists. Native API transp
 and complete source-scoped group resolution belong in app adapters. The diagram
 marks live-provider/authentication boundaries separately from implemented code.
 
-### D-015 — Stored answers are re-authorised when served
+### D-017 — Stored answers are re-authorised when served
 
 Status: Accepted
 Date: 2026-10-13
@@ -317,7 +317,7 @@ Answers are never cached by question; any future cache must apply the same check
 request. Access restored means history restored. Auditors read originals only through the
 audit trail.
 
-### D-016 — Permission snapshots expire by classification
+### D-018 — Permission snapshots expire by classification
 
 Status: Proposed (needs Pavan for the sync change)
 Date: 2026-10-13
@@ -339,19 +339,19 @@ not by best effort. If the sync stops (worker or beat down), confidential docume
 unavailable after 5 minutes: availability is traded for safety. Each sync makes one permission
 read per page; real connectors will need batching or change feeds at scale.
 
-### D-017 — Auditors get need-to-know answer content; approvals report source blocks
+### D-019 — Auditors get need-to-know answer content; approvals report source blocks
 
 Status: Proposed (Raphael: audit router, Access and Audit pages)
 Date: 2026-10-13
 
-**Context.** Under `ac-v2` (D-014) admins no longer read everything, but auditors still saw full
+**Context.** Under `ac-v2` (D-016) admins no longer read everything, but auditors still saw full
 answer text and quotes in the audit trail for documents they could not open, which undercuts
 least privilege (MAS TRM 9.1.1) and PDPC guidance to restrict prompt logs. Separately, approving
 an access request created a grant that could not take effect when the source withheld access,
 while the approver saw "approved".
 
 **Decision.** Audit responses always show metadata but withhold answer content unless the viewer
-can read every evidence document now (the same rule as saved answers, D-015). A break-glass
+can read every evidence document now (the same rule as saved answers, D-017). A break-glass
 `POST /api/audit/events/{id}/reveal` with a reason shows it and records `audit.reveal` in the
 chain. Approval responses add `effective` and an actionable `note` naming the source platform.
 
