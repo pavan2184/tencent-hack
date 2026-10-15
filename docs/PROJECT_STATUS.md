@@ -70,6 +70,14 @@ Auditors see every decision but only the answer content they could read themselv
 "reveal with reason" shows the rest (D-019). Approving a request now tells the approver when the
 source platform still withholds the document. **Demo scenario 5 now includes one reveal.**
 
+## Architecture deck (Chai, 2026-10-13)
+
+`docs/presentations/internal-brain-architecture.pptx`: case study, problem, four guarantees, the
+end-to-end architecture with trust boundaries and the model-context boundary, native permission
+handling per platform, the access-control demo, the five scenarios mapped to tests, answer
+receipts, trade-offs and stack. Slides 6 and 10 assume the access-control v2 rules (native
+permissions cap local grants), which still need team agreement.
+
 ## Next
 
 - **Raphael (groundedness + foundation):** integrate waves 1–2; make `make test`, `make up`,
