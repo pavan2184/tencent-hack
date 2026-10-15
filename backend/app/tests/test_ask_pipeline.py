@@ -83,7 +83,8 @@ def test_negative_permission_no_existence_leak(seeded: Any, client: Any) -> None
         "allowed_count",
         "evaluated_at",
     }
-    assert "48.6" not in str(env)
+    # Timestamps can legitimately contain the digits 48.6, independently of document text.
+    assert "48.6" not in str((env["answer"], env["claims"], env["citations"]))
 
     headers = {"X-Actor-Id": "mei.chen", "X-Request-Id": "req-leak-check"}
     denied = client.get(f"/api/documents/{deck_id}", headers=headers)
@@ -142,6 +143,7 @@ def test_audit_reconstruction(seeded: Any, client: Any) -> None:
             "reason",
             "matched_rule",
             "permission_version",
+            "permission_captured_at",
         }
     receipt = payload["freshness_receipt"]
     assert receipt["receipt_id"] == env["freshness_receipt"]["receipt_id"]

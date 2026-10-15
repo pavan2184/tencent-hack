@@ -641,6 +641,13 @@ within `ASK_GENERATION_DEADLINE_S` and otherwise falls back to the extractive an
 `grounding_report`, `freshness_receipt_id` and `access_summary`; other actors' queries are `404`
 unless the caller is an auditor or admin.
 
+Both endpoints re-authorise every stored answer for the **viewer, at read time**. If the viewer
+cannot read every document behind the answer right now (revoked, deleted, or evidence that cannot
+be traced), the row is served with `"status": "withheld"`, a fixed `answer_text` ("This answer
+used sources you can no longer access. …"), `"citations": []`, `"grounding_report": null` and
+`"freshness_receipt_id": null`. The question is kept; which document changed is never disclosed.
+Restoring access restores the row. Auditors reach the original through `/api/audit/events/{id}`.
+
 ### GET /api/audit/events · GET /api/audit/events/{id} · GET /api/audit/verify
 
 Auth: `auditor` or `admin`; everyone else `403`.
@@ -734,12 +741,15 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
 
 The `ask` payload keys are fixed (the audit UI reads them in `frontend/lib/auditPayload.ts`):
 `question`, `query_id`, `retrieved_document_ids[]`, `access_decisions[]` (`{document_id,
-decision, reason, matched_rule, permission_version}`, one per retrieved document including
-denied ones), `freshness_receipt` (`{receipt_id, overall_status, receipt_hash,
-evidence_items[]}`), `answer_text`, `abstained`, `abstain_reason`, `cited_document_ids[]`,
-`composer`, `grounding` (`{verdict, coverage_ratio}`), `started_at`, `completed_at`. `composer` is
-`extractive-v1` in mock mode, `model-v1+ground-v1` when the model answered (the example above), and
-`model-v1->extractive-v1` after a timeout or provider error. The copies of the event
+decision, reason, matched_rule, permission_version, permission_captured_at}`, one per retrieved
+document including denied ones; `permission_captured_at` is when the permission snapshot used was
+read from the source, or `null` without one), `freshness_receipt` (`{receipt_id, overall_status,
+receipt_hash, evidence_items[]}`), `evidence_document_ids[]` (the documents behind the evidence
+spans the composer saw; used to re-authorise stored answers), `answer_text`, `abstained`,
+`abstain_reason`, `cited_document_ids[]`, `composer`, `grounding` (`{verdict, coverage_ratio}`),
+`started_at`, `completed_at`. `composer` is `extractive-v1` in mock mode, `model-v1+ground-v1`
+when the model answered (the example above), and `model-v1->extractive-v1` after a timeout or
+provider error. The copies of the event
 columns (`schema_version`, `actor_id`, `action`, `occurred_at`, `request_id`, `subject_type`,
 `subject_id`) are recommended so the chain hash covers them. Denied decisions appear in audit
 events and nowhere else.
@@ -842,3 +852,23 @@ missing one.
 - Do we expose `url` deep links for synthetic sources, or leave them `null` until real connectors
   exist?
 - Final caps and their `details.limit` values depend on the upload numbers that are still TBD.
+
+## Access library ac-v2 (12 October 2026)
+
+The existing `DefaultAccessPolicy.decide/filter` and store interfaces remain
+compatible. Native source permissions now cap local owner/admin/allow grants.
+Creating or approving a local grant does not grant native Confluence/Jira/Slack/Drive
+access. The API's existing visible-page checks still apply to grant creation.
+App-managed upload grants can extend sharing and revocation removes that access.
+
+`AccessControlService(directory=..., grants=..., snapshots=..., policy=None,
+verifier=None)` supplies `await filter(principal_id, contexts, now=...)` for
+query-time authority refresh. Its optional live verifier returns exactly True,
+False or None. True cannot widen policy access; False denies; unknown/error denies.
+Provider transport, timeouts and verified source identity are app obligations.
+The current app uses the compatible pure policy path, not a credentialed live
+verifier. Full API examples above remain the network contract.
+
+Only `allowed_ids` select evidence. `decisions` remain private audit data. Recheck
+long-running/cached answers and final citations before publishing. Detailed
+connector contracts are in [research](ACCESS_CONTROL_RESEARCH.md).

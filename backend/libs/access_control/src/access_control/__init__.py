@@ -9,6 +9,11 @@ This package never imports ``app``; the app implements the async store Protocols
 
 from __future__ import annotations
 
+from access_control.connectors import (
+    gdrive_permissions_from_api,
+    permission_fingerprint,
+    slack_permissions_from_api,
+)
 from access_control.memory import (
     InMemoryAccessRequestStore,
     InMemoryGrantStore,
@@ -49,6 +54,7 @@ from access_control.permissions import (
 )
 from access_control.policy import (
     ADMIN_ROLE,
+    DEFAULT_MAX_PERMISSION_AGE,
     DEFAULT_POLICY_VERSION,
     DefaultAccessPolicy,
     has_source_membership,
@@ -63,16 +69,20 @@ from access_control.protocols import (
     GrantStore,
     PermissionSnapshotStore,
     PrincipalDirectory,
+    SourcePermissionVerifier,
 )
+from access_control.service import AccessControlService
 
 SCHEMA_VERSION = 1
 __version__ = "0.1.0"
 
 __all__ = [
     "ADMIN_ROLE",
+    "DEFAULT_MAX_PERMISSION_AGE",
     "DEFAULT_POLICY_VERSION",
     "SCHEMA_VERSION",
     "AccessControlError",
+    "AccessControlService",
     "AccessDecision",
     "AccessPolicy",
     "AccessRequest",
@@ -110,10 +120,14 @@ __all__ = [
     "SlackPermissions",
     "SourceKind",
     "SourcePermissions",
+    "SourcePermissionVerifier",
     "SubjectType",
     "UploadPermissions",
     "__version__",
     "has_source_membership",
+    "gdrive_permissions_from_api",
     "parse_raw_permissions",
     "platform_identities",
+    "permission_fingerprint",
+    "slack_permissions_from_api",
 ]

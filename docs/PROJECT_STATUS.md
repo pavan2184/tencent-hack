@@ -50,6 +50,20 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 | Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                                                                             |
 | Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                                                                                  |
 
+## Fixed 2026-10-13: query history bypassed revocation (Chai)
+
+`GET /api/queries` and `GET /api/queries/{id}` returned stored answers without an access check,
+so a revoked user could still read the board deck figures from history and the Ask page. Stored
+answers are now re-authorised for the viewer on every read and withheld when any evidence
+document is no longer readable (D-017). Regression tests: `app/tests/test_query_history_access.py`.
+
+## Permission snapshot expiry (Chai, 2026-10-13, branch `feat/permission-max-age`)
+
+Built on the access-control v2 work. Snapshots of source permissions now expire by
+classification (confidential 5 min) and every delta sync refreshes them, so a revocation at the
+source is enforced within 5 minutes for confidential documents (D-018). **The demo stack must run
+the Celery worker and beat**, or confidential documents go dark after 5 minutes.
+
 ## Next
 
 - **Raphael (groundedness + foundation):** integrate waves 1–2; make `make test`, `make up`,
@@ -134,3 +148,37 @@ The first real-mode container start failed with an `AttributeError` for
 `ASK_GENERATION_DEADLINE_S`: the temporary staging copy had an older config file than the source
 branch. Refreshing that staged file and rebuilding the containers resolved the startup error;
 the repository source was already correct. The tunnel and Docker services are running at handoff.
+
+## Chai's access-control delivery (12 October 2026)
+
+Branch: `PinZheng/access-control`, integrated with latest `origin/main` at
+`fc0bdf6c`. The new foundation merge was incorporated before final verification.
+
+Delivered: ac-v2 source ceiling, query-time validated authority service, live-read
+verifier seam, Slack/Drive capture helpers, permission fingerprints, corpus
+visibility/revocation demo, primary-source research and security review. Updated
+API expectations retain native restrictions after local grant approval and prove
+local upload grants still work. Existing foundation docs, migrations and CI were
+preserved. Merged via PR #9.
+
+Verification: 174 library tests; 549 offline backend tests passed, 11 database
+tests skipped without a database; all 135 Python files pass Ruff lint/format.
+The editable architecture deck contains five reviewed slides with native
+connectors, an editable permissions table and source notes. File:
+superseded by `docs/presentations/internal-brain-architecture.pptx` (PR #7).
+
+See [handoff](ACCESS_CONTROL_HANDOFF.md). Native live-provider checks and verified
+authentication still require integration. The existing pure-policy read paths
+automatically use ac-v2 and passed the core REST scenario tests. Deployment and
+credentialed enterprise/Tencent calls have not been verified by this work.
+
+### SQL verification follow-up
+
+The 11 SQL integration tests passed against a disposable local Postgres 17
+instance, including the access snapshot round-trip with Drive expiry, deleted
+subjects and discovery fields. Combined with the 549 passing offline tests,
+all 560 distinct backend tests passed. Postgres 17 was used because pulling the
+configured Postgres 16 image was blocked by registry authentication. No shared
+database or existing containers were modified. The temporary instance was
+removed after the run. The configured Postgres 16 deployment and credentialed
+source/Tencent calls were not tested by this work.
