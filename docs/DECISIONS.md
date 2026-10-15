@@ -280,7 +280,7 @@ contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and 
 changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
 eval set for the verifier.
 
-### D-014 - Native source permissions cap local application grants
+### D-016 - Native source permissions cap local application grants
 
 Status: Accepted
 Date: 2026-10-12
@@ -296,7 +296,7 @@ verifier that can only tighten access. No cached allow exists. Native API transp
 and complete source-scoped group resolution belong in app adapters. The diagram
 marks live-provider/authentication boundaries separately from implemented code.
 
-### D-015 — Stored answers are re-authorised when served
+### D-017 — Stored answers are re-authorised when served
 
 Status: Accepted
 Date: 2026-10-13
@@ -317,7 +317,7 @@ Answers are never cached by question; any future cache must apply the same check
 request. Access restored means history restored. Auditors read originals only through the
 audit trail.
 
-### D-016 — Permission snapshots expire by classification
+### D-018 — Permission snapshots expire by classification
 
 Status: Proposed (needs Pavan for the sync change)
 Date: 2026-10-13
