@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 Architectural and product decisions, newest last. Each entry is immutable once accepted; a change
 of mind is a new entry that supersedes the old one.
@@ -279,6 +279,27 @@ wording close to the evidence. Counting `without` as a negation cue may cause a 
 contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and no report field
 changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
 eval set for the verifier.
+
+### D-014 — No-payment demo uses local retrieval vectors with ADP generation
+
+Status: Accepted
+Date: 2026-10-13
+
+**Context.** The demo needs an actual Tencent ADP model and a public link, but Pavan forbids all
+payments. TokenHub's embedding service requires payment-based activation, and the account has no
+Tencent VM. The existing deterministic embedding provider already supports the app's 1024-dimension
+pgvector index and synthetic corpus.
+
+**Decision.** Keep `PROVIDER_MODE=real` for ADP chat while allowing
+`EMBEDDING_PROVIDER=local_hash` to select the existing local vector implementation. The default
+`openai_compatible` embedding path continues to require its endpoint and model. Run the stack
+locally and use only a free temporary tunnel for a public preview, after checking public exposure.
+Do not activate TokenHub, add a paid cloud host, or enable any postpaid service.
+
+**Consequences.** ADP performs real answer generation while retrieval remains deterministic and
+mostly lexical; the demo must describe that distinction accurately. The local host and temporary
+tunnel have no uptime guarantee. The free ADP plan has a finite prepaid credit pool and no paid
+overage path is enabled; calls may fail when that pool is exhausted.
 
 ### D-016 - Native source permissions cap local application grants
 

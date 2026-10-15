@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     LLM_API_KEY: str = ""
     LLM_MODEL: str = "deepseek-v3"
     LLM_TIMEOUT_S: float = 30.0
+    EMBEDDING_PROVIDER: Literal["openai_compatible", "local_hash"] = "openai_compatible"
     EMBEDDING_BASE_URL: str = ""
     EMBEDDING_API_KEY: str = ""
     EMBEDDING_MODEL: str = ""
@@ -115,9 +116,10 @@ class Settings(BaseSettings):
                 missing.append("LLM_API_KEY")
             if self.LLM_PROVIDER == "tencent_adp_app" and not self.TENCENT_ADP_APP_KEY:
                 missing.append("TENCENT_ADP_APP_KEY")
-            for name in ("EMBEDDING_BASE_URL", "EMBEDDING_MODEL"):
-                if not getattr(self, name):
-                    missing.append(name)
+            if self.EMBEDDING_PROVIDER == "openai_compatible":
+                for name in ("EMBEDDING_BASE_URL", "EMBEDDING_MODEL"):
+                    if not getattr(self, name):
+                        missing.append(name)
             if missing:
                 raise ValueError(
                     "PROVIDER_MODE=real but required settings are blank: " + ", ".join(missing)
