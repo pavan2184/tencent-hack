@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.domain import AuditEvent
 
@@ -18,3 +18,9 @@ class AuditVerify(BaseModel):
 
 class AuditEventDetail(AuditEvent):
     reconstruction: dict[str, Any] | None = None
+
+
+class RevealRequest(BaseModel):
+    """Why an auditor needs to see answer content they could not otherwise read."""
+
+    reason: str = Field(min_length=10, max_length=500)

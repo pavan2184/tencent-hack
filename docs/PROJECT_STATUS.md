@@ -64,6 +64,12 @@ classification (confidential 5 min) and every delta sync refreshes them, so a re
 source is enforced within 5 minutes for confidential documents (D-018). **The demo stack must run
 the Celery worker and beat**, or confidential documents go dark after 5 minutes.
 
+## Audit need-to-know and approval feedback (Chai, 2026-10-13, branch `feat/audit-need-to-know`)
+
+Auditors see every decision but only the answer content they could read themselves; a recorded
+"reveal with reason" shows the rest (D-019). Approving a request now tells the approver when the
+source platform still withholds the document. **Demo scenario 5 now includes one reveal.**
+
 ## Next
 
 - **Raphael (groundedness + foundation):** integrate waves 1–2; make `make test`, `make up`,

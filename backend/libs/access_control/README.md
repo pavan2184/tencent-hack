@@ -133,7 +133,8 @@ not cached authorisation decisions.
 The existing `GrantStore`, `PrincipalDirectory`, `PermissionSnapshotStore` and
 `AccessRequestStore` contracts remain public. Grant revocation is idempotent,
 retains its audit row, and takes effect on the next service evaluation. Approving
-an access request does not automatically add a grant or change native access.
+an access request adds a local grant, which cannot change native access; the app reports when
+the source still withholds the document.
 
 ## Run tests and demonstrate revocation
 

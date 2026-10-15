@@ -187,6 +187,28 @@ def run_demo(api: Api, seed_dir: Path, sync_timeout_s: float) -> None:
             deck_decision.get("decision") == "deny"
             and deck_decision.get("reason") == "no_source_membership",
         )
+        original = api.get(AUDITOR, f"/api/audit/events/{before['audit_id']}").json()
+        check(
+            "Sam sees scene 1's decisions but not its answer content",
+            original.get("content_withheld") is True and FIGURE not in str(original),
+        )
+        reason = "Compliance review of board deck access, case 42"
+        revealed = api.post(
+            AUDITOR, f"/api/audit/events/{before['audit_id']}/reveal", {"reason": reason}
+        )
+        check(
+            "a reveal with a reason shows the original answer",
+            revealed.status_code == 200
+            and FIGURE in str(revealed.json()["payload"]["answer_text"]),
+        )
+        reveals = api.get(AUDITOR, "/api/audit/events", action="audit.reveal").json()["items"]
+        check(
+            "the reveal itself is recorded in the audit trail",
+            any(
+                r["subject_id"] == before["audit_id"] and r["payload"]["reason"] == reason
+                for r in reveals
+            ),
+        )
         chain = api.get(AUDITOR, "/api/audit/verify").json()
         check("hash chain verifies", chain.get("ok") is True, f"{chain.get('length')} events")
 
