@@ -1270,14 +1270,14 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         S.amber,
         "Revoked at the source",
         "Drive owner removes Leadership from the share",
-        "John asks again, then reopens her earlier answer",
+        "John asks again, then reopens the earlier answer",
         [
           {
             text: "Next sync (each minute): the deck is gone",
             options: { bold: true, breakLine: true },
           },
           {
-            text: "Her saved answer is withheld too",
+            text: "The saved answer is withheld too",
             options: { fontSize: 11, color: S.slate },
           },
         ],
@@ -1414,7 +1414,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "1",
           "Unified query",
-          "John asks about the Rail-B cutover. The facts are spread across email, Jira, Slack and Drive; she gets one answer citing several of them",
+          "John asks about the Rail-B cutover. The facts are spread across email, Jira, Slack and Drive, and one answer cites several of them",
           "test_unified_cited_query",
         ),
         row(
@@ -1432,7 +1432,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "4",
           "Live revocation",
-          "Leadership is removed from the Drive share (or the in-app grant revoked): John's next answer drops the board deck and her saved answer is withheld",
+          "Leadership is removed from the Drive share (or the in-app grant revoked): John's next answer drops the board deck and the saved answer is withheld",
           "test_permission_freshness, test_live_revocation_changes_next_answer, test_query_history_access",
         ),
         row(
