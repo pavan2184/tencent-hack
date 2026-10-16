@@ -11,9 +11,10 @@ ACL revisions, security regressions and a runnable corpus revocation demonstrati
 No runtime dependency was added. The default policy revision changes to `ac-v2`.
 The work was reconciled with the new foundation merge `fc0bdf6c` before delivery.
 
-The editable architecture PPT is `output/presentations/tencent-internal-brain-architecture-delivery.pptx`.
-It shows the latest implemented app/library path and the remaining live-provider
-and authentication boundaries.
+The editable architecture deck is [`docs/presentations/internal-brain-architecture.pptx`](presentations/internal-brain-architecture.pptx)
+(15 slides; the submission copy without the internal status slide is
+`internal-brain-architecture-submission.pptx`). It shows the implemented app/library path
+and the remaining live-provider and authentication boundaries.
 
 ## Integration points for Pavan and Raphael
 
