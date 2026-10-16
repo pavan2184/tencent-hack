@@ -1,4 +1,7 @@
-/* Submission cover image (16:9). Usage: node cover.js <outDir> */
+/* Submission cover image (16:9), styled like the web UI (D-020).
+ * Usage: npm install react@18.3.1 react-dom@18.3.1 react-icons@5.3.0 sharp@0.33.5
+ *        node build-cover.js <outDir>
+ */
 const React = require("react");
 const ReactDOMServer = require("react-dom/server");
 const sharp = require("sharp");
@@ -6,12 +9,18 @@ const si = require("react-icons/si");
 const fa = require("react-icons/fa6");
 
 const out = process.argv[2];
-const W = 1520,
-  H = 864; // 4x of 380x216, downscaled for crisp text
-const NAVY = "#0B2545",
-  TEAL = "#0E9F8E",
-  ICE = "#C9D8EE",
-  WHITE = "#FFFFFF";
+const W = 1520;
+const H = 864; // 4x of 380x216, downscaled for crisp text
+// Web UI tokens: white page, ink type, soft-grey second line, one muted green accent.
+const INK = "#1D1D1D";
+const SOFT = "#A6A6A6";
+const MUTED = "#666666";
+const FIELD = "#F5F5F5";
+const HAIR = "#D7D7D7";
+const GREEN = "#549F58";
+const GREEN_STRONG = "#3F8243";
+const GREEN_SOFT = "#EAF3EA";
+const WHITE = "#FFFFFF";
 const FONT = "Helvetica, Arial, sans-serif";
 
 async function iconPng(Comp, color, size) {
@@ -28,40 +37,40 @@ async function iconPng(Comp, color, size) {
     [si.SiSlack, "#4A154B"],
     [si.SiGoogledrive, "#1FA463"],
   ];
-  const cx = 1060,
-    d = 118,
-    gap = 34;
+  const cx = 1060;
+  const d = 118;
+  const gap = 34;
   const top = (H - (4 * d + 3 * gap)) / 2;
-  const shieldX = 1290,
-    shieldD = 190;
+  const shieldX = 1290;
+  const shieldD = 190;
   const rowY = (i) => top + i * (d + gap) + d / 2;
 
   const lines = sources
     .map(
       (_, i) =>
-        `<line x1="${cx + d / 2 + 6}" y1="${rowY(i)}" x2="${shieldX - 10}" y2="${H / 2}" stroke="${ICE}" stroke-width="4" stroke-opacity="0.7"/>`,
+        `<line x1="${cx + d / 2 + 6}" y1="${rowY(i)}" x2="${shieldX - 10}" y2="${H / 2}" stroke="${HAIR}" stroke-width="4"/>`,
     )
     .join("");
   const circles = sources
     .map(
       (_, i) =>
-        `<circle cx="${cx}" cy="${rowY(i)}" r="${d / 2}" fill="${WHITE}"/>`,
+        `<circle cx="${cx}" cy="${rowY(i)}" r="${d / 2}" fill="${FIELD}"/>`,
     )
     .join("");
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${NAVY}"/>
+    <rect width="${W}" height="${H}" fill="${WHITE}"/>
     ${lines}${circles}
-    <circle cx="${shieldX + shieldD / 2}" cy="${H / 2}" r="${shieldD / 2}" fill="${TEAL}"/>
-    <rect x="96" y="176" rx="28" ry="28" width="560" height="56" fill="${TEAL}"/>
-    <text x="376" y="214" font-family="${FONT}" font-size="27" font-weight="700" fill="${WHITE}" text-anchor="middle" letter-spacing="1">FINTECH · ASPIRE CHALLENGE</text>
-    <text x="90" y="400" font-family="${FONT}" font-size="132" font-weight="700" fill="${WHITE}">Brain Sauce</text>
-    <text x="96" y="500" font-family="${FONT}" font-size="44" fill="${ICE}">Answers only from what</text>
-    <text x="96" y="556" font-family="${FONT}" font-size="44" fill="${ICE}">you're allowed to see.</text>
-    <text x="96" y="688" font-family="${FONT}" font-size="30" font-weight="700" fill="${TEAL}">Permitted · Fresh · Grounded · Audited</text>
+    <circle cx="${shieldX + shieldD / 2}" cy="${H / 2}" r="${shieldD / 2}" fill="${GREEN}"/>
+    <rect x="96" y="150" rx="28" ry="28" width="560" height="56" fill="${GREEN_SOFT}"/>
+    <text x="376" y="188" font-family="${FONT}" font-size="27" font-weight="700" fill="${GREEN_STRONG}" text-anchor="middle" letter-spacing="1">FINTECH · ASPIRE CHALLENGE</text>
+    <text x="90" y="360" font-family="${FONT}" font-size="128" font-weight="700" fill="${INK}" letter-spacing="-3">Brain Sauce.</text>
+    <text x="92" y="470" font-family="${FONT}" font-size="76" font-weight="700" fill="${SOFT}" letter-spacing="-2">Answers with receipts.</text>
+    <text x="96" y="580" font-family="${FONT}" font-size="38" fill="${MUTED}">Only from what you're allowed to see.</text>
+    <text x="96" y="700" font-family="${FONT}" font-size="30" font-weight="700" fill="${GREEN_STRONG}">Permitted · Fresh · Grounded · Audited</text>
   </svg>`;
 
-  const iconSize = Math.round(d * 0.6);
+  const iconSize = Math.round(d * 0.58);
   const composites = [];
   for (let i = 0; i < sources.length; i++) {
     const [Comp, color] = sources[i];

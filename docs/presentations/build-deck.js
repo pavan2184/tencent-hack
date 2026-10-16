@@ -11,29 +11,37 @@ const { applyTheme } = require(process.env.APPLY_THEME);
 
 const OUT = process.argv[2] || "deck.pptx";
 
+// Palette follows the web UI's Housend-derived tokens (frontend/app/globals.css, D-020): near-
+// monochrome greys, one muted green accent, and amber/red kept only for status. Role names are
+// historical: "navy" is the ink used for headings and dark bands, "blue" the secondary ink, and
+// "teal" the green accent (accent-strong, so small text stays AA-legible).
 const HEX = {
-  ink: "0F172A",
-  navy: "0B2545",
-  mist: "EEF3F8",
+  ink: "1D1D1D",
+  navy: "1D1D1D",
+  mist: "F5F5F5",
   white: "FFFFFF",
-  teal: "0E9F8E",
-  coral: "E5484D",
-  amber: "E9A23B",
-  blue: "2F6FDB",
-  violet: "7C5CD6",
-  slate: "64748B",
-  line: "CBD5E1",
-  tealT: "E3F5F2",
-  coralT: "FDECEC",
-  amberT: "FDF4E4",
-  blueT: "E8F0FC",
-  violetT: "EFEBFB",
-  ice: "C9D8EE",
+  teal: "3F8243",
+  green: "549F58",
+  coral: "D9433B",
+  amber: "C77A0A",
+  blue: "8C8C8C",
+  violet: "666666",
+  slate: "737373",
+  line: "D7D7D7",
+  tealT: "EAF3EA",
+  coralT: "FBECEB",
+  amberT: "FCF3E3",
+  blueT: "F5F5F5",
+  violetT: "F5F5F5",
+  ice: "A6A6A6",
+  bar: "A6A6A6",
+  soft: "8C8C8C",
 };
 const THEME = {
   name: "Brain Sauce",
-  headFontFace: "Calibri",
-  bodyFontFace: "Calibri",
+  // Arial is the closest metric-safe stand-in for the UI's Inter Tight grotesque.
+  headFontFace: "Arial",
+  bodyFontFace: "Arial",
   colors: {
     dk1: HEX.ink,
     lt1: HEX.white,
@@ -79,7 +87,7 @@ const FOOTER =
 // ---------------------------------------------------------------- layouts
 pres.defineSlideMaster({
   title: "TITLE_DARK",
-  background: { color: S.navy },
+  background: { color: S.white },
   objects: [
     {
       placeholder: {
@@ -90,9 +98,9 @@ pres.defineSlideMaster({
           y: 1.55,
           w: 8.6,
           h: 1.2,
-          fontSize: 54,
+          fontSize: 60,
           bold: true,
-          color: S.white,
+          color: S.navy,
           valign: "top",
           align: "left",
           margin: 0,
@@ -115,7 +123,7 @@ pres.defineSlideMaster({
           y: 0.35,
           w: 12.1,
           h: 0.85,
-          fontSize: 28,
+          fontSize: 26,
           bold: true,
           color: S.navy,
           valign: "middle",
@@ -194,7 +202,7 @@ function card(slide, o) {
     y: o.y,
     w: o.w,
     h: o.h,
-    rectRadius: o.r ?? 0.08,
+    rectRadius: o.r ?? 0.05,
     fill: { color: o.fill ?? S.white },
     line:
       o.line === null
@@ -204,18 +212,17 @@ function card(slide, o) {
             width: o.lw ?? 1,
             dashType: o.dash ?? "solid",
           },
-    shadow: o.shadow
-      ? {
-          type: "outer",
-          color: "0F172A",
-          opacity: 0.12,
-          blur: 6,
-          offset: 2,
-          angle: 90,
-        }
-      : undefined,
+    // Flat surfaces (D-020): no drop shadows; hairline borders separate cards.
     objectName: nm(o.name ?? "card"),
   });
+}
+
+// Two-tone display title, as in the web UI: the claim in ink, the qualifier in soft grey.
+function titleRuns(primary, secondary, colors = {}) {
+  return [
+    { text: primary, options: { color: colors.primary ?? S.navy } },
+    { text: secondary, options: { color: colors.secondary ?? HEX.soft } },
+  ];
 }
 
 function text(slide, runs, o) {
@@ -281,15 +288,18 @@ function pill(slide, label, o) {
 }
 
 function numDot(slide, n, x, y, d, fill) {
-  slide.addText(String(n), {
+  // Web UI "01" markers: grey disc with ink numerals; the accent marks a positive outcome.
+  const accent = fill === S.teal;
+  slide.addText(String(n).padStart(2, "0"), {
     shape: pres.shapes.OVAL,
     x,
     y,
     w: d,
     h: d,
-    fill: { color: fill },
-    color: S.white,
-    fontSize: d > 0.4 ? 16 : 11,
+    fill: { color: accent ? S.teal : S.white },
+    line: accent ? undefined : { color: HEX.line, width: 1 },
+    color: accent ? S.white : S.navy,
+    fontSize: d > 0.4 ? 14 : 10,
     bold: true,
     align: "center",
     valign: "middle",
@@ -363,32 +373,43 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     pill(s, "FINTECH TRACK  ·  ASPIRE CASE STUDY", {
       x: 0.7,
-      y: 0.75,
+      y: 0.8,
       w: 3.9,
       h: 0.42,
-      fill: S.teal,
+      fill: HEX.tealT,
+      color: S.teal,
       size: 12,
     });
-    s.addText("Brain Sauce", { placeholder: "title" });
+    // Two-tone display headline, as in the web UI's page headers.
+    s.addText("Brain Sauce.", { placeholder: "title" });
+    text(s, "Answers with receipts.", {
+      x: 0.7,
+      y: 2.5,
+      w: 8.6,
+      h: 1.0,
+      size: 54,
+      bold: true,
+      color: HEX.ice,
+    });
     text(
       s,
       "Ask one question across Confluence, Jira, Slack and Google Drive. Get an answer built only from what you are allowed to see, with the proof attached.",
-      { x: 0.7, y: 2.85, w: 7.6, h: 1.2, size: 20, color: S.mist },
+      { x: 0.7, y: 3.85, w: 7.4, h: 1.0, size: 18, color: HEX.violet },
     );
     text(
       s,
       [
-        { text: "Challenge: ", options: { bold: true } },
+        { text: "Challenge: ", options: { bold: true, color: S.navy } },
         {
           text: "The Internal Brain: a context-aware enterprise knowledge system with RBAC, security logging and audit trail",
         },
       ],
-      { x: 0.7, y: 4.35, w: 7.6, h: 0.8, size: 14, color: HEX.ice },
+      { x: 0.7, y: 5.0, w: 7.4, h: 0.7, size: 13, color: HEX.violet },
     );
     text(
       s,
       "Team: Chai · Raphael · Pavan     |     Tencent Cloud AI CAN DO IT Hackathon Singapore 2026",
-      { x: 0.7, y: 6.55, w: 11.5, h: 0.4, size: 13, color: HEX.ice },
+      { x: 0.7, y: 6.6, w: 11.5, h: 0.35, size: 12, color: S.slate },
     );
 
     // Visual: four sources -> governed answer
@@ -400,19 +421,19 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     ];
     srcs.forEach(([label, data], i) => {
       const y = 1.0 + i * 1.18;
-      iconDot(s, data, 9.15, y, 0.8, S.white, 0.2);
+      iconDot(s, data, 9.15, y, 0.8, S.mist, 0.22);
       text(s, label, {
-        x: 9.05,
+        x: 8.95,
         y: y + 0.84,
-        w: 1.0,
+        w: 1.2,
         h: 0.28,
         size: 11,
-        color: S.mist,
+        color: S.slate,
         align: "center",
       });
-      arrow(s, 10.05, y + 0.4, 11.0, 3.1, { color: HEX.ice, width: 1.25 });
+      arrow(s, 10.05, y + 0.4, 11.0, 3.1, { color: HEX.line, width: 1.25 });
     });
-    iconDot(s, I.shieldW, 11.05, 2.6, 1.1, S.teal, 0.24);
+    iconDot(s, I.shieldW, 11.05, 2.6, 1.1, HEX.green, 0.24);
     text(s, "Governed answer", {
       x: 10.7,
       y: 3.8,
@@ -420,7 +441,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       h: 0.3,
       size: 12,
       bold: true,
-      color: S.white,
+      color: S.navy,
       align: "center",
     });
     text(s, "permitted · fresh · grounded · audited", {
@@ -429,7 +450,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       w: 2.4,
       h: 0.3,
       size: 10,
-      color: HEX.ice,
+      color: S.slate,
       align: "center",
     });
     s.addNotes(
@@ -440,7 +461,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 2. Problem
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Story" });
-    s.addText("A chatbot on top of search fails a fintech in three ways", {
+    s.addText(titleRuns("A chatbot on top of search fails a fintech", " in three ways"), {
       placeholder: "title",
     });
     const cards = [
@@ -536,7 +557,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Story" });
     s.addText(
-      "Our answer: one governed pipeline, four guarantees on every response",
+      titleRuns("One governed pipeline,", " four guarantees on every answer"),
       { placeholder: "title" },
     );
     const p = [
@@ -575,7 +596,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         x,
         y: 1.55,
         w: 2.85,
-        h: 3.75,
+        h: 4.0,
         fill: tint,
         line: null,
         name: "pillar",
@@ -610,7 +631,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
           text: "the web app, the REST API and MCP tools for AI agents all run the same checks, so there is no back door around them.",
         },
       ],
-      { x: 0.6, y: 5.55, w: 12.1, h: 0.6, size: 15 },
+      { x: 0.6, y: 5.75, w: 12.1, h: 0.6, size: 15 },
     );
   }
 
@@ -622,7 +643,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       sectionTitle: "Architecture",
     });
     s.addText(
-      "Restricted evidence never reaches the language model",
+      titleRuns("Restricted evidence never reaches", " the language model"),
       { placeholder: "title" },
     );
 
@@ -748,7 +769,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         S.white,
         S.violet,
       ],
-      ["⑥ Verify", "Deterministic check of every claim, numbers included; no LLM judge", S.white, S.blue],
+      ["⑥ Verify", "Deterministic check of each claim; no LLM judge", S.white, S.blue],
     ];
     boxes.forEach(([h, b, fill, col], i) => {
       card(s, {
@@ -775,7 +796,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         y: Y + 0.45,
         w: BW - 0.2,
         h: 0.82,
-        size: 11,
+        size: 10.5,
         color: S.ink,
       });
       if (i < boxes.length - 1)
@@ -824,7 +845,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       w: 1.9,
       h: 0.3,
       fill: S.coral,
-      size: 9.5,
+      size: 8,
     });
 
     // Denied callout
@@ -912,7 +933,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         2.6,
         2.35,
         I.gears,
-        "Connectors + workers",
+        "Sync workers",
         "Celery: webhooks and syncs. Re-reads every page's permissions each minute.",
       ],
       [
@@ -997,7 +1018,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
 
     text(
       s,
-      "Teal path: only authorised evidence.  Red dashed line: nothing denied crosses it.  Dashed boxes: untrusted or external.  Demo uses a synthetic corpus; in production Slack is searched live as the user and never stored.",
+      "Green path: authorised evidence only.  Red dashed line: nothing denied crosses it.  Dashed boxes: untrusted or external.  Production Slack is searched live, never stored.",
       {
         x: 0.32,
         y: 6.75,
@@ -1019,7 +1040,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       masterName: "CONTENT",
       sectionTitle: "Architecture",
     });
-    s.addText("Four trust boundaries, each failing closed", {
+    s.addText(titleRuns("Four trust boundaries,", " each failing closed"), {
       placeholder: "title",
     });
     const rows = [
@@ -1116,7 +1137,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       sectionTitle: "Architecture",
     });
     s.addText(
-      "We keep each platform's own permission model instead of flattening it",
+      titleRuns("Each platform keeps its own permission model,", " never flattened"),
       { placeholder: "title" },
     );
     const src = [
@@ -1135,7 +1156,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         I.slack,
         "Slack",
-        "Channel membership; public channels for full members only. In production, searched live as the user; nothing stored",
+        "Channel membership. Production: live search as the user, nothing stored",
         "Guests, bots and other workspaces never inherit public access",
       ],
       [
@@ -1211,7 +1232,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
           },
         },
         {
-          text: "A local grant can narrow access but never widen what the source allows. Confidential documents also need the owner, an admin or an active grant.",
+          text: "A local grant can narrow access, never widen it. Confidential documents also need the owner, an admin or an active grant.",
           options: { fontSize: 13, color: HEX.ice },
         },
       ],
@@ -1223,7 +1244,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   pres.addSection({ title: "Proof" });
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("The access-control demo in three scenes", {
+    s.addText(titleRuns("The access-control demo", " in three scenes"), {
       placeholder: "title",
     });
     const scenes = [
@@ -1235,11 +1256,11 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         "“What were the Q3 board deck revenue figures?”",
         [
           {
-            text: "SGD 48.6 million, up 18% year on year",
+            text: "Q3 2026 revenue: SGD 48.6 million, up 18% year on year",
             options: { bold: true, breakLine: true },
           },
           {
-            text: "[1] Board deck Q3 · Google Drive",
+            text: "[E4] Q3 2026 Board Deck · Google Drive · 8/8 claims supported",
             options: { color: S.blue, fontSize: 11 },
           },
         ],
@@ -1254,11 +1275,11 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         "“What were the Q3 board deck revenue figures?”",
         [
           {
-            text: "No figures, no title, no hint the deck exists",
+            text: "“There is not enough evidence to answer this question.”",
             options: { bold: true, breakLine: true },
           },
           {
-            text: "Opening the deck returns the same 404 as a missing file",
+            text: "11 of 11 candidates denied before the model; opening the deck gives the same 404 as a missing file",
             options: { fontSize: 11, color: S.slate },
           },
         ],
@@ -1387,7 +1408,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
     s.addText(
-      "All five mandatory scenarios run end to end, and each is a test",
+      titleRuns("All five mandatory scenarios run end to end,", " and each is a test"),
       { placeholder: "title" },
     );
     const H = (t) => ({
@@ -1414,7 +1435,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "1",
           "Unified query",
-          "John asks about the Rail-B cutover. The facts are spread across email, Jira, Slack and Drive, and one answer cites several of them",
+          "John asks about the Rail-B cutover and gets one answer citing an email, Jira PAY-150, two Slack channels and the Drive vendor list (8/8 claims supported)",
           "test_unified_cited_query",
         ),
         row(
@@ -1475,10 +1496,11 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 9. Answer receipts
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("Every answer ships with its own receipts", {
+    s.addText(titleRuns("Every answer ships", " with its own receipts"), {
       placeholder: "title",
     });
-    // Answer card mock
+    // Answer card, laid out like the web UI's answer view, with values from a real run on main
+    // (demo corpus, mock model, 16 Oct 2026).
     card(s, {
       x: 0.6,
       y: 1.5,
@@ -1486,15 +1508,14 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       h: 5.2,
       fill: S.white,
       line: HEX.line,
-      shadow: true,
       name: "answer-card",
     });
-    text(s, "“What were the Q3 board deck revenue figures?”", {
+    text(s, "“What were the Q3 board deck revenue figures?”  ·  John Tan", {
       x: 0.9,
-      y: 1.7,
+      y: 1.68,
       w: 5.3,
-      h: 0.4,
-      size: 14,
+      h: 0.35,
+      size: 12,
       italic: true,
       color: S.slate,
     });
@@ -1502,54 +1523,64 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       s,
       [
         {
-          text: "Q3 2026 revenue was SGD 48.6 million, up 18% year on year ",
+          text: "Q3 2026 revenue: SGD 48.6 million, up 18% year on year (Q3 2025: SGD 41.2 million). ",
           options: { color: S.ink },
         },
-        { text: "[1]", options: { color: S.blue, bold: true } },
-        {
-          text: ". Q4 guidance is SGD 50 to 52 million ",
-          options: { color: S.ink },
-        },
-        { text: "[1]", options: { color: S.blue, bold: true } },
-        { text: ".", options: { color: S.ink } },
+        { text: "[E4]", options: { color: S.teal, bold: true } },
+        { text: " Q4 2026 revenue guidance: SGD 50 to 52 million. ", options: { color: S.ink } },
+        { text: "[E1]", options: { color: S.teal, bold: true } },
       ],
-      { x: 0.9, y: 2.2, w: 5.3, h: 0.95, size: 16 },
+      { x: 0.9, y: 2.08, w: 5.3, h: 1.05, size: 14 },
     );
+    // Grounding tiles: the green coverage tile and grey stat tiles, as in the app.
+    card(s, { x: 0.9, y: 3.25, w: 1.6, h: 1.25, fill: HEX.green, line: null, name: "coverage-tile" });
+    text(s, "100%", { x: 1.02, y: 3.32, w: 1.4, h: 0.6, size: 30, bold: true, color: S.white });
+    text(s, "Claim coverage", { x: 1.02, y: 4.1, w: 1.4, h: 0.3, size: 10, color: S.white });
+    [
+      ["8", "claims", S.navy],
+      ["8", "supported", S.navy],
+      ["2", "injection flags", S.coral],
+    ].forEach(([n, label, col], i) => {
+      const x = 2.6 + i * 1.22;
+      card(s, { x, y: 3.25, w: 1.12, h: 1.25, fill: S.mist, line: null, name: "stat-tile" });
+      text(s, n, { x: x + 0.12, y: 3.32, w: 0.9, h: 0.6, size: 26, bold: true, color: col });
+      text(s, label, { x: x + 0.12, y: 4.1, w: 0.95, h: 0.3, size: 10, color: S.slate });
+    });
     const parts = [
-      [2.25, 3.3, S.blue, "[1]  Board deck Q3 · Google Drive · supported"],
-      [3.85, 3.8, S.amber, "Freshness: fresh · verified at source"],
-      [3.85, 4.3, S.teal, "Grounded: 2/2 claims supported"],
-      [3.85, 4.8, S.teal, "Access: allowed count only, no denials shown"],
-      [3.85, 5.3, S.violet, "Audit event a3f9…  ·  chain verified  ·  answer by reveal only"],
+      [S.navy, "[E4]  Q3 2026 Board Deck · Google Drive · supported"],
+      [S.amber, "Freshness: mixed · stale failover runbook omitted"],
+      [S.teal, "Access: 11 documents allowed · policy ac-v2"],
+      [S.navy, "Audit #f40c83b6 · hash chain verified"],
     ];
-    parts.forEach(([, y, col, label]) => {
+    parts.forEach(([col, label], i) => {
+      const y = 4.68 + i * 0.42;
       card(s, {
         x: 0.9,
         y,
         w: 5.3,
-        h: 0.4,
-        fill: S.mist,
-        line: null,
-        r: 0.05,
+        h: 0.34,
+        fill: S.white,
+        line: HEX.line,
+        r: 0.17,
         name: "receipt-line",
       });
       text(s, label, {
-        x: 1.05,
+        x: 1.08,
         y,
-        w: 5.1,
-        h: 0.4,
-        size: 12,
+        w: 5.0,
+        h: 0.34,
+        size: 11,
         color: col,
         bold: true,
         valign: "middle",
       });
     });
-    text(s, "Illustrative layout; values from the synthetic demo corpus.", {
+    text(s, "Real output on main (demo corpus, mock model), 16 Oct 2026.", {
       x: 0.9,
-      y: 6.2,
+      y: 6.38,
       w: 5.3,
-      h: 0.3,
-      size: 10,
+      h: 0.26,
+      size: 9.5,
       italic: true,
       color: S.slate,
     });
@@ -1600,7 +1631,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 9b. How we compare
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("Same foundation as Glean and Copilot, plus what they don't document", {
+    s.addText(titleRuns("Glean and Copilot's foundation,", " plus what they don't document"), {
       placeholder: "title",
     });
     const H = (t, ours = false) => ({
@@ -1682,7 +1713,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 9c. Revocation delay chart
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("A revocation at the source is enforced within 5 minutes", {
+    s.addText(titleRuns("A revocation at the source", " is enforced within 5 minutes"), {
       placeholder: "title",
     });
     s.addChart(
@@ -1716,7 +1747,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         catAxisLabelFontSize: 12,
         catAxisLabelFontFace: "+mn-lt",
         catAxisLineShow: false,
-        chartColors: ["475569", "475569", "475569", HEX.teal],
+        chartColors: [HEX.bar, HEX.bar, HEX.bar, HEX.green],
         barGapWidthPct: 60,
         showValue: true,
         dataLabelPosition: "outEnd",
@@ -1762,7 +1793,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 10. Trade-offs
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("Design trade-offs we chose deliberately", {
+    s.addText(titleRuns("Design trade-offs", " we chose deliberately"), {
       placeholder: "title",
     });
     const H = (t) => ({
@@ -1838,19 +1869,19 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
   // ============================================================ 11. Numbers + stack
   {
     const s = pres.addSlide({ masterName: "CONTENT", sectionTitle: "Proof" });
-    s.addText("Tested offline, built to run on Tencent Cloud", {
+    s.addText(titleRuns("Tested offline,", " built to run on Tencent Cloud"), {
       placeholder: "title",
     });
     const stats = [
       [
-        "674",
+        "676",
         "automated tests pass with no network, using mock providers and in-memory stores",
         S.teal,
       ],
       ["0", "restricted documents in the contractor's model context", S.coral],
       [
         "5 min",
-        "longest a revocation at the source goes unnoticed for confidential documents; in-app grants apply on the next query",
+        "max time a source revocation goes unnoticed (confidential); in-app grants: next query",
         S.amber,
       ],
     ];
@@ -1910,7 +1941,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     text(
       s,
-      "Test count: main plus PRs #9 and #10, 15 Oct 2026 (11 SQL tests run separately against Postgres).",
+      "Test count: main, 16 Oct 2026 (11 SQL tests run separately against Postgres).",
       {
         x: 0.6,
         y: 6.55,
@@ -1930,7 +1961,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       sectionTitle: "Proof",
     });
     s.addText(
-      "Ask anything. See only what you are allowed to. Prove every answer.",
+      titleRuns("Ask anything. See only what you are allowed to.", " Prove every answer.", { primary: S.white, secondary: HEX.green }),
       { placeholder: "title" },
     );
     const items = [
@@ -1977,7 +2008,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       masterName: "CONTENT",
       sectionTitle: "Internal",
     });
-    s.addText("Team status, 13 Oct (internal: remove before submission)", {
+    s.addText(titleRuns("Team status, 13 Oct", " (internal: remove before submission)"), {
       placeholder: "title",
     });
     const cols = [
@@ -2007,7 +2038,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         S.blue,
         HEX.blueT,
-        "Next, before filming 14 Oct",
+        "Next",
         [
           "Store the audit chain's latest hash outside the app database (Raphael)",
           "Log model and prompt-template version per answer (Raphael)",

@@ -17,3 +17,9 @@ Run it from a scratch folder, not inside the repo, so `node_modules` stays out o
 on the slides (test counts, demo values) come from the synthetic seed corpus and the test suite
 as of 13 October 2026; update them in the script when they change. Vendor comparisons on slides
 10 and 11 come from `docs/ACCESS_CONTROL_INDUSTRY_REVIEW.md`; re-check them before reuse.
+
+The visual style follows the web UI (decision D-020): white pages, near-black and grey type with
+two-tone titles, one muted green accent, amber and red only for status, flat 4px cards with
+hairline borders, and "01" number markers. Arial stands in for the UI's Inter Tight. Slide 9
+shows real output from `main` (demo corpus, mock model). The cover in `docs/submission/` is built
+by `build-cover.js` in the same style.
