@@ -1,6 +1,6 @@
 # API Contract
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 ## Overview
 
@@ -138,8 +138,10 @@ Purpose: persona list for the switcher. Auth: none.
 
 ### GET /api/me
 
-Purpose: the resolved principal. Response: one principal as above plus `external_identities`.
-Errors: `401`.
+Purpose: the resolved principal. Response: one principal as above plus `external_identities`
+and `platform_groups`. `groups` is resolved (D-023): direct groups plus every ancestor group.
+`platform_groups` maps a source kind to the principal's group ids on that platform (empty when no
+group has a bound platform id). Errors: `401`.
 
 ### GET /api/documents?q=&source_id=&limit=20&offset=0
 
@@ -406,10 +408,21 @@ documents. Items: `{"id", "document_id", "document_title", "principal_id", "reas
 
 `approve` creates an `allow` grant for the requester (`subject_type: principal`) and returns
 `200 {"request": {…}, "grant": {…}, "effective": bool, "note": str | null}`; `deny` returns
-`200 {"request": {…}}`. Both audited. A local grant cannot widen what the source platform allows,
-so `effective` is `false` when the requester still cannot read the document, and `note` tells
-the approver why (for example "Google Drive doesn't share it with them") so they can fix it at
-the source.
+`200 {"request": {…}, "note": str}`. Both audited. A local grant cannot widen what the source
+platform allows, so `effective` is `false` when the requester still cannot read the document,
+and `note` tells the approver why, naming the requester, so they can fix it:
+
+| Cause                              | `note`                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source does not share it           | "Approved, but Alex Tan still can't open this document: Google Drive doesn't share it with them. Ask the owner to share it in Google Drive."       |
+| Permissions not confirmed recently | "Approved, but Google Drive hasn't confirmed this document's permissions recently, so it stays closed to everyone until the next successful sync." |
+| A deny grant                       | "Approved, but a deny grant on this document still blocks John Tan. Revoke it to let them in."                                                     |
+| Inactive requester                 | "Approved, but Alex Tan's account is inactive, so they still can't open it."                                                                       |
+| Anything else                      | "Approved, but another access rule still blocks Alex Tan."                                                                                         |
+| `deny`                             | "Denied. Nothing changes for Alex Tan, and they aren't notified."                                                                                  |
+
+The requester is never told the outcome: decided requests are not listed to them, so a denial
+cannot confirm that the document exists.
 Errors: `404`, `403`, `409` (already decided).
 
 ### GET /api/access/map
@@ -419,8 +432,11 @@ too, so `documents` holds only the documents the caller can read (no titles or c
 other document). Every active principal is evaluated against those documents with the same
 policy `filter` as retrieval, and `edges` holds **allow decisions only**: a missing edge means
 no access, and no deny reason is ever serialised. `via` lists the active allow grants behind an
-`R5:explicit_grant` edge (empty for every other rule). `sources` holds only sources with a
-mapped document. Audited `access.map` (payload: `mapped_document_ids`, `principal_ids`,
+`R5:explicit_grant` edge (empty for every other rule): the grants the policy decision itself
+reports (`AccessDecision.grant_ids`). `sources` holds only sources with a mapped document. Each
+document carries `permissions_synced_at` (when its source permissions were last synced) and
+`permissions_expire_at` (when that sync stops counting; after it the document is denied to
+everyone, and leaves the map, until the next sync; D-018); both are `null` for uploads. Audited `access.map` (payload: `mapped_document_ids`, `principal_ids`,
 `edge_count`, `policy_version`). Never cached: a revocation shows on the next call.
 
 ```json
@@ -450,7 +466,9 @@ mapped document. Audited `access.map` (payload: `mapped_document_ids`, `principa
       "slug": "files/board-deck-q3",
       "source_id": "gdrive-finance",
       "source_kind": "gdrive",
-      "classification": "confidential"
+      "classification": "confidential",
+      "permissions_synced_at": "2026-10-12T08:59:20Z",
+      "permissions_expire_at": "2026-10-12T09:04:20Z"
     }
   ],
   "edges": [

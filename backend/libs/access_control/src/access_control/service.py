@@ -9,6 +9,7 @@ import asyncio
 from collections.abc import Iterable
 from datetime import datetime
 
+from access_control.groups import resolve_groups
 from access_control.models import (
     AccessDecision,
     DenyReason,
@@ -21,6 +22,7 @@ from access_control.policy import DefaultAccessPolicy
 from access_control.protocols import (
     AccessPolicy,
     GrantStore,
+    GroupDirectory,
     PermissionSnapshotStore,
     PrincipalDirectory,
     SourcePermissionVerifier,
@@ -42,8 +44,10 @@ class AccessControlService:
         snapshots: PermissionSnapshotStore,
         policy: AccessPolicy | None = None,
         verifier: SourcePermissionVerifier | None = None,
+        groups: GroupDirectory | None = None,
     ) -> None:
         self.directory = directory
+        self.group_directory = groups
         self.grants = grants
         self.snapshots = snapshots
         self.policy = policy or DefaultAccessPolicy()
@@ -68,6 +72,9 @@ class AccessControlService:
             principal = Principal.model_validate(
                 {**principal.model_dump(warnings="error"), "groups": groups}
             )
+            if self.group_directory is not None:
+                definitions = await self.group_directory.list_definitions()
+                principal = resolve_groups(principal, definitions)
             # A missing grant-store key is an incomplete read, not an empty grant list.
             hydrated = [
                 DocumentAccessContext.model_validate(

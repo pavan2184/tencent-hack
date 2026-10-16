@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-10-13
+Last updated: 2026-10-16
 
 Architectural and product decisions, newest last. Each entry is immutable once accepted; a change
 of mind is a new entry that supersedes the old one.
@@ -413,3 +413,59 @@ the same policy `filter` as retrieval, is never cached and is audited as
 `access.map`. The frontend draws it as plain SVG with a fixed layered layout
 (groups → people → documents inside source panels). It adds no graph library and
 no lockfile change.
+
+### D-022 - The in-memory API syncs its own sources
+
+Status: Accepted
+Date: 2026-10-16
+
+Permission snapshots expire by classification, 5 minutes for confidential documents (D-018).
+Only a sync refreshes them, and Celery beat runs syncs only in the Docker stack. An in-memory
+API (`REPO_BACKEND=memory`, used for local runs and browser checks) keeps its stores inside the
+API process, where no worker can reach them. Five minutes after start-up the board deck was
+denied to everyone, admin and owner included, and dropped off the access map.
+
+When the API builds its own in-memory services, its lifespan therefore runs
+`app.services.memory_sync.keep_permissions_fresh`. This loop runs the worker's `run_sync`
+(delta) for every source with a real connector, every `SYNC_DELTA_INTERVAL_S` seconds, with the
+beat's idempotency key. A failing source is logged and skipped. The loop never runs with the SQL
+backend or under tests that install their own services. This departs from "thin API, heavy
+workers" only where no worker can exist. The access map also shows when each document's source
+permissions were last synced and when they expire, so a presenter can see an expiry coming.
+
+### D-023 - Group resolution: nested groups and platform group ids
+
+Status: Accepted
+Date: 2026-10-16
+
+Directories list direct memberships, but platforms treat members of a nested group as members
+of its ancestors. Each platform also names a group its own way: Drive by address, Confluence and
+Jira by their own ids. Matching local group ids as-is under-grants nested members and lets a
+look-alike platform group name match.
+
+`access_control.resolve_groups` (pure) expands `Principal.groups` to direct groups plus every
+ancestor and fills `Principal.platform_groups[kind]`. For each platform where any of those groups
+has a bound id, that list holds the bound id per group (the local id when a group has none). A
+bound id replaces the local id on that platform, exactly as a bound identity does, so it can
+never widen access. The policy matches Confluence, Jira and Drive group entries against it.
+Definitions live in a `GroupDirectory`: in memory, or SQL tables from migration `0201`. Seed
+groups may carry `parents` and `platform_ids`. The app resolves groups wherever it loads a
+principal for a decision: actor resolution, the access map and approval checks. Live
+directory sync (Google Groups, Atlassian groups) remains connector work.
+
+### D-024 - One permission-drift hook shared with freshness
+
+Status: Accepted
+Date: 2026-10-16
+
+A source ACL change with unchanged content was silent: the new snapshot replaced the old one,
+nothing recorded that the audience changed, and freshness never heard about it. Every imported
+snapshot now goes through `app.services.permission_drift.store_permissions`. It compares the new
+snapshot with the stored one by `permission_fingerprint` (`access_control.detect_permission_drift`).
+On a change it records a hash-chained `access.permission_drift` audit event. The event carries
+fingerprints and versions only, never the members added or removed. When a permission refresh
+(not a content sync) saw the change, the hook also accepts a freshness `metadata_change` event,
+whose id is unique per ACL state. The next sync re-applies the object, so freshness knows it
+changed, and re-ingesting it brings the page's own `permission_version` into line. Until then a
+version mismatch denies everyone, so the gap fails closed. Uploads are managed locally and are not
+part of this.

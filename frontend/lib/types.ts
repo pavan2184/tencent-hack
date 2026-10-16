@@ -266,7 +266,8 @@ export interface AccessRequest {
 }
 
 /** Result of approving or denying a request. `effective` is false when the source platform
- * still withholds the document; `note` then tells the approver what to do. */
+ * still withholds the document (null after a denial); `note` tells the approver what happened
+ * and what to do. */
 export interface AccessDecisionResult {
   request: AccessRequest;
   effective: boolean | null;
@@ -296,6 +297,11 @@ export interface AccessMapDocument {
   source_id: string;
   source_kind: string;
   classification: Classification;
+  /** When the source permissions behind your access were last synced; null for uploads. */
+  permissions_synced_at: string | null;
+  /** When that sync stops counting: the document is then denied to everyone until the next
+   * sync. Null for uploads, whose permissions are managed locally. */
+  permissions_expire_at: string | null;
 }
 
 export interface AccessMapEdge {

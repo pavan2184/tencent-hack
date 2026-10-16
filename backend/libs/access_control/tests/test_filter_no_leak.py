@@ -134,6 +134,10 @@ def test_denied_decisions_reveal_nothing_beyond_ids_given(policy, people, corpus
             "matched_rule",
             "permission_version",
             "permission_captured_at",
+            "permission_expires_at",
+            "grant_ids",
             "policy_version",
             "evaluated_at",
         }
+        if not decision.allowed:
+            assert decision.grant_ids == []  # only an R5 allow names the grants it used

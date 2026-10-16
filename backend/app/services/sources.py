@@ -15,6 +15,7 @@ from app.core.errors import Conflict, NotFound, NotImplementedFeature, Validatio
 from app.schemas.domain import IngestLogEntry, Page, Source
 from app.services import jobs
 from app.services.ingestion import make_apply
+from app.services.permission_drift import store_permissions
 
 if TYPE_CHECKING:
     from app.services.wiring import Services
@@ -213,7 +214,8 @@ async def refresh_permission_snapshots(
     age (`access_control.DEFAULT_MAX_PERMISSION_AGE`), even when content did not change.
 
     Uploads are skipped: their permissions are managed locally. A page whose permissions cannot
-    be read keeps its old snapshot, which then ages out and is denied (fail closed)."""
+    be read keeps its old snapshot, which then ages out and is denied (fail closed). An ACL that
+    changed is audited and reported to freshness (`permission_drift.store_permissions`)."""
     if source.kind == SourceKind.upload:
         return 0
     refreshed = 0
@@ -228,7 +230,7 @@ async def refresh_permission_snapshots(
                 extra={"source_id": source.id, "page_id": page.id},
             )
             continue
-        await services.permission_store.put(page.id, perms)
+        await store_permissions(services, page, perms, observed_via="refresh", source=source)
         refreshed += 1
     return refreshed
 

@@ -84,6 +84,10 @@ class Principal(BaseModel):
     ``external_identities`` maps a ``SourceKind`` value (e.g. ``"slack"``) to the principal's id
     on that platform (e.g. ``"U_JORDAN"``). A binding replaces the local identity. Only when
     absent does the policy fall back to ``id`` (and, for ``gdrive``/``email``, also ``email``).
+
+    ``platform_groups`` maps a ``SourceKind`` value to the principal's group ids on that platform,
+    filled by ``access_control.groups.resolve_groups``. When a platform has an entry it replaces
+    ``groups`` for that platform's group ACL entries; otherwise ``groups`` is matched directly.
     """
 
     id: str
@@ -92,6 +96,7 @@ class Principal(BaseModel):
     roles: list[str] = Field(default_factory=list)
     groups: list[str] = Field(default_factory=list)
     external_identities: dict[str, str] = Field(default_factory=dict)
+    platform_groups: dict[str, list[str]] = Field(default_factory=dict)
     is_active: bool = True
 
 
@@ -166,6 +171,11 @@ class AccessDecision(BaseModel):
     # When the permission snapshot behind this decision was captured, so an auditor can see how
     # current the system's knowledge of the source's permissions was. None when no snapshot.
     permission_captured_at: datetime | None = None
+    # When that snapshot stops counting (captured_at + the classification's maximum age). None for
+    # uploads, documents without a snapshot, or a policy with the age check turned off.
+    permission_expires_at: datetime | None = None
+    # The active allow grants that satisfied ``R5:explicit_grant``; empty for every other rule.
+    grant_ids: list[str] = Field(default_factory=list)
     policy_version: str
     evaluated_at: datetime
 

@@ -20,8 +20,10 @@ from access_control import (
     AccessRequestStore,
     DefaultAccessPolicy,
     GrantStore,
+    GroupDirectory,
     InMemoryAccessRequestStore,
     InMemoryGrantStore,
+    InMemoryGroupDirectory,
     InMemoryPermissionSnapshotStore,
     PermissionSnapshotStore,
     Principal,
@@ -58,6 +60,7 @@ class Services:
     permission_store: PermissionSnapshotStore
     principal_directory: PrincipalDirectory
     access_request_store: AccessRequestStore
+    group_directory: GroupDirectory
     chat: ChatProvider
     embedder: EmbeddingProvider
     sanitizer: EvidenceSanitizer
@@ -83,11 +86,14 @@ class RepoPrincipalDirectory:
         return list(principal.groups) if principal is not None else []
 
 
-def _sql_stores() -> tuple[Repo, FreshnessStore, GrantStore, PermissionSnapshotStore, Any, Any]:
+def _sql_stores() -> tuple[
+    Repo, FreshnessStore, GrantStore, PermissionSnapshotStore, Any, Any, GroupDirectory
+]:
     try:
         from app.adapters.access_stores import (
             SqlAccessRequestStore,
             SqlGrantStore,
+            SqlGroupDirectory,
             SqlPermissionSnapshotStore,
             SqlPrincipalDirectory,
         )
@@ -100,7 +106,8 @@ def _sql_stores() -> tuple[Repo, FreshnessStore, GrantStore, PermissionSnapshotS
             "Expected app.db.repo_sql.SqlRepo, app.db.session.async_session_factory, "
             "app.adapters.freshness_store.SqlFreshnessStore and app.adapters.access_stores."
             "{SqlGrantStore, SqlPermissionSnapshotStore, SqlPrincipalDirectory, "
-            "SqlAccessRequestStore}. Use REPO_BACKEND=memory to run without Postgres."
+            "SqlAccessRequestStore, SqlGroupDirectory}. Use REPO_BACKEND=memory to run without "
+            "Postgres."
         ) from exc
     sf = async_session_factory
     return (
@@ -110,6 +117,7 @@ def _sql_stores() -> tuple[Repo, FreshnessStore, GrantStore, PermissionSnapshotS
         SqlPermissionSnapshotStore(sf),
         SqlPrincipalDirectory(sf),
         SqlAccessRequestStore(sf),
+        SqlGroupDirectory(sf),
     )
 
 
@@ -123,7 +131,7 @@ def build_services(
     settings = settings or get_settings()
     clock = clock or SystemClock()
     if settings.REPO_BACKEND == "sql":
-        repo, freshness_store, grants, perms, directory, requests = _sql_stores()
+        repo, freshness_store, grants, perms, directory, requests, groups = _sql_stores()
     else:
         from app.db.repo_memory import InMemoryRepo
 
@@ -133,6 +141,7 @@ def build_services(
         perms = InMemoryPermissionSnapshotStore()
         directory = RepoPrincipalDirectory(repo)
         requests = InMemoryAccessRequestStore()
+        groups = InMemoryGroupDirectory()
 
     chat = chat or get_chat_provider(settings)
     embedder = embedder or get_embedding_provider(settings)
@@ -156,6 +165,7 @@ def build_services(
         permission_store=perms,
         principal_directory=directory,
         access_request_store=requests,
+        group_directory=groups,
         chat=chat,
         embedder=embedder,
         sanitizer=RegexInjectionSanitizer(),

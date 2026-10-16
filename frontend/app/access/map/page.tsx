@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AccessMapView } from "@/components/AccessMap";
+import { AccessMapView } from "@/components/access-map/AccessMapView";
 import { PageHeader } from "@/components/PageHeader";
 import { usePersona } from "@/components/PersonaProvider";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";

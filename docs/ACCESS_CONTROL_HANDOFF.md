@@ -1,6 +1,6 @@
 # Access-control handoff
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 ## Delivered by Chai
 
@@ -36,6 +36,16 @@ and the remaining live-provider and authentication boundaries.
 6. Protect grant creation/revocation and audit routes with separate management
    privileges. Admin status does not grant native read access. Approval adds a
    local grant only after the integrating app explicitly writes it.
+7. **Connectors (Pavan):** turn provider responses into snapshots with the capture
+   helpers, one per platform: `slack_…`, `gdrive_…`, `confluence_…`,
+   `jira_permissions_from_api` and `email_permissions_from_gmail`. A `ValueError`
+   means "incomplete": keep the old snapshot (it ages out and denies), never write a
+   partial one. Write every snapshot through `app.services.permission_drift.store_permissions`
+   so ACL changes are audited and reach freshness (D-024).
+8. **Directory sync:** write `GroupDefinition`s (parents, platform group ids such
+   as a Drive group address) to `services.group_directory`. Load principals for a
+   decision through `resolve_principal` / `with_resolved_groups` so nested groups
+   and platform ids apply (D-023).
 
 The latest main now includes REST/MCP handlers, SQL adapters and the governed
 query path. Its existing `filter_pages`/`visible_page` functions use the updated

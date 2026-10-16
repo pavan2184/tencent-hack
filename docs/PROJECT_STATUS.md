@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-13
+Last updated: 2026-10-16
 
 ## Current phase
 
@@ -62,7 +62,8 @@ document is no longer readable (D-017). Regression tests: `app/tests/test_query_
 Built on the access-control v2 work. Snapshots of source permissions now expire by
 classification (confidential 5 min) and every delta sync refreshes them, so a revocation at the
 source is enforced within 5 minutes for confidential documents (D-018). **The demo stack must run
-the Celery worker and beat**, or confidential documents go dark after 5 minutes.
+the Celery worker and beat**, or confidential documents go dark after 5 minutes. (An in-memory
+API now syncs its own sources every `SYNC_DELTA_INTERVAL_S`; D-022.)
 
 ## Audit need-to-know and approval feedback (Chai, 2026-10-13, branch `feat/audit-need-to-know`)
 
@@ -89,9 +90,11 @@ permissions cap local grants), which still need team agreement.
   Confluence and Slack probes or simulations, port the TS eval fixtures to Python tests; own the
   Celery/connector pipeline; rehearse the public ADP-backed demo and monitor its free credit
   balance. TokenHub activation and paid cloud hosting are excluded.
-- **Chai (access control):** real platform-permission ingestion, group resolution, a
-  permission-drift hook shared with freshness, final deny wording; review the corpus visibility
-  matrix in `backend/seed/corpus/README.md`.
+- **Chai (access control):** group resolution (D-023), the permission-drift hook (D-024),
+  final deny wording and capture normalisers for every platform are done (16 Oct, below). Left:
+  wire the normalisers into live, credentialed connectors with Pavan (the platform connectors are
+  still stubs); sync real group memberships and platform group ids from Google Workspace and
+  Atlassian; review the corpus visibility matrix in `backend/seed/corpus/README.md`.
 - **Everyone:** PR only `backend/libs/<your lib>`, `backend/app/adapters/<your file>` and
   `infra/postgres/migrations/<your range>`; capture CodeBuddy/WorkBuddy evidence daily.
 - **14 Oct:** demo script on the real stack with `PROVIDER_MODE=real` against Tencent ADP.
@@ -229,3 +232,40 @@ claim too. `sentence_spans` and the verifier are unchanged, so verify scores do 
 composer id stays `extractive-v1` (Raphael to decide whether it should be bumped). Tests: three
 new cases in `libs/groundedness/tests/test_compose.py`; full backend suite 686 passed, 11 skipped.
 Timeline rows (`**2026-10-10** | Slack — ...`) can still be picked.
+
+## Access-control follow-ups (Chai, 16 October 2026)
+
+Branch `PinZheng/access-control-followups`.
+
+- **Permission expiry on the map.** The in-memory API had no Celery beat, so 5 minutes after
+  start-up the board deck was denied to everyone and dropped off the map (reproduced in a test).
+  The API now runs the worker's delta sync in-process when it builds its own in-memory services
+  (D-022). Each map document reports `permissions_synced_at` and `permissions_expire_at`. The
+  page shows "Source permissions synced 18s ago · first expiry in 4m 42s", turns amber 60 s
+  before an expiry, and offers a reload if one passes while it is open. The Docker stack was
+  already covered by beat (every 60 s).
+- **Grants from the policy.** `AccessDecision` now carries `grant_ids` (the grants behind an
+  `R5` allow) and `permission_expires_at`. The map uses `grant_ids` instead of re-implementing
+  grant matching.
+- **`AccessMap.tsx` split** into `frontend/components/access-map/` (14 files, largest 242 lines):
+  rules, layout, highlight, canvas, edges, nodes, filter, sync status, detail panels.
+- **Platform permission capture.** `confluence_permissions_from_api`,
+  `jira_permissions_from_api` and `email_permissions_from_gmail` join the Slack and Drive
+  normalisers. They need complete pages and refuse what they cannot represent: role principals,
+  dynamic Jira holders (reporter, assignee, application roles) and missing restriction lists. HTTP
+  clients and credentials stay with the (stub) connectors.
+- **Group resolution** (D-023): nested groups and per-platform group ids, migration `0201`,
+  `GroupDirectory` (memory + SQL), seed `parents`/`platform_ids`, resolved on every principal
+  loaded for a decision.
+- **Permission-drift hook** (D-024): ACL changes are audited (`access.permission_drift`,
+  fingerprints only) and handed to freshness as `metadata_change` events.
+- **Final deny wording.** The shared not-found page now says "It doesn't exist, or you don't have
+  access to it" and offers a request form (the API answers 202 either way). Approver notes name
+  the requester and the fix, and a denial returns "Denied. Nothing changes for …, and they aren't
+  notified."
+
+Verification: backend 737 passed, 12 skipped offline. The 12 SQL integration tests passed against
+a disposable pgvector Postgres 16 container, migration `0201` included. Ruff, frontend typecheck
+and lint pass. The map, the sync status at 1440 px and 375 px, the not-found request flow and the
+denial note were checked in the browser against an in-memory API. That API also showed the
+in-process sync moving the deck's sync time forward within one interval.

@@ -145,8 +145,11 @@ class DefaultAccessPolicy:
         permission_version = doc.permission_version or (
             snapshot.permission_version if snapshot is not None else None
         )
+        expires_at = _expires_at(doc, self.max_permission_age)
 
-        def decision(rule: str, reason: DenyReason | None) -> AccessDecision:
+        def decision(
+            rule: str, reason: DenyReason | None, grant_ids: Iterable[str] = ()
+        ) -> AccessDecision:
             return AccessDecision(
                 document_id=doc.document_id,
                 decision=Effect.allow if reason is None else Effect.deny,
@@ -154,6 +157,8 @@ class DefaultAccessPolicy:
                 matched_rule=rule,
                 permission_version=permission_version,
                 permission_captured_at=snapshot.captured_at if snapshot is not None else None,
+                permission_expires_at=expires_at,
+                grant_ids=list(grant_ids),
                 policy_version=self.policy_version,
                 evaluated_at=now,
             )
@@ -170,7 +175,8 @@ class DefaultAccessPolicy:
             and _subject_matches(g, principal)
         ]
         active = [g for g in matching if g.revoked_at is None]
-        has_allow = any(g.effect == Effect.allow for g in active)
+        allow_ids = [g.id for g in active if g.effect == Effect.allow]
+        has_allow = bool(allow_ids)
 
         def denied(rule: str, reason: DenyReason) -> AccessDecision:
             if not has_allow and any(
@@ -197,7 +203,7 @@ class DefaultAccessPolicy:
             return decision(RULE_ADMIN, None)
         # R5
         if has_allow:
-            return decision(RULE_EXPLICIT_GRANT, None)
+            return decision(RULE_EXPLICIT_GRANT, None, allow_ids)
 
         if doc.classification == Classification.restricted:
             return denied(RULE_RESTRICTED, DenyReason.classification_requires_grant)
@@ -248,6 +254,19 @@ def _source_access(
     return (rule, None) if member else (rule, DenyReason.no_source_membership)
 
 
+def _expires_at(
+    doc: DocumentAccessContext, max_age: Mapping[Classification, timedelta] | None
+) -> datetime | None:
+    """When the document's snapshot stops counting, or None if it never ages out."""
+    snapshot = doc.source_permissions
+    if max_age is None or snapshot is None or doc.source_kind == SourceKind.upload:
+        return None
+    captured_at = snapshot.captured_at
+    if captured_at.tzinfo is None or captured_at.utcoffset() is None:
+        return None
+    return captured_at + max_age[doc.classification]
+
+
 def _is_stale(
     doc: DocumentAccessContext,
     captured_at: datetime,
@@ -280,6 +299,17 @@ def platform_identities(principal: Principal, kind: str) -> set[str]:
     return ids
 
 
+def platform_groups(principal: Principal, kind: str) -> set[str]:
+    """The group ids a principal holds on platform ``kind``.
+
+    Resolved platform group ids (``access_control.groups.resolve_groups``) take precedence; a
+    principal without them for ``kind`` is matched by its local group ids (synthetic seeds).
+    """
+
+    bound = principal.platform_groups.get(kind)
+    return set(bound if bound is not None else principal.groups)
+
+
 def has_source_membership(
     principal: Principal, raw: object, *, now: datetime | None = None
 ) -> bool | None:
@@ -309,7 +339,7 @@ def _in(ids: set[str], groups: set[str], users: Iterable[str], group_ids: Iterab
 
 def _confluence(principal: Principal, raw: ConfluencePermissions) -> bool:
     ids = platform_identities(principal, SourceKind.confluence)
-    groups = set(principal.groups)
+    groups = platform_groups(principal, SourceKind.confluence)
     if not _in(ids, groups, raw.space_view_users, raw.space_view_groups):
         return False
     if (raw.page_view_users or raw.page_view_groups) and not _in(
@@ -328,7 +358,7 @@ def _confluence(principal: Principal, raw: ConfluencePermissions) -> bool:
 
 def _jira(principal: Principal, raw: JiraPermissions) -> bool:
     ids = platform_identities(principal, SourceKind.jira)
-    groups = set(principal.groups)
+    groups = platform_groups(principal, SourceKind.jira)
     held_roles = {
         role for role, members in raw.project_roles.items() if _in(ids, groups, members, members)
     }
@@ -357,7 +387,7 @@ def _norm_address(value: str) -> str:
 def _gdrive(principal: Principal, raw: GDrivePermissions, now: datetime) -> bool:
     ids = {_norm_address(i) for i in platform_identities(principal, SourceKind.gdrive)}
     domains = {i.rsplit("@", 1)[1] for i in ids if "@" in i}
-    groups = {g.lower() for g in principal.groups}
+    groups = {g.lower() for g in platform_groups(principal, SourceKind.gdrive)}
     for ace in raw.acl:
         if ace.deleted or (ace.expiration_time is not None and now >= ace.expiration_time):
             continue

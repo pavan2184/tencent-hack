@@ -43,12 +43,19 @@ class AccessMapSource(BaseModel):
 
 
 class AccessMapDocument(BaseModel):
+    """A document the caller can read. The permission times come from the caller's own decision:
+    when its source permissions were last synced, and when that sync stops counting (after which
+    the document is denied to everyone, and drops off the map, until the next sync). Both are
+    null for uploads, whose permissions are managed locally."""
+
     id: str
     title: str
     slug: str
     source_id: str
     source_kind: str
     classification: str
+    permissions_synced_at: datetime | None = None
+    permissions_expire_at: datetime | None = None
 
 
 class AccessMapGrantRef(BaseModel):

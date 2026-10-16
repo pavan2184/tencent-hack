@@ -1,6 +1,6 @@
 # Testing Plan
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 ## Testing Philosophy
 
@@ -64,7 +64,7 @@ the marker is selected. The first one migrates an empty database and asserts tha
 | repo       | `repo_memory.MemoryRepo` installed through `repo.set_repo(...)`                                                                  |
 | lib stores | `access_control.memory` stores, `freshness.memory.InMemoryFreshnessStore` + `FixedClock(2026-10-12T09:00:00Z)` + `ScriptedProbe` |
 | providers  | `MockChatProvider`, `MockEmbeddingProvider` (dimension `EMBEDDING_DIM`)                                                          |
-| `client`   | FastAPI `TestClient` with lifespan; default header `X-Actor-Id: alex.tan`; `client.as_actor("john.tan")` switches persona      |
+| `client`   | FastAPI `TestClient` with lifespan; default header `X-Actor-Id: alex.tan`; `client.as_actor("john.tan")` switches persona        |
 | `seeded`   | Runs the real seed loader (`app/seed.py`) against `backend/seed/` into the in-memory stores; returns `{slug: document_id}`       |
 
 Library tests build their own fixtures from their `memory.py` (`InMemoryFreshnessStore`,
@@ -76,13 +76,13 @@ feed literal evidence and generator text.
 
 All five live in `backend/app/tests/test_ask_pipeline.py` and run on the seeded corpus.
 
-| #   | Scenario (handbook)                        | Test                                         | Asserts                                                                                                                                                                 |
-| --- | ------------------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #   | Scenario (handbook)                        | Test                                         | Asserts                                                                                                                                                               |
+| --- | ------------------------------------------ | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Unified natural-language query             | `test_unified_cited_query`                   | `john.tan` asks about the Rail-B cutover; answer not abstained; every claim has ≥ 1 citation; citations span ≥ 2 sources; envelope has receipt, grounding, `audit_id` |
-| 2   | Bounded freshness                          | `test_bounded_freshness_stale_omitted`       | failover runbook (critical, indexed v7, live v8) is in the receipt as `stale`, `safe_to_use: false`, and is never cited; the fresh KYC runbook passes verification      |
-| 3   | Negative permission without existence leak | `test_negative_permission_no_existence_leak` | `mei.chen` gets no citations and `GET` on the board deck returns a body identical to a random id's `404`; `alex.tan` never sees PAY-142; no denied count anywhere       |
+| 2   | Bounded freshness                          | `test_bounded_freshness_stale_omitted`       | failover runbook (critical, indexed v7, live v8) is in the receipt as `stale`, `safe_to_use: false`, and is never cited; the fresh KYC runbook passes verification    |
+| 3   | Negative permission without existence leak | `test_negative_permission_no_existence_leak` | `mei.chen` gets no citations and `GET` on the board deck returns a body identical to a random id's `404`; `alex.tan` never sees PAY-142; no denied count anywhere     |
 | 4   | Live permission-change handling            | `test_live_revocation_changes_next_answer`   | board deck cited for `john.tan`; `root.admin` revokes the `leadership` grant; the next ask does not cite it and `allowed_count` drops                                 |
-| 5   | Audit inquiry                              | `test_audit_reconstruction`                  | `sam.lee` reads the ask's audit event: question, every candidate's decision (incl. denied), receipt id/hash, answer, timestamps; `/api/audit/verify` is `ok`            |
+| 5   | Audit inquiry                              | `test_audit_reconstruction`                  | `sam.lee` reads the ask's audit event: question, every candidate's decision (incl. denied), receipt id/hash, answer, timestamps; `/api/audit/verify` is `ok`          |
 
 `test_pipeline_invariants.py` asserts the pipeline order (`test_pipeline_order_access_before_llm`):
 a recording fake `ChatProvider` wrapped in `ModelComposer`, and a recording sanitizer, prove that
@@ -116,25 +116,33 @@ marker is answered, its citation auto-attached and `supported`, composer `model-
   kind; no `app` import), `test_policy_rules` (deny beats allow; owner and admin allow; revoked
   allow falls through; restricted and confidential need grants; missing snapshot → deny),
   `test_platform_semantics` (one per platform), `test_filter_no_leak` (one decision per input;
-  allowed ⊆ inputs; `AccessSummary` has no denied field), `test_stores`.
+  allowed ⊆ inputs; `AccessSummary` has no denied field), `test_stores`, `test_permission_age`
+  (snapshot expiry and `permission_expires_at`), `test_capture_atlassian_gmail` (Confluence,
+  Jira and Gmail capture; partial or dynamic data refused), `test_groups` (nested groups,
+  platform group ids never widen access), `test_drift` (fingerprint drift, no members logged).
 
 ## API Tests (app)
 
-| File                           | Covers                                                                                                                                              |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test_health_and_errors.py`    | `/healthz`; `401 unauthenticated` / `unknown_actor`; 422 rewritten into the envelope; `X-Request-Id` echoed                                         |
-| `test_documents_and_caps.py`   | ACL-filtered list; canonical `404`; upload `201`; extension `422`; size `413`; per-actor and total caps `429`; embedding budget → `budget_exceeded` |
-| `test_ask_pipeline.py`         | the five scenarios above                                                                                                                            |
-| `test_pipeline_invariants.py`  | access before any LLM; injection fixture quarantined; `ModelComposer` deadline fallback; unmarked model reply grounded                              |
-| `test_audit_chain.py`          | append/verify; tampering with a payload, deleting a row, or reordering is detected at the right `seq`                                               |
-| `test_seed.py`                 | seed is idempotent; 6 principals, 4 groups, 16 policies, 6 sources, 11 pages; grants restored on re-seed                                            |
-| `test_connectors_and_tasks.py` | `gbrain_import` list/fetch/head (incl. `simulate`); stubs raise `NotImplementedError`; tasks registered; webhook `202`/duplicate/`501`              |
-| `test_mcp.py`                  | lifespan `initialize` → `tools/list` → `tools/call whoami` (`X-Actor-Id: alex.tan`) → `tools/call query` → envelope keys                            |
+| File                           | Covers                                                                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test_health_and_errors.py`    | `/healthz`; `401 unauthenticated` / `unknown_actor`; 422 rewritten into the envelope; `X-Request-Id` echoed                                                                     |
+| `test_documents_and_caps.py`   | ACL-filtered list; canonical `404`; upload `201`; extension `422`; size `413`; per-actor and total caps `429`; embedding budget → `budget_exceeded`                             |
+| `test_ask_pipeline.py`         | the five scenarios above                                                                                                                                                        |
+| `test_pipeline_invariants.py`  | access before any LLM; injection fixture quarantined; `ModelComposer` deadline fallback; unmarked model reply grounded                                                          |
+| `test_audit_chain.py`          | append/verify; tampering with a payload, deleting a row, or reordering is detected at the right `seq`                                                                           |
+| `test_seed.py`                 | seed is idempotent; 6 principals, 4 groups, 16 policies, 6 sources, 11 pages; grants restored on re-seed                                                                        |
+| `test_connectors_and_tasks.py` | `gbrain_import` list/fetch/head (incl. `simulate`); stubs raise `NotImplementedError`; tasks registered; webhook `202`/duplicate/`501`                                          |
+| `test_access_map.py`           | role gate; rules and grant subjects; admin source ceiling; revocation; sync/expiry times; the deck leaves the map when permissions expire and returns after the in-process sync |
+| `test_group_resolution.py`     | a nested group's member reads what its parent reads; a bound Confluence group id replaces the local name; seed `parents`/`platform_ids`                                         |
+| `test_permission_drift.py`     | no drift on seed or unchanged syncs; an ACL-only change is audited (no members) and becomes a freshness `metadata_change` that the next sync applies                            |
+| `test_access_wording.py`       | the approver's notes (source block, unconfirmed permissions, deny grant, inactive requester) and the denial note                                                                |
+| `test_mcp.py`                  | lifespan `initialize` → `tools/list` → `tools/call whoami` (`X-Actor-Id: alex.tan`) → `tools/call query` → envelope keys                                                        |
 
 ## Frontend Tests
 
 `npm run lint`, `npm run typecheck` and `npm run build` in CI. Manual check: the persona switcher
-changes what `/documents` and `/ask` show; a denied document page shows the generic not-found view.
+changes what `/documents` and `/ask` show; a denied document page shows the generic "Document not
+available" view with a request form, identical to a missing one.
 
 ## End-to-End Tests
 

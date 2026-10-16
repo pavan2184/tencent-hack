@@ -24,6 +24,7 @@ import {
 import { useApiAction, useApiQuery } from "@/lib/useApi";
 import { GrantEditor } from "./GrantEditor";
 import { usePersona } from "./PersonaProvider";
+import { RequestAccessForm } from "./RequestAccessForm";
 import { EmptyState, ErrorState, LoadingState } from "./StateViews";
 import { ClassificationBadge, FreshnessBadge } from "./StatusBadge";
 
@@ -32,7 +33,7 @@ export function DocumentDetailView({ id }: { id: string }) {
   const document = useApiQuery(`document:${id}`, () => getDocument(id));
 
   // Denied and nonexistent documents are byte-identical 404s; render them identically too.
-  if (document.error?.status === 404) return <NotFound />;
+  if (document.error?.status === 404) return <NotFound id={id} />;
   if (document.error) return <ErrorState error={document.error} />;
   if (!document.data) return <LoadingState />;
 
@@ -136,16 +137,27 @@ function BackLink() {
   );
 }
 
-function NotFound() {
+/** The same page for a missing document and one you may not read: the wording is true of both,
+ * and the request form is offered for both (the API answers 202 either way). */
+function NotFound({ id }: { id: string }) {
   return (
     <div className="space-y-3">
       <BackLink />
       <Card>
-        <CardContent>
-          <h1 className="text-2xl font-medium tracking-tight text-neutral-900">Not found</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            There is no document at this address.
-          </p>
+        <CardContent className="space-y-4">
+          <div>
+            <h1 className="text-2xl font-medium tracking-tight text-neutral-900">
+              Document not available
+            </h1>
+            <p className="mt-1 text-sm text-neutral-500">
+              It doesn&apos;t exist, or you don&apos;t have access to it. If you
+              need it, ask for access: its owner or an admin can approve the
+              request.
+            </p>
+          </div>
+          <div className="max-w-md">
+            <RequestAccessForm documentId={id} />
+          </div>
         </CardContent>
       </Card>
     </div>

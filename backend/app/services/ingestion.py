@@ -42,6 +42,7 @@ from app.schemas.domain import (
     TimelineEntry,
     new_id,
 )
+from app.services.permission_drift import store_permissions
 
 if TYPE_CHECKING:
     from app.services.wiring import Services
@@ -265,7 +266,7 @@ async def upsert_fetched_page(
     if perms is not None:
         if permission_version and perms.permission_version != permission_version:
             perms = perms.model_copy(update={"permission_version": permission_version})
-        await services.permission_store.put(stored.id, perms)
+        await store_permissions(services, stored, perms, observed_via="ingest")
     await repo.set_tags(stored.id, fetched.tags)
     for entry in parsed.timeline_entries:
         await repo.add_timeline_entry(TimelineEntry(page_id=stored.id, **entry))

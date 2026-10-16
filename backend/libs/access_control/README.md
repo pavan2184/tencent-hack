@@ -17,15 +17,15 @@ matching active local grant. App-managed uploads use local owner/admin/grant
 semantics. A missing, wrong-kind or mismatched source snapshot denies imported
 content even for an admin.
 
-| Source | Read semantics |
-| --- | --- |
-| Confluence | Space view and page restrictions and every ancestor restriction. Bare ancestor ids mean incomplete capture and deny. |
-| Jira | Browse Projects roles and issue security. Connectors must fully resolve dynamic subjects or confirm the asker's read natively. |
-| Slack | Explicit channel membership for every channel type. Public channels additionally permit a captured full workspace roster, excluding guests/bots/deactivated users. Missing roster never allows outsiders. |
-| Drive | Effective file ACL, including inherited entries. Deleted/expired entries and link-only domain/anyone shares cannot grant search discovery. |
-| Email | Sender/recipient mailbox identity, including to/cc/bcc. |
-| Upload | Local owner and explicit sharing. Local grants can extend sharing. |
-| External MCP | Explicit principal/group allow-list. |
+| Source       | Read semantics                                                                                                                                                                                            |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confluence   | Space view and page restrictions and every ancestor restriction. Bare ancestor ids mean incomplete capture and deny.                                                                                      |
+| Jira         | Browse Projects roles and issue security. Connectors must fully resolve dynamic subjects or confirm the asker's read natively.                                                                            |
+| Slack        | Explicit channel membership for every channel type. Public channels additionally permit a captured full workspace roster, excluding guests/bots/deactivated users. Missing roster never allows outsiders. |
+| Drive        | Effective file ACL, including inherited entries. Deleted/expired entries and link-only domain/anyone shares cannot grant search discovery.                                                                |
+| Email        | Sender/recipient mailbox identity, including to/cc/bcc.                                                                                                                                                   |
+| Upload       | Local owner and explicit sharing. Local grants can extend sharing.                                                                                                                                        |
+| External MCP | Explicit principal/group allow-list.                                                                                                                                                                      |
 
 ### Permission snapshots expire
 
@@ -33,11 +33,11 @@ Native source access is judged from a captured snapshot, so the snapshot must be
 imported document's snapshot older than its classification's maximum age denies with
 `R9:permission_snapshot_stale` until a sync refreshes it:
 
-| Classification | Maximum snapshot age |
-| --- | --- |
-| public | 24 hours |
-| internal | 1 hour |
-| confidential, restricted | 5 minutes |
+| Classification           | Maximum snapshot age |
+| ------------------------ | -------------------- |
+| public                   | 24 hours             |
+| internal                 | 1 hour               |
+| confidential, restricted | 5 minutes            |
 
 This bounds how long a revocation at the source can go unnoticed: at most the maximum age, even
 if a webhook is missed. The app re-reads every page's permissions on each delta sync (every
@@ -125,10 +125,42 @@ domain, permissionDetails, deleted, expirationTime and allowFileDiscovery.
 Both helpers reject incomplete pagination. Never blindly union parent Drive
 ACLs or drop inherited Confluence restrictions.
 
+`confluence_permissions_from_api(space_key=..., page_id=..., space_permission_pages=...,
+page_restriction=..., ancestor_restrictions=...)` accepts every page of the v2 space
+permissions, the page's `restriction/byOperation/read` response and every ancestor's (root
+first). Only `read` space entries count. Role principals, truncated lists and missing
+restriction blocks are refused.
+
+`jira_permissions_from_api(issue=..., project_roles=..., permission_scheme=...,
+security_member_pages=...)` captures Browse Projects holders (project roles, groups, users) and,
+for a secured issue, every page of its security level members. Holders that depend on the issue
+or a licence (reporter, assignee, project lead, custom fields, application roles, anyone) are
+refused. Such issues need a live, user-bound check instead.
+
+`email_permissions_from_gmail(message)` accepts a `users.messages.get` metadata response with
+From/To/Cc/Bcc/Message-ID headers. It needs exactly one sender.
+
+All five helpers raise `ValueError` rather than return a partial snapshot. The connector then
+keeps the old snapshot, which ages out and is denied.
+
 `permission_fingerprint(raw)` returns a deterministic SHA-256 ACL revision.
 Capture time/run id do not affect it. Permission or parent changes do. Write the
 current document revision and matching snapshot atomically. Fingerprints are
 not cached authorisation decisions.
+
+`detect_permission_drift(document_id, previous, current)` compares two captures by
+fingerprint. It returns a `PermissionDrift` (fingerprints and versions, never members) or None
+when the ACL is unchanged or on a first capture. The app records it and tells freshness (D-024).
+
+## Group resolution
+
+`resolve_groups(principal, definitions)` expands nested groups (`GroupDefinition.parent_ids`)
+and binds each group's id per platform (`GroupDefinition.platform_ids`, e.g. a Drive group
+address) into `Principal.platform_groups`. Confluence, Jira and Drive group entries match those
+ids. A bound id replaces the local id on its platform, so it never widens access. Cycles and
+undefined parents are tolerated. A `GroupDirectory` (`InMemoryGroupDirectory`, or the app's SQL
+store) holds the definitions. `AccessControlService(groups=...)` resolves every principal it
+loads. Callers that build principals themselves must call `resolve_groups`.
 
 The existing `GrantStore`, `PrincipalDirectory`, `PermissionSnapshotStore` and
 `AccessRequestStore` contracts remain public. Grant revocation is idempotent,

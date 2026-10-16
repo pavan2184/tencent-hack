@@ -3,10 +3,12 @@ edges only, and a revocation removes the edge on the very next call."""
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 import pytest
 
+from app.services.memory_sync import sync_all_sources
 from app.tests.conftest import run
 
 DECK = ("gdrive-finance", "files/board-deck-q3")
@@ -92,3 +94,67 @@ def test_revocation_removes_edge_on_next_map(seeded: Any, client: Any) -> None:
     john_after = client.get("/api/access/map", headers=JOHN).json()
     assert deck not in {d["id"] for d in john_after["documents"]}
     assert len(john_after["documents"]) == 10
+
+
+def test_map_reports_when_each_documents_permissions_were_synced(seeded: Any, client: Any) -> None:
+    uploaded = client.post(
+        "/api/documents/upload",
+        files={"file": ("note.md", b"# Note\n\nA local upload.\n", "text/markdown")},
+        headers=JOHN,
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    body = client.get("/api/access/map", headers=JOHN).json()
+    docs = {d["id"]: d for d in body["documents"]}
+    deck = docs[_id(seeded, DECK)]
+    now = seeded.clock.now()
+    assert deck["permissions_synced_at"] == now.isoformat().replace("+00:00", "Z")
+    # Confidential snapshots count for 5 minutes (D-018).
+    assert deck["permissions_expire_at"] == (now + timedelta(minutes=5)).isoformat().replace(
+        "+00:00", "Z"
+    )
+    uploads = [d for d in body["documents"] if d["source_kind"] == "upload"]
+    assert uploads and all(
+        d["permissions_synced_at"] is None and d["permissions_expire_at"] is None for d in uploads
+    )
+
+
+def test_expired_permissions_drop_the_deck_until_the_in_process_sync_runs(
+    seeded: Any, client: Any
+) -> None:
+    """The in-memory API has no Celery beat: without `memory_sync` the board deck leaves the map
+    5 minutes after start-up, for everyone, admin and owner included."""
+    deck = _id(seeded, DECK)
+    assert deck in {
+        d["id"] for d in client.get("/api/access/map", headers=ADMIN).json()["documents"]
+    }
+
+    seeded.clock.advance(6 * 60)
+    stale = client.get("/api/access/map", headers=ADMIN).json()
+    assert deck not in {d["id"] for d in stale["documents"]}
+    assert deck not in {e["document_id"] for e in stale["edges"]}
+
+    synced = run(sync_all_sources(seeded))
+    assert "gdrive-finance" in synced and "uploads" in synced
+    fresh = client.get("/api/access/map", headers=ADMIN).json()
+    assert deck in {d["id"] for d in fresh["documents"]}
+    assert ("john.tan", deck) in _edges(fresh)
+
+
+def test_in_process_sync_loop_keeps_running_after_a_source_fails(
+    seeded: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.services import sources
+
+    original = sources.run_sync
+    calls: list[str] = []
+
+    async def flaky(services: Any, source_id: str, *args: Any, **kwargs: Any) -> Any:
+        calls.append(source_id)
+        if source_id == "confluence-ops":
+            raise TimeoutError("provider down")
+        return await original(services, source_id, *args, **kwargs)
+
+    monkeypatch.setattr(sources, "run_sync", flaky)
+    synced = run(sync_all_sources(seeded))
+    assert "confluence-ops" in calls and "confluence-ops" not in synced
+    assert "gdrive-finance" in synced

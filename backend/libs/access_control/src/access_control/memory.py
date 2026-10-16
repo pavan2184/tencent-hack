@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 
+from access_control.groups import GroupDefinition
 from access_control.models import (
     AccessRequest,
     AccessRequestStatus,
@@ -106,6 +107,21 @@ class InMemoryPrincipalDirectory:
     async def groups_of(self, principal_id: str) -> list[str]:
         principal = self._principals.get(principal_id)
         return [*principal.groups] if principal is not None else []
+
+
+class InMemoryGroupDirectory:
+    """Satisfies :class:`access_control.protocols.GroupDirectory`."""
+
+    def __init__(self, definitions: Iterable[GroupDefinition] = ()) -> None:
+        self._definitions: dict[str, GroupDefinition] = {}
+        for definition in definitions:
+            self._definitions[definition.id] = definition.model_copy(deep=True)
+
+    async def list_definitions(self) -> list[GroupDefinition]:
+        return [d.model_copy(deep=True) for _, d in sorted(self._definitions.items())]
+
+    async def put(self, definition: GroupDefinition) -> None:
+        self._definitions[definition.id] = definition.model_copy(deep=True)
 
 
 class InMemoryAccessRequestStore:
