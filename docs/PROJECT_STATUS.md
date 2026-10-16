@@ -259,7 +259,8 @@ upgrades an existing stack, and no `make reset` is needed.
 
 Verification:
 
-- Offline: 708 passed, 11 skipped; Ruff check and format are clean.
+- Offline: 711 passed, 11 skipped after merging main (708 on the branch alone); Ruff check and
+  format are clean.
 - Access-control library: `test_seed_demo.py` now has 23 tests (persona matrix and 12 access
   stories). New `app/tests/test_seed_stories.py` has 9 REST tests.
 - `make smoke` against the in-memory API: 15/15 steps pass.

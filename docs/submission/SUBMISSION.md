@@ -136,7 +136,7 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 | Time for an edited source page to be picked up (live rehearsal)            | **15 seconds** after the edit                                                                                         |
 | Model calls per question                                                   | **1**; grounding and verification are deterministic                                                                   |
 | Audit coverage                                                             | **Every** candidate document's allow or deny decision, in a hash-chained log that verifies end to end                 |
-| Automated tests                                                            | **686 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
+| Automated tests                                                            | **711 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
 
 **Clearly defined impact for Aspire.**
 
@@ -174,7 +174,7 @@ Tencent Cloud ADP writes a word. Revocations apply on the next question in the a
 minutes at the source, including saved answers. Every claim is verified deterministically
 (numbers and dates included), the system abstains below 60% support, and every answer carries
 citations, a freshness receipt and a hash-chained audit record that compliance can replay. All
-five scenarios in Aspire's challenge run end to end as automated tests: 686 pass offline, and a
+five scenarios in Aspire's challenge run end to end as automated tests: 711 pass offline, and a
 contractor's model context contains zero restricted documents.
 
 ## Form checklist
