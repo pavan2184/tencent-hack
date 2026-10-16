@@ -4,7 +4,7 @@ Last updated: 2026-10-13
 
 ## Overview
 
-The Internal Brain is a governed knowledge layer over an "everything is a document" corporate
+Brain Sauce is a governed knowledge layer over an "everything is a document" corporate
 brain. Uploads, Slack conversation logs, emails, and Confluence, Jira and Google Drive content all
 become **pages**: Markdown with YAML frontmatter, using GBrain's two-layer layout (compiled truth
 above `---`, append-only timeline below) and GBrain's `(source_id, slug)` identity. Pages are

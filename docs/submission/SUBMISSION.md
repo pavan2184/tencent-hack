@@ -6,7 +6,7 @@ or the team's live rehearsal on 13–14 October 2026. Personas and figures are s
 
 ## Project title
 
-The Internal Brain
+Brain Sauce
 
 ## Blurb (under 10 words)
 
@@ -65,7 +65,7 @@ ways:
    old version as current.
 3. **It cannot be audited**: nobody can reconstruct what the model was shown or why.
 
-The Internal Brain solves all three, and closes the revocation gap: someone who loses access loses
+Brain Sauce solves all three, and closes the revocation gap: someone who loses access loses
 it in the assistant too, including answers saved earlier.
 
 ## Comprehensive Solution Design: Business and Technical Architecture, and How Prompts Drive the AI Generation
@@ -163,7 +163,7 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 
 ## Short description (about 120 words, if a field limits length)
 
-The Internal Brain answers questions across Confluence, Jira, Slack and Google Drive using only
+Brain Sauce answers questions across Confluence, Jira, Slack and Google Drive using only
 evidence the asker may see. Each platform's native permissions are checked per document before
 Tencent Cloud ADP writes a word. Revocations apply on the next question in the app and within five
 minutes at the source, including saved answers. Every claim is verified deterministically

@@ -77,7 +77,7 @@ the gap for source-side changes once it is wired in.
 
 ## 2. Our design against the industry
 
-| Area                             | Industry practice                                                               | Internal Brain                                                          | Verdict                                                         |
+| Area                             | Industry practice                                                               | Brain Sauce                                                             | Verdict                                                         |
 | -------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Filter before the model          | Universal                                                                       | Access gate before freshness, sanitising and the model                  | Matches                                                         |
 | Per-platform semantics           | Confluence space + page, Jira AND-of-ORs, Slack membership, Drive effective ACL | Same, plus every Confluence ancestor and Drive expiry/deleted/link-only | Matches, ahead on Confluence inheritance                        |

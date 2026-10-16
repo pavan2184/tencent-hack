@@ -1,4 +1,4 @@
-/* Internal Brain architecture deck generator (pptxgenjs). See README.md in this folder. */
+/* Brain Sauce architecture deck generator (pptxgenjs). See README.md in this folder. */
 const pptxgen = require("pptxgenjs");
 const React = require("react");
 const ReactDOMServer = require("react-dom/server");
@@ -31,7 +31,7 @@ const HEX = {
   ice: "C9D8EE",
 };
 const THEME = {
-  name: "Internal Brain",
+  name: "Brain Sauce",
   headFontFace: "Calibri",
   bodyFontFace: "Calibri",
   colors: {
@@ -52,7 +52,7 @@ const THEME = {
 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE"; // 13.333 x 7.5
-pres.title = "The Internal Brain: architecture and trust boundaries";
+pres.title = "Brain Sauce: architecture and trust boundaries";
 pres.author = "Chai Pin Zheng";
 pres.theme = {
   headFontFace: THEME.headFontFace,
@@ -74,7 +74,7 @@ const S = {
 };
 const W = 13.333;
 const FOOTER =
-  "The Internal Brain  ·  Tencent Cloud AI CAN DO IT Hackathon SG 2026  ·  FinTech track, Aspire case study";
+  "Brain Sauce  ·  Tencent Cloud AI CAN DO IT Hackathon SG 2026  ·  FinTech track, Aspire case study";
 
 // ---------------------------------------------------------------- layouts
 pres.defineSlideMaster({
@@ -369,7 +369,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       fill: S.teal,
       size: 12,
     });
-    s.addText("The Internal Brain", { placeholder: "title" });
+    s.addText("Brain Sauce", { placeholder: "title" });
     text(
       s,
       "Ask one question across Confluence, Jira, Slack and Google Drive. Get an answer built only from what you are allowed to see, with the proof attached.",
@@ -1633,7 +1633,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
           H("Microsoft 365 Copilot"),
           H("Gemini Enterprise"),
           H("Amazon Q Business"),
-          H("Internal Brain", true),
+          H("Brain Sauce", true),
         ],
         row("Filters evidence before the model", [yes(), yes(), yes(), yes()], "Yes"),
         row(
@@ -1694,7 +1694,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
             "Microsoft 365 Copilot, Confluence connector",
             "Glean, Google Drive identity refresh",
             "Gemini Enterprise, fastest identity sync",
-            "Internal Brain, confidential documents",
+            "Brain Sauce, confidential documents",
           ],
           values: [1440, 60, 30, 5],
         },

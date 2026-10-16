@@ -84,7 +84,7 @@ TOOL_NAMES: tuple[str, ...] = (
 
 mcp: MCPServer = MCPServer(
     "internal-brain",
-    title="Internal Brain",
+    title="Brain Sauce",
     version="0.1.0",
     instructions=(
         "Governed company brain. Every tool acts as the principal named by the X-Actor-Id header "
