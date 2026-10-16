@@ -12,7 +12,7 @@ def test_list_sources(seeded: Any, client: Any) -> None:
     response = client.get("/api/sources")
     assert response.status_code == 200
     items = {s["id"]: s for s in response.json()["items"]}
-    assert len(items) == 6
+    assert len(items) == 7
     assert items["confluence-ops"]["connector"] == "gbrain_import"
     assert items["confluence-ops"]["kind"] == "confluence"
     assert items["uploads"]["connector"] == "upload"
@@ -28,7 +28,9 @@ def test_source_status(seeded: Any, client: Any) -> None:
     assert body["last_run"]["status"] == "completed"
     assert "objects_by_status" not in body
     admin = client.get("/api/sources/confluence-ops/status", headers={"X-Actor-Id": "root.admin"})
-    assert admin.json()["objects_by_status"] == {"fresh": 2, "stale": 1}
+    # stale: the failover runbook (newer live version), the September incident review (newer
+    # live version) and the 2025 escalation page (deleted upstream).
+    assert admin.json()["objects_by_status"] == {"fresh": 3, "stale": 3}
     assert client.get("/api/sources/nope/status").status_code == 404
 
 

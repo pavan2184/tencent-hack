@@ -65,7 +65,10 @@ uv run --frozen python libs/access_control/examples/revocation_demo.py
 ```
 
 The demo reports `before_board_allowed: true`, `after_board_allowed: false`,
-`outsider_allowed_count: 0`, `revoked_body_in_model_context: false`. Reuse it for
+`outsider_allowed_ids: ["1RailBTestPlanExampleHarbor"]` (the one file shared with the
+contractor), `revoked_body_in_model_context: false`, and one `access_stories` entry per rule the
+corpus exercises (R1, R2, R3, R5, inherited Confluence restriction, Drive expiry and link-only
+shares, DM, bcc, admin without source access). Reuse it for
 Tencent scenarios 3 and 4, clearly labelled as synthetic in-memory execution.
 A live-provider verifier regression also tests source revocation without
 reindexing. The latest main's core REST suite checks all five scenarios, including

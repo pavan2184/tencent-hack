@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { Button } from "@/components/ui/button";
 import { ask, listQueries } from "@/lib/api";
 import { canAudit } from "@/lib/roles";
+import { sampleQuestionsFor } from "@/lib/sampleQuestions";
 import { useApiAction, useApiQuery } from "@/lib/useApi";
 
 const PIPELINE = [
@@ -33,21 +34,31 @@ const PIPELINE = [
 ] as const;
 
 export default function AskPage() {
-  const { me } = usePersona();
+  const { me, actorId } = usePersona();
   const [question, setQuestion] = useState("");
   const [requireFresh, setRequireFresh] = useState(false);
   const asking = useApiAction(ask);
   const recent = useApiQuery("queries", listQueries);
+  const samples = sampleQuestionsFor(actorId);
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    const trimmed = question.trim();
+  async function submit(text: string) {
+    const trimmed = text.trim();
     if (!trimmed || asking.pending) return;
     const result = await asking.run({
       question: trimmed,
       require_fresh: requireFresh,
     });
     if (result.ok) recent.reload();
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    await submit(question);
+  }
+
+  async function askSample(sample: string) {
+    setQuestion(sample);
+    await submit(sample);
   }
 
   const envelope = asking.data;
@@ -98,6 +109,14 @@ export default function AskPage() {
               </Button>
             </div>
           </form>
+
+          {samples.length > 0 && (
+            <SampleQuestions
+              questions={samples}
+              disabled={asking.pending}
+              onPick={askSample}
+            />
+          )}
 
           {asking.error && (
             <ErrorState
@@ -160,6 +179,44 @@ export default function AskPage() {
             </ul>
           )}
         </aside>
+      </div>
+    </div>
+  );
+}
+
+/** The persona's demo questions (seed README, "Questions to ask"); a click asks it. */
+function SampleQuestions({
+  questions,
+  disabled,
+  onPick,
+}: {
+  questions: readonly string[];
+  disabled: boolean;
+  onPick: (question: string) => void;
+}) {
+  return (
+    <div>
+      <p id="sample-questions" className="text-sm text-neutral-500">
+        Try asking
+      </p>
+      <div
+        role="group"
+        aria-labelledby="sample-questions"
+        className="mt-3 flex flex-wrap gap-2"
+      >
+        {questions.map((sample) => (
+          <Button
+            key={sample}
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={() => onPick(sample)}
+            className="h-auto min-h-9 py-2 text-left text-sm font-normal whitespace-normal"
+          >
+            {sample}
+            <ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
+          </Button>
+        ))}
       </div>
     </div>
   );

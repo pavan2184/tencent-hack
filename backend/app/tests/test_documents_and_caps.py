@@ -138,7 +138,8 @@ def test_classification_change_by_owner_ok_by_stranger_denied(seeded: Any, clien
 
 def test_document_list_is_acl_filtered(seeded: Any, client: Any) -> None:
     mei = client.get("/api/documents", headers={"X-Actor-Id": "mei.chen"}).json()
-    assert mei["items"] == []
+    # The contractor sees exactly the one Drive file shared with the contractor address.
+    assert [d["slug"] for d in mei["items"]] == ["files/rail-b-integration-test-plan"]
     john = client.get("/api/documents", params={"limit": 100}, headers={"X-Actor-Id": "john.tan"})
     slugs = {d["slug"] for d in john.json()["items"]}
     assert "files/board-deck-q3" in slugs
