@@ -133,7 +133,7 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 | Time for an edited source page to be picked up (live rehearsal)            | **15 seconds** after the edit                                                                                         |
 | Model calls per question                                                   | **1**; grounding and verification are deterministic                                                                   |
 | Audit coverage                                                             | **Every** candidate document's allow or deny decision, in a hash-chained log that verifies end to end                 |
-| Automated tests                                                            | **676 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
+| Automated tests                                                            | **683 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
 
 **Clearly defined impact for Aspire.**
 
@@ -158,6 +158,8 @@ as Slack's API terms require; the demo uses a synthetic corpus.
    no title and no hint the board deck exists.
 4. **Live revocation**: the Drive owner removes Leadership from the board deck's share. After the
    next sync, John's answer no longer uses the deck, and the earlier saved answer is withheld.
+   The access map shows who can read each document and the policy rule behind every line; it runs
+   the same check as retrieval, so John's line to the deck disappears at the same moment.
 5. **Audit inquiry**: Sam (compliance) reconstructs the question, retrieved documents and every
    allow or deny decision, reveals the answer with a recorded reason, and verifies the hash chain.
 
@@ -169,7 +171,7 @@ Tencent Cloud ADP writes a word. Revocations apply on the next question in the a
 minutes at the source, including saved answers. Every claim is verified deterministically
 (numbers and dates included), the system abstains below 60% support, and every answer carries
 citations, a freshness receipt and a hash-chained audit record that compliance can replay. All
-five scenarios in Aspire's challenge run end to end as automated tests: 676 pass offline, and a
+five scenarios in Aspire's challenge run end to end as automated tests: 683 pass offline, and a
 contractor's model context contains zero restricted documents.
 
 ## Form checklist
