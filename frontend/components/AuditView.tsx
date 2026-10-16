@@ -102,7 +102,7 @@ export function AuditView() {
 
       <div
         className={
-          selectedId ? "grid gap-6 xl:grid-cols-[1fr_30rem]" : undefined
+          selectedId ? "grid items-start gap-6 xl:grid-cols-[1fr_30rem]" : undefined
         }
       >
         <Card>
