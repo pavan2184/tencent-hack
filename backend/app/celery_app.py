@@ -61,7 +61,7 @@ TASK_ROUTES: dict[str, dict[str, str]] = {
 }
 
 celery_app = Celery(
-    "internal_brain",
+    "brain_sauce",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
     include=["app.tasks.ingest", "app.tasks.sync", "app.tasks.verify", "app.tasks.watchdog"],

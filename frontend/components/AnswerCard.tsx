@@ -1,12 +1,11 @@
 import { ArrowUpRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { truncateHash } from "@/lib/format";
 import type { AnswerEnvelope, GroundingReport } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AccessSummaryBadge } from "./AccessSummaryBadge";
-import { InlineMarkdown } from "./InlineMarkdown";
+import { AnswerMarkdown } from "./Markdown";
 import { VerdictBadge } from "./StatusBadge";
 
 export function AnswerCard({
@@ -45,16 +44,18 @@ export function AnswerCard({
               </p>
               {answer.abstain_reason && <p>{answer.abstain_reason}</p>}
               {answer.text && (
-                <p className="mt-1 text-amber-800">
-                  <AnswerText text={answer.text} />
-                </p>
+                <AnswerMarkdown
+                  text={answer.text}
+                  className="mt-1 space-y-2 text-amber-800"
+                />
               )}
             </div>
           </div>
         ) : (
-          <p className="text-lg leading-relaxed text-neutral-900">
-            <AnswerText text={answer.text} />
-          </p>
+          <AnswerMarkdown
+            text={answer.text}
+            className="text-lg leading-relaxed text-neutral-900"
+          />
         )}
         <GroundingStats grounding={grounding} />
         <p className="text-xs text-neutral-400">
@@ -64,24 +65,6 @@ export function AnswerCard({
         </p>
       </CardContent>
     </Card>
-  );
-}
-
-// A composed answer is claims each followed by evidence markers ("… [E1][E3] …").
-const MARKER_RUN = /((?:\s*\[E\d+\])+)/;
-
-/** Renders each claim on its own, so a stray "**" in one cannot bleed into the next. */
-function AnswerText({ text }: { text: string }) {
-  return text.split(MARKER_RUN).map((part, index) =>
-    index % 2 === 1 ? (
-      <Fragment key={index}>
-        <span className="ml-1 font-mono text-xs text-neutral-400">
-          {part.replace(/\s+/g, "")}
-        </span>{" "}
-      </Fragment>
-    ) : (
-      <InlineMarkdown key={index} text={part} />
-    ),
   );
 }
 

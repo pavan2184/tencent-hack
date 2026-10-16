@@ -1,4 +1,4 @@
-# Single-box stack for the Internal Brain (see docs/ARCHITECTURE.md -> Deployment).
+# Single-box stack for Brain Sauce (see docs/ARCHITECTURE.md -> Deployment).
 #   cp .env.example .env && make up && make seed      -> http://localhost:3000 (UI), :8000 (API, /mcp)
 #   docker compose --profile edge up -d               -> adds Caddy on :80 (one origin)
 # Every value has a mock-safe default, so `docker compose --env-file .env.example config -q` validates

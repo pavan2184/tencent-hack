@@ -1,4 +1,4 @@
-"""access_control — permission-aware retrieval for the Internal Brain (owner: Chai).
+"""access_control — permission-aware retrieval for Brain Sauce (owner: Chai).
 
 Principals, groups and roles; per-platform raw permission semantics (never flattened);
 classification; grant/revoke; access requests; and a pure, ordered policy whose decisions are

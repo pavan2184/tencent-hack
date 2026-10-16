@@ -1,5 +1,5 @@
 """groundedness: claims <-> evidence citations, support verification, abstention, and
-prompt-injection screening for the Internal Brain.
+prompt-injection screening for Brain Sauce.
 
 Pure Python + Pydantic; never imports ``app`` and never calls a model: every step is
 deterministic. Generation is the app's; the app calls, in this order::

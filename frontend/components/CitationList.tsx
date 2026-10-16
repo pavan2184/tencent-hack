@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnswerCitation, Claim } from "@/lib/types";
-import { InlineMarkdown } from "./InlineMarkdown";
+import { SnippetMarkdown } from "./Markdown";
 import { EmptyState } from "./StateViews";
 import { SupportBadge } from "./StatusBadge";
 
@@ -37,14 +37,14 @@ export function CitationList({
               {String(index + 1).padStart(2, "0")}
             </span>
             <div className="min-w-0 flex-1 pt-1.5">
-              <p className="text-[15px] text-neutral-900">
-                <InlineMarkdown text={claim.text} />
+              <div className="text-[15px] text-neutral-900">
+                <SnippetMarkdown text={claim.text} />
                 {claim.kind === "inference" && (
                   <span className="ml-1.5 text-xs text-neutral-400">
                     (inference)
                   </span>
                 )}
-              </p>
+              </div>
               <EvidenceList
                 citations={citations.filter((c) => c.claim_id === claim.id)}
               />
@@ -102,7 +102,7 @@ function EvidenceList({ citations }: { citations: AnswerCitation[] }) {
           </div>
           {citation.quote && (
             <blockquote className="mt-2 border-l-2 border-neutral-300 pl-3 text-xs leading-relaxed text-neutral-600">
-              <InlineMarkdown text={citation.quote} />
+              <SnippetMarkdown text={citation.quote} tableClassName="text-xs" />
             </blockquote>
           )}
         </li>

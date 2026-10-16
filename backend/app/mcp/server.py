@@ -83,7 +83,7 @@ TOOL_NAMES: tuple[str, ...] = (
 )
 
 mcp: MCPServer = MCPServer(
-    "internal-brain",
+    "brain-sauce",
     title="Brain Sauce",
     version="0.1.0",
     instructions=(

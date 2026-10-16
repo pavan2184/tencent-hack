@@ -401,7 +401,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
       [
         { text: "Challenge: ", options: { bold: true, color: S.navy } },
         {
-          text: "The Internal Brain: a context-aware enterprise knowledge system with RBAC, security logging and audit trail",
+          text: "Brain Sauce: a context-aware enterprise knowledge system with RBAC, security logging and audit trail",
         },
       ],
       { x: 0.7, y: 5.0, w: 7.4, h: 0.7, size: 13, color: HEX.violet },

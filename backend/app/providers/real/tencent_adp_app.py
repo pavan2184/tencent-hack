@@ -141,7 +141,7 @@ class TencentAdpAppChatProvider(ChatProvider):
         self.url = settings.TENCENT_ADP_CHAT_URL
         self.app_key = settings.TENCENT_ADP_APP_KEY
         self.timeout_s = settings.LLM_TIMEOUT_S
-        self.visitor_id = "internal-brain"
+        self.visitor_id = "brain-sauce"
 
     async def complete(
         self,

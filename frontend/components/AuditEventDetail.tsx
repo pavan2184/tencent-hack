@@ -18,6 +18,7 @@ import { parseAskPayload, type AskReconstruction } from "@/lib/auditPayload";
 import { formatDateTime, humanize, truncateHash } from "@/lib/format";
 import type { AuditEvent } from "@/lib/types";
 import { useApiAction, useApiQuery } from "@/lib/useApi";
+import { AnswerMarkdown } from "./Markdown";
 import { ErrorState, LoadingState } from "./StateViews";
 import { DecisionBadge, FreshnessBadge, VerdictBadge } from "./StatusBadge";
 
@@ -246,9 +247,11 @@ function AskReconstructionView({
         {withheld ? (
           <RevealForm eventId={eventId} onRevealed={onRevealed} />
         ) : (
-          <p className="text-sm whitespace-pre-wrap text-neutral-800">
-            {ask.answerText ?? "—"}
-          </p>
+          <AnswerMarkdown
+            text={ask.answerText ?? "—"}
+            className="space-y-3 text-sm leading-relaxed text-neutral-800"
+            tableClassName="text-xs"
+          />
         )}
         {ask.grounding && (
           <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">

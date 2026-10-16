@@ -30,7 +30,7 @@ Tencent Cloud ADP is the first real provider.
 | Layer         | Choice                                                                                                                               |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Backend       | Python 3.12, FastAPI, Pydantic v2, pydantic-settings, `uv` workspace (`backend/` = app, `backend/libs/*` = members)                  |
-| MCP           | `mcp>=2.0` `MCPServer("internal-brain")`, streamable HTTP mounted at `/mcp` (`json_response=True`)                                   |
+| MCP           | `mcp>=2.0` `MCPServer("brain-sauce")`, streamable HTTP mounted at `/mcp` (`json_response=True`)                                   |
 | Libraries     | `groundedness`, `freshness`, `access_control`: pure Python, `pydantic>=2.9` only, hatchling `src/` layout                            |
 | Database      | Postgres 16 + pgvector (`pgvector/pgvector:pg16`), `pg_trgm`, `pgcrypto`; single driver psycopg 3 (async app, sync migration runner) |
 | Migrations    | Numbered SQL files in `infra/postgres/migrations/` with owner ranges, applied by `app/db/migrate.py` (no Alembic)                    |

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-13
+Last updated: 2026-10-16
 
 ## Current phase
 
@@ -219,3 +219,37 @@ gains an `api-memory` entry (in-memory API on port 8000) for browser checks.
 
 Tests: `backend/app/tests/test_access_map.py` (7 tests: role gate, rules and grant
 subjects, admin source ceiling with no title leaks, revocation).
+
+## Demo video v2 and markdown rendering (16 October 2026)
+
+**Video** (`demo/video/`, HyperFrames 0.8.157): eleven scenes, 6 min 39 s, restyled to the
+D-020 web language (Inter Tight, neutral ramp, one green accent, pills, numbered markers).
+Narration is the tightened v2 script (5,100 characters) on the ElevenLabs shared voice
+"Ziyu" (`1a0nAYA3FcNQcMMfbddY`) at the API's maximum speed 1.2 plus a 0.4 s pause cap and a
+1.0417 tempo top-up (`script/tighten.py`), to land inside the handbook's 5–8 minute window.
+Real-UI screenshots come from `script/shoot.mjs` against the in-memory API on a scratch copy
+of the seed: it reproduces the source-side Drive revocation by editing the deck's ACL and
+syncing, and writes `assets/shots/facts.json`; `script/fill.py` puts the real audit chain,
+verify result, 404 bodies and grounding counts into the composition, so nothing shown is typed
+in. `npx hyperframes check` passes runtime, motion, layout and contrast (152/152 AA). Render:
+`out/brain-sauce-demo.mp4` (git-ignored); upload goes to Raphael's Google Drive, then the
+submission form.
+
+**Finding to decide (D-013 wording):** `GroundingReport.report_hash` deliberately covers
+`created_at` (tamper evidence; `test_models.py` pins that a 1 µs change alters the hash), so
+two identical asks give identical grounding content but different hashes. The narration now
+says "the same grounding report, every time" and does not claim "the same hash". If the hash
+is meant as a determinism key, exclude `created_at` from `hash_payload()` and update the
+golden hash; the audit chain already covers the timestamped payload either way.
+
+**Markdown rendering** (`frontend/`): the audit view rendered `answer_text` raw (literal
+`**`, source line breaks, plain `[E1]` markers); timeline rows and whole markdown tables that
+the extractive composer cites as single claims showed pipes. New `components/Markdown.tsx`
+(`AnswerMarkdown`, `SnippetMarkdown`, `DocumentMarkdown`) and `lib/markdown.ts` render these
+safely (no raw HTML, images dropped, only http(s)/mailto links live); `InlineMarkdown` shows
+table rows as "·"-separated cells. Lint and `tsc --noEmit` pass. Open: the composer still
+emits verbatim source markup and whole tables as one claim (`backend/app/services/compose.py`).
+
+**Rename leftovers:** identifiers upstream left as `internal-brain`/`internal_brain` (MCP
+server name, Celery app, ADP visitor id, frontend package name, lib docstrings, two docs) are
+now `brain-sauce`/`brain_sauce`; `test_mcp.py` updated (11 passed).

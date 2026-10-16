@@ -2,8 +2,6 @@
 
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,14 +13,18 @@ import {
 import { NativeSelect } from "@/components/ui/input";
 import { getDocument, setClassification, verifyDocument } from "@/lib/api";
 import { formatDateTime, humanize } from "@/lib/format";
+import { parseTimeline, stripTimelineHeading } from "@/lib/markdown";
 import { canManage } from "@/lib/roles";
 import {
   CLASSIFICATIONS,
   type Classification,
   type DocumentDetail,
+  type TimelineEntry,
 } from "@/lib/types";
 import { useApiAction, useApiQuery } from "@/lib/useApi";
 import { GrantEditor } from "./GrantEditor";
+import { InlineMarkdown } from "./InlineMarkdown";
+import { DocumentMarkdown } from "./Markdown";
 import { usePersona } from "./PersonaProvider";
 import { EmptyState, ErrorState, LoadingState } from "./StateViews";
 import { ClassificationBadge, FreshnessBadge } from "./StatusBadge";
@@ -71,11 +73,7 @@ export function DocumentDetailView({ id }: { id: string }) {
             </CardHeader>
             <CardContent>
               {doc.compiled_truth.trim() ? (
-                <div className="markdown">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {doc.compiled_truth}
-                  </ReactMarkdown>
-                </div>
+                <DocumentMarkdown text={doc.compiled_truth} />
               ) : (
                 <EmptyState>No compiled truth yet{ingestNote(doc)}.</EmptyState>
               )}
@@ -154,16 +152,22 @@ function NotFound() {
 
 function Timeline({ timeline }: { timeline: DocumentDetail["timeline"] }) {
   if (typeof timeline === "string") {
-    return timeline.trim() ? (
-      <div className="markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{timeline}</ReactMarkdown>
-      </div>
+    // GBrain writes "- **date** | Source — summary" bullets: show them as entries, not pipes.
+    const entries = parseTimeline(timeline);
+    if (entries) return <TimelineEntries timeline={entries} />;
+    const body = stripTimelineHeading(timeline);
+    return body ? (
+      <DocumentMarkdown text={body} />
     ) : (
       <EmptyState>No timeline entries.</EmptyState>
     );
   }
   if (timeline.length === 0)
     return <EmptyState>No timeline entries.</EmptyState>;
+  return <TimelineEntries timeline={timeline} />;
+}
+
+function TimelineEntries({ timeline }: { timeline: TimelineEntry[] }) {
   return (
     <ol className="space-y-6 border-l border-neutral-300 pl-5 text-sm">
       {timeline.map((entry, index) => (
@@ -175,9 +179,15 @@ function Timeline({ timeline }: { timeline: DocumentDetail["timeline"] }) {
             {entry.date ?? "undated"}
             {entry.source && ` · ${entry.source}`}
           </p>
-          {entry.summary && <p className="text-neutral-800">{entry.summary}</p>}
+          {entry.summary && (
+            <p className="text-neutral-800">
+              <InlineMarkdown text={entry.summary} />
+            </p>
+          )}
           {entry.detail && (
-            <p className="text-xs text-neutral-500">{entry.detail}</p>
+            <p className="text-xs text-neutral-500">
+              <InlineMarkdown text={entry.detail} />
+            </p>
           )}
         </li>
       ))}

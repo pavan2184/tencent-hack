@@ -84,6 +84,18 @@ body {
 .markdown h3 {
   @apply pt-1 text-base font-medium text-neutral-900;
 }
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  @apply text-sm font-medium text-neutral-900;
+}
+.markdown hr {
+  @apply border-neutral-200;
+}
+.markdown li > ul,
+.markdown li > ol {
+  @apply mt-1;
+}
 .markdown ul {
   @apply list-disc space-y-1 pl-5 marker:text-neutral-400;
 }
@@ -99,6 +111,9 @@ body {
 .markdown pre {
   @apply overflow-x-auto rounded-sm bg-neutral-100 p-4 text-xs;
 }
+.markdown pre code {
+  @apply bg-transparent p-0;
+}
 .markdown blockquote {
   @apply border-l-2 border-accent pl-4 text-neutral-600;
 }
@@ -107,7 +122,7 @@ body {
 }
 .markdown th,
 .markdown td {
-  @apply border-b border-neutral-300 px-2 py-2 text-left;
+  @apply border-b border-neutral-300 px-2 py-2 text-left align-top;
 }
 .markdown th {
   @apply font-normal text-neutral-500;

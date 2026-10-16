@@ -885,7 +885,7 @@ provider retries; it never acknowledges an event it did not store.
 
 ## MCP tools
 
-Server `MCPServer("internal-brain")`, streamable HTTP mounted at `/mcp` (requests go to `/mcp/`;
+Server `MCPServer("brain-sauce")`, streamable HTTP mounted at `/mcp` (requests go to `/mcp/`;
 `/mcp` redirects). Clients send `Accept: application/json, text/event-stream`. The actor comes from
 `X-Actor-Id` or `?actor=` on the MCP URL. Every tool call runs the same services as REST, is
 audited as `mcp.<tool>`, and returns JSON text content. Tool failures return `isError: true` with

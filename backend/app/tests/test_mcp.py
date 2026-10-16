@@ -111,7 +111,7 @@ def _error(result: dict[str, Any]) -> dict[str, Any]:
 def mcp_session(seeded: Any, client: Any) -> McpSession:
     session = McpSession(client)
     reply = session.initialize()
-    assert reply["result"]["serverInfo"]["name"] == "internal-brain"
+    assert reply["result"]["serverInfo"]["name"] == "brain-sauce"
     assert session.session_id, "stateful streamable HTTP must issue an mcp-session-id"
     return session
 
