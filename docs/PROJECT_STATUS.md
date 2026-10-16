@@ -220,6 +220,16 @@ gains an `api-memory` entry (in-memory API on port 8000) for browser checks.
 Tests: `backend/app/tests/test_access_map.py` (7 tests: role gate, rules and grant
 subjects, admin source ceiling with no title leaks, revocation).
 
+## Extractive composer skips layout lines (Chai, 16 October 2026)
+
+`ExtractiveComposer` no longer picks sentences on heading, table or message-header lines
+(`From:`, `Subject:` ...). Before this, "What is the payment rail failover procedure?" in mock
+mode answered with the whole vendor table as one claim, and the email header line showed up as a
+claim too. `sentence_spans` and the verifier are unchanged, so verify scores do not move. The
+composer id stays `extractive-v1` (Raphael to decide whether it should be bumped). Tests: three
+new cases in `libs/groundedness/tests/test_compose.py`; full backend suite 686 passed, 11 skipped.
+Timeline rows (`**2026-10-10** | Slack — ...`) can still be picked.
+
 ## Seed corpus expansion (Chai, 16 October 2026)
 
 The demo corpus now covers each access rule and freshness branch the pipeline enforces, not just

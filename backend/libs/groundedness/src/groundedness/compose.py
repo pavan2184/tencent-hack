@@ -63,6 +63,10 @@ _HEADING_LINE = re.compile(r"[ \t]*#{1,6}[ \t]")
 _LIST_LINE = re.compile(r"[ \t]*(?:[-*+>]|\d+[.)])[ \t]")
 _RULE_LINE = re.compile(r"[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*")
 _LEADING_MARKUP = re.compile(r"(?:[ \t]*(?:#{1,6}|[-*+>]|\d+[.)])[ \t]+)+")
+_TABLE_LINE = re.compile(r"[ \t]*\|")
+_HEADER_FIELD_LINE = re.compile(
+    r"[ \t]*(?:\*\*|__)?(?:from|to|cc|bcc|sent|date|subject|reply-to)[ \t]*:", re.IGNORECASE
+)
 _TERMINATOR = re.compile(r"[.!?]+[\"'”’)\]]*(?=\s)")
 
 
@@ -164,6 +168,20 @@ def sentence_spans(text: str) -> list[tuple[int, int]]:
     return [(start, end) for start, end in trimmed if start < end]
 
 
+def _is_layout_sentence(text: str, start: int, end: int) -> bool:
+    """True when ``text[start:end]`` sits on a heading, table or message-header line
+    (``From:``, ``Subject:`` ...). Those lines are layout, not statements, so the extractive
+    composer never answers with them. Every line the span touches is checked in full, so a
+    table split at a full stop inside a cell is still caught."""
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    lines = text[line_start : len(text) if line_end == -1 else line_end].splitlines()
+    return any(
+        _HEADING_LINE.match(line) or _TABLE_LINE.match(line) or _HEADER_FIELD_LINE.match(line)
+        for line in lines
+    )
+
+
 def split_sentences(text: str) -> list[str]:
     """Verbatim sentences of ``text`` (see :func:`sentence_spans`)."""
     return [text[start:end] for start, end in sentence_spans(text)]
@@ -229,7 +247,8 @@ class _Candidate:
 class ExtractiveComposer:
     """Model-free ``AnswerComposer``: verbatim evidence sentences, one citation each.
 
-    A sentence is a candidate when it has ``>= min_sentence_tokens`` words and shares at least
+    A sentence is a candidate when it has ``>= min_sentence_tokens`` words, is not a heading,
+    table or message-header line (:func:`_is_layout_sentence`), and shares at least
     ``max(1, best * min_relative_score)`` content tokens with the question, where ``best`` is the
     best candidate's overlap. Candidates are grouped by ``document_id`` (documents ordered by
     their best sentence), then taken round-robin, skipping duplicate sentences, until
@@ -302,6 +321,8 @@ class ExtractiveComposer:
             for start, end in sentence_spans(text):
                 sentence = text[start:end]
                 if len(tokenize(sentence)) < self.min_sentence_tokens:
+                    continue
+                if _is_layout_sentence(text, start, end):
                     continue
                 tokens = content_tokens(sentence)
                 matched = len(query & tokens)

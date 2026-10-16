@@ -100,7 +100,10 @@ one Docker Compose stack. Every question runs the same governed pipeline:
 
 Saved answers are re-checked every time they are opened. Auditors see every decision, but answer
 text drawn from documents they cannot open needs a "reveal with reason" that is itself recorded in
-the audit chain.
+the audit chain. Managers and admins also get an **access map**: a live diagram of who can read
+each document and why (the platform rule or the grant behind every line), limited to documents
+they can read themselves. Revoking a grant there removes the line immediately, and each view of
+the map is audited.
 
 **How prompts drive the AI generation.**
 
@@ -133,7 +136,7 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 | Time for an edited source page to be picked up (live rehearsal)            | **15 seconds** after the edit                                                                                         |
 | Model calls per question                                                   | **1**; grounding and verification are deterministic                                                                   |
 | Audit coverage                                                             | **Every** candidate document's allow or deny decision, in a hash-chained log that verifies end to end                 |
-| Automated tests                                                            | **676 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
+| Automated tests                                                            | **683 pass offline**, plus 11 database tests against Postgres; the access demo passes 15 of 15 checks                 |
 
 **Clearly defined impact for Aspire.**
 
@@ -142,7 +145,8 @@ as Slack's API terms require; the demo uses a synthetic corpus.
   reportable data incident.
 - **Compliance**: auditors can replay any answer (who asked, what was retrieved, what was allowed
   or denied, what was answered) with tamper evidence, which matches the logging and least-privilege
-  expectations in MAS's technology and AI risk guidelines.
+  expectations in MAS's technology and AI risk guidelines. Managers can see at a glance why each
+  person has access, which supports the periodic access reviews MAS expects.
 - **Productivity**: one question replaces searching four tools, and the answer arrives with its
   citations and freshness status, so staff can trust it without re-checking every source.
 
@@ -157,7 +161,8 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 3. **Negative permission**: Mei, an external contractor, asks for Q3 revenue and gets no figures,
    no title and no hint the board deck exists.
 4. **Live revocation**: the Drive owner removes Leadership from the board deck's share. After the
-   next sync, John's answer no longer uses the deck, and the earlier saved answer is withheld.
+   next sync, John's answer no longer uses the deck, the earlier saved answer is withheld, and
+   John's line to the deck disappears from the access map, which runs the same check as retrieval.
 5. **Audit inquiry**: Sam (compliance) reconstructs the question, retrieved documents and every
    allow or deny decision, reveals the answer with a recorded reason, and verifies the hash chain.
 
@@ -169,7 +174,7 @@ Tencent Cloud ADP writes a word. Revocations apply on the next question in the a
 minutes at the source, including saved answers. Every claim is verified deterministically
 (numbers and dates included), the system abstains below 60% support, and every answer carries
 citations, a freshness receipt and a hash-chained audit record that compliance can replay. All
-five scenarios in Aspire's challenge run end to end as automated tests: 676 pass offline, and a
+five scenarios in Aspire's challenge run end to end as automated tests: 683 pass offline, and a
 contractor's model context contains zero restricted documents.
 
 ## Form checklist

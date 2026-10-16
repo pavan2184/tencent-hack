@@ -1298,7 +1298,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
             options: { bold: true, breakLine: true },
           },
           {
-            text: "The saved answer is withheld too",
+            text: "Saved answer withheld; John's line leaves the access map",
             options: { fontSize: 11, color: S.slate },
           },
         ],
@@ -1391,7 +1391,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     text(
       s,
-      "Synthetic company and figures. Each scene is an automated test: test_ask_pipeline.py, test_permission_freshness.py and test_query_history_access.py.",
+      "Synthetic company and figures. Each scene is an automated test: test_ask_pipeline.py, test_permission_freshness.py, test_query_history_access.py and test_access_map.py.",
       {
         x: 0.6,
         y: 6.78,
@@ -1874,7 +1874,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     const stats = [
       [
-        "676",
+        "683",
         "automated tests pass with no network, using mock providers and in-memory stores",
         S.teal,
       ],
