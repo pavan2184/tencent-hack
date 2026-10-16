@@ -1874,7 +1874,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
     const stats = [
       [
-        "683",
+        "686",
         "automated tests pass with no network, using mock providers and in-memory stores",
         S.teal,
       ],
