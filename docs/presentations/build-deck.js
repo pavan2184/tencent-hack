@@ -1968,6 +1968,8 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     );
   }
 
+  // The internal status slide is left out of the submission build (DECK_SUBMISSION=1).
+  if (!process.env.DECK_SUBMISSION) {
   // ============================================================ 13. Internal status
   pres.addSection({ title: "Internal" });
   {
@@ -2057,6 +2059,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
     });
   }
 
+  } // end internal slides
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);
   console.log("wrote", OUT);

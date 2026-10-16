@@ -177,7 +177,7 @@ contractor's model context contains zero restricted documents.
 | Field                        | Where                                                                                                        |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Cover image, 16:9, 380 × 216 | `docs/submission/cover-380x216.png` (2×: `cover-760x432.png`)                                                |
-| Architecture PPT             | `docs/presentations/internal-brain-architecture.pptx`: delete slide 15 and replace the slide 9 mock-up first |
+| Architecture PPT             | `docs/presentations/internal-brain-architecture-submission.pptx` (14 slides, internal slide removed); swap the slide 9 mock-up for a real screenshot if time allows |
 | GitHub URL                   | `https://github.com/pavan2184/tencent-hack`; must be public or shared with judges                            |
 | Project / demo URL           | Pavan's live link, with a passcode in front of it                                                            |
 | Demo video (5–8 min)         | Overview, the five scenarios, CodeBuddy reflection                                                           |
