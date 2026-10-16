@@ -171,6 +171,45 @@ def test_grant_for_other_principal_does_not_apply(policy, people, make_doc, make
     assert policy.decide(people["mei"], doc, now=now).decision == Effect.deny
 
 
+def test_r5_decision_names_exactly_the_grants_it_used(policy, people, make_doc, make_grant, now):
+    used = [
+        make_grant(SubjectType.group, "leadership", grant_id="g-group"),
+        make_grant(SubjectType.principal, "john.tan", grant_id="g-john"),
+    ]
+    ignored = [
+        make_grant(SubjectType.principal, "john.tan", revoked=True, grant_id="g-revoked"),
+        make_grant(SubjectType.principal, "mei.chen", grant_id="g-mei"),
+        make_grant(SubjectType.principal, "john.tan", scope="write", grant_id="g-write"),
+        make_grant(SubjectType.principal, "john.tan", document_id="other", grant_id="g-other"),
+    ]
+    doc = make_doc(None, classification=Classification.confidential, grants=[*used, *ignored])
+    d = policy.decide(people["john"], doc, now=now)
+    assert (d.decision, d.matched_rule) == (Effect.allow, "R5:explicit_grant")
+    assert d.grant_ids == ["g-group", "g-john"]
+
+
+def test_only_r5_reports_grant_ids(policy, people, make_doc, make_grant, seed_blocks, now):
+    """Owner and admin outrank a matching grant (R3, R4 before R5); source access alone is R8."""
+    cases = [
+        ("jordan", make_doc(seed_blocks["confluence"]), "R8:confluence"),
+        (
+            "jordan",
+            make_doc(
+                None, owner="jordan.lim", grants=[make_grant(SubjectType.principal, "jordan.lim")]
+            ),
+            "R3:owner",
+        ),
+        (
+            "root",
+            make_doc(None, grants=[make_grant(SubjectType.principal, "root.admin")]),
+            "R4:admin",
+        ),
+    ]
+    for who, doc, rule in cases:
+        d = policy.decide(people[who], doc, now=now)
+        assert (d.matched_rule, d.grant_ids) == (rule, [])
+
+
 # -- revoked allow falls through ------------------------------------------------------------
 
 

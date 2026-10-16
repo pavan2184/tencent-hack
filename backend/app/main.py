@@ -4,15 +4,17 @@
 `/healthz`, and (when the MCP module is present) the MCP server at `/mcp`. The lifespan configures
 logging and installs the `Services` container (building one from settings unless a test already
 installed it); in `REPO_BACKEND=memory` with a freshly built container it auto-loads the seed so a
-local run without Postgres has personas and documents.
+local run without Postgres has personas and documents, and runs a delta sync of every source each
+`SYNC_DELTA_INTERVAL_S` so permission snapshots never age out (`app.services.memory_sync`).
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -73,6 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if built_here:
         services = build_services(settings)
         set_services(services)
+    sync_loop: asyncio.Task[None] | None = None
     if built_here and settings.REPO_BACKEND == "memory":
         seed_dir = _default_seed_dir(settings.SEED_DIR)
         if seed_dir is not None:
@@ -80,10 +83,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
             summary = await load_seed(services, str(seed_dir))
             logger.info("memory backend auto-seeded", extra={"summary": summary.model_dump()})
+        # No worker can reach in-process stores, so the API syncs them itself (D-022).
+        from app.services.memory_sync import keep_permissions_fresh
+
+        sync_loop = asyncio.create_task(
+            keep_permissions_fresh(services, float(settings.SYNC_DELTA_INTERVAL_S))
+        )
     async with AsyncExitStack() as stack:
         if mcp_lifespan is not None:
             await stack.enter_async_context(mcp_lifespan(app))
         yield
+    if sync_loop is not None:
+        sync_loop.cancel()
+        with suppress(asyncio.CancelledError):
+            await sync_loop
     if built_here and settings.REPO_BACKEND == "sql":
         try:
             from app.db.session import dispose_engine

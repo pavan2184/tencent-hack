@@ -94,4 +94,5 @@ async def deny_request(
     request_id: str, services: ServicesDep, principal: CurrentPrincipal
 ) -> dict[str, Any]:
     req, _ = await access_service.decide_request(services, principal, request_id, approve=False)
-    return {"request": req.model_dump(mode="json")}
+    note = await access_service.denial_note(services, req)
+    return {"request": req.model_dump(mode="json"), "note": note}

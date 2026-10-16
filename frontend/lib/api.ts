@@ -168,7 +168,7 @@ export async function decideAccessRequest(
   requestId: string,
   decision: AccessDecisionAction,
 ): Promise<AccessDecisionResult> {
-  // Approve returns {request, grant, effective, note}; deny returns {request}.
+  // Approve returns {request, grant, effective, note}; deny returns {request, note}.
   const res = await apiFetch<{
     request: AccessRequest;
     effective?: boolean;

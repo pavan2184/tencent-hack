@@ -30,6 +30,8 @@ from access_control import (
     Grant,
     GrantNotFound,
     GrantStore,
+    GroupDefinition,
+    GroupDirectory,
     PermissionSnapshotStore,
     Principal,
     PrincipalDirectory,
@@ -73,6 +75,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.adapters.access_stores import (
     SqlAccessRequestStore,
     SqlGrantStore,
+    SqlGroupDirectory,
     SqlPermissionSnapshotStore,
     SqlPrincipalDirectory,
 )
@@ -184,9 +187,40 @@ async def test_check_db_and_protocols(sf: async_sessionmaker[AsyncSession]) -> N
     assert isinstance(SqlPermissionSnapshotStore(sf), PermissionSnapshotStore)
     assert isinstance(SqlPrincipalDirectory(sf), PrincipalDirectory)
     assert isinstance(SqlAccessRequestStore(sf), AccessRequestStore)
+    assert isinstance(SqlGroupDirectory(sf), GroupDirectory)
 
 
 # ---------------------------------------------------------------------------------- principals
+
+
+async def test_group_directory_round_trip(repo: SqlRepo, sf: async_sessionmaker) -> None:
+    child, parent, other = _uid("child-"), _uid("parent-"), _uid("other-")
+    for gid in (child, parent, other):
+        await repo.upsert_group(Group(id=gid, name=gid))
+    groups = SqlGroupDirectory(sf)
+    await groups.put(
+        GroupDefinition(
+            id=child,
+            parent_ids=[parent, other, parent],
+            platform_ids={"gdrive": f"{child}@corp.example", "confluence": f"conf-{child}"},
+        )
+    )
+    mine = {d.id: d for d in await groups.list_definitions() if d.id == child}
+    assert mine[child].parent_ids == sorted([parent, other])
+    assert mine[child].platform_ids == {
+        SourceKind.confluence: f"conf-{child}",
+        SourceKind.gdrive: f"{child}@corp.example",
+    }
+
+    # put replaces the whole definition.
+    await groups.put(GroupDefinition(id=child, parent_ids=[parent]))
+    (again,) = [d for d in await groups.list_definitions() if d.id == child]
+    assert again.parent_ids == [parent] and again.platform_ids == {}
+
+    with pytest.raises(AccessControlError):  # both groups of a link must exist
+        await groups.put(GroupDefinition(id=child, parent_ids=["missing-" + _uid()]))
+    (unchanged,) = [d for d in await groups.list_definitions() if d.id == child]
+    assert unchanged.parent_ids == [parent]  # the failed put rolled back
 
 
 async def test_principal_round_trip(repo: SqlRepo, sf: async_sessionmaker[AsyncSession]) -> None:

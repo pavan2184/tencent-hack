@@ -30,6 +30,12 @@ async def resolve_principal(actor_id: str | None) -> Principal:
     principal = await get_repo().get_principal(actor_id)
     if principal is None or not principal.is_active:
         raise UnknownActor()
+    from app.services.access import with_resolved_groups
+    from app.services.wiring import current_services
+
+    services = current_services()
+    if services is not None:  # nested groups and platform group ids (D-023)
+        (principal,) = await with_resolved_groups(services, [principal])
     actor_id_var.set(principal.id)
     return principal
 

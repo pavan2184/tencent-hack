@@ -10,13 +10,19 @@ This package never imports ``app``; the app implements the async store Protocols
 from __future__ import annotations
 
 from access_control.connectors import (
+    confluence_permissions_from_api,
+    email_permissions_from_gmail,
     gdrive_permissions_from_api,
+    jira_permissions_from_api,
     permission_fingerprint,
     slack_permissions_from_api,
 )
+from access_control.drift import PermissionDrift, detect_permission_drift
+from access_control.groups import GroupDefinition, expand_groups, resolve_groups
 from access_control.memory import (
     InMemoryAccessRequestStore,
     InMemoryGrantStore,
+    InMemoryGroupDirectory,
     InMemoryPermissionSnapshotStore,
     InMemoryPrincipalDirectory,
 )
@@ -58,6 +64,7 @@ from access_control.policy import (
     DEFAULT_POLICY_VERSION,
     DefaultAccessPolicy,
     has_source_membership,
+    platform_groups,
     platform_identities,
 )
 from access_control.protocols import (
@@ -67,6 +74,7 @@ from access_control.protocols import (
     AccessRequestStore,
     GrantNotFound,
     GrantStore,
+    GroupDirectory,
     PermissionSnapshotStore,
     PrincipalDirectory,
     SourcePermissionVerifier,
@@ -106,12 +114,16 @@ __all__ = [
     "Grant",
     "GrantNotFound",
     "GrantStore",
+    "GroupDefinition",
+    "GroupDirectory",
     "InMemoryAccessRequestStore",
     "InMemoryGrantStore",
+    "InMemoryGroupDirectory",
     "InMemoryPermissionSnapshotStore",
     "InMemoryPrincipalDirectory",
     "JiraPermissions",
     "McpExternalPermissions",
+    "PermissionDrift",
     "PermissionSnapshotStore",
     "Principal",
     "PrincipalDirectory",
@@ -125,9 +137,16 @@ __all__ = [
     "UploadPermissions",
     "__version__",
     "has_source_membership",
+    "confluence_permissions_from_api",
+    "detect_permission_drift",
+    "email_permissions_from_gmail",
+    "expand_groups",
     "gdrive_permissions_from_api",
+    "jira_permissions_from_api",
     "parse_raw_permissions",
+    "platform_groups",
     "platform_identities",
     "permission_fingerprint",
+    "resolve_groups",
     "slack_permissions_from_api",
 ]

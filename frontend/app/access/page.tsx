@@ -101,14 +101,19 @@ function GrantsExplorer({ canEdit }: { canEdit: boolean }) {
 function RequestInbox({ canDecide }: { canDecide: boolean }) {
   const requests = useApiQuery("access-requests", listAccessRequests);
   const decide = useApiAction(decideAccessRequest);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    text: string;
+    warn: boolean;
+  } | null>(null);
 
   async function onDecide(requestId: string, decision: "approve" | "deny") {
     setNotice(null);
     const result = await decide.run(requestId, decision);
     if (!result.ok) return;
-    // A local approval cannot widen what the source platform allows; say so plainly.
-    if (result.data.effective === false) setNotice(result.data.note);
+    // A local approval cannot widen what the source platform allows; say so plainly. A denial
+    // changes nothing and tells nobody; say that too.
+    const { effective, note } = result.data;
+    if (note) setNotice({ text: note, warn: effective === false });
     requests.reload();
   }
 
@@ -133,9 +138,13 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
         {notice && (
           <p
             role="status"
-            className="mx-3 my-2 rounded-sm bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            className={
+              notice.warn
+                ? "mx-3 my-2 rounded-sm bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                : "mx-3 my-2 rounded-sm bg-neutral-100 px-4 py-3 text-sm text-neutral-700"
+            }
           >
-            {notice}
+            {notice.text}
           </p>
         )}
         {requests.loading && !requests.data && (

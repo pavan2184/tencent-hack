@@ -8,6 +8,7 @@ from collections.abc import Iterable, Sequence
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
+from access_control.groups import GroupDefinition
 from access_control.models import (
     AccessDecision,
     AccessRequest,
@@ -129,6 +130,21 @@ class PrincipalDirectory(Protocol):
     async def list(self) -> list[Principal]: ...
 
     async def groups_of(self, principal_id: str) -> list[str]: ...
+
+
+@runtime_checkable
+class GroupDirectory(Protocol):
+    """Group hierarchy and per-platform group ids, for ``access_control.groups.resolve_groups``.
+
+    Invariants:
+    - ``list_definitions`` returns at most one definition per group id. A group without one
+      resolves to itself with no platform ids.
+    - ``put`` replaces the group's definition (parents and platform ids together).
+    """
+
+    async def list_definitions(self) -> list[GroupDefinition]: ...
+
+    async def put(self, definition: GroupDefinition) -> None: ...
 
 
 @runtime_checkable

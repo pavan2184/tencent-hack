@@ -11,6 +11,9 @@
 - `SqlPrincipalDirectory` (`principals`, `groups`, `group_memberships`, 0001):
   `Principal.groups` = the principal's membership group ids, sorted.
 - `SqlAccessRequestStore` (`access_requests`, 0001): pending → approved/denied exactly once.
+- `SqlGroupDirectory` (`access_group_parents`, `access_group_platform_ids`, 0201): group
+  hierarchy and per-platform group ids. `put` replaces a group's whole definition in one
+  transaction; both groups of a parent link must exist (else `AccessControlError`).
 
 "Insertion order" for grants is `(granted_at, id)` — the table has no sequence column.
 Malformed (non-UUID) document/grant/request ids read as misses, never as database errors.
@@ -31,13 +34,14 @@ from access_control import (
     AccessRequestStatus,
     Grant,
     GrantNotFound,
+    GroupDefinition,
     Principal,
     SourcePermissions,
     SubjectType,
     parse_raw_permissions,
 )
 from pydantic import ValidationError
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,6 +60,7 @@ from app.db.models import (
 __all__ = [
     "SqlAccessRequestStore",
     "SqlGrantStore",
+    "SqlGroupDirectory",
     "SqlPermissionSnapshotStore",
     "SqlPrincipalDirectory",
 ]
@@ -368,6 +373,77 @@ class SqlPrincipalDirectory(_SqlStore):
         async with self._tx() as s:
             await write_principal(s, principal)
             await replace_memberships(s, principal.id, principal.groups, create_groups=True)
+
+
+# ------------------------------------------------------------------------- group directory
+
+
+class SqlGroupDirectory(_SqlStore):
+    """Satisfies :class:`access_control.GroupDirectory`."""
+
+    async def list_definitions(self) -> list[GroupDefinition]:
+        async with self._tx() as s:
+            parents = (
+                await s.execute(
+                    text(
+                        "SELECT group_id, parent_group_id FROM access_group_parents "
+                        "ORDER BY group_id, parent_group_id"
+                    )
+                )
+            ).all()
+            platform = (
+                await s.execute(
+                    text(
+                        "SELECT group_id, source_kind, platform_group_id "
+                        "FROM access_group_platform_ids ORDER BY group_id, source_kind"
+                    )
+                )
+            ).all()
+        by_id: dict[str, dict[str, Any]] = {}
+        for group_id, parent_id in parents:
+            by_id.setdefault(group_id, {"parent_ids": [], "platform_ids": {}})
+            by_id[group_id]["parent_ids"].append(parent_id)
+        for group_id, kind, platform_id in platform:
+            by_id.setdefault(group_id, {"parent_ids": [], "platform_ids": {}})
+            by_id[group_id]["platform_ids"][kind] = platform_id
+        return [GroupDefinition(id=gid, **fields) for gid, fields in sorted(by_id.items())]
+
+    async def put(self, definition: GroupDefinition) -> None:
+        params = {"group_id": definition.id}
+        try:
+            async with self._tx() as s:
+                await s.execute(
+                    text("DELETE FROM access_group_parents WHERE group_id = :group_id"), params
+                )
+                await s.execute(
+                    text("DELETE FROM access_group_platform_ids WHERE group_id = :group_id"),
+                    params,
+                )
+                parents = list(dict.fromkeys(definition.parent_ids))
+                if parents:
+                    await s.execute(
+                        text(
+                            "INSERT INTO access_group_parents (group_id, parent_group_id) "
+                            "VALUES (:group_id, :parent_group_id)"
+                        ),
+                        [{**params, "parent_group_id": p} for p in parents],
+                    )
+                if definition.platform_ids:
+                    await s.execute(
+                        text(
+                            "INSERT INTO access_group_platform_ids "
+                            "(group_id, source_kind, platform_group_id) "
+                            "VALUES (:group_id, :source_kind, :platform_group_id)"
+                        ),
+                        [
+                            {**params, "source_kind": str(kind), "platform_group_id": pid}
+                            for kind, pid in definition.platform_ids.items()
+                        ],
+                    )
+        except IntegrityError as exc:
+            raise AccessControlError(
+                f"group definition {definition.id!r}: {_db_reason(exc)}"
+            ) from exc
 
 
 # --------------------------------------------------------------------------- access requests

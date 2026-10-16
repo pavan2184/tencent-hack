@@ -139,3 +139,32 @@ def test_custom_ages_apply(people, make_doc, seed_blocks, now):
 def test_incomplete_or_non_positive_ages_are_rejected(ages):
     with pytest.raises(ValueError):
         DefaultAccessPolicy(max_permission_age=ages)
+
+
+@pytest.mark.parametrize("classification", list(Classification))
+def test_decision_says_when_its_snapshot_expires(
+    policy, people, make_doc, make_grant, seed_blocks, now, classification
+):
+    grant = make_grant(SubjectType.principal, "jordan.lim")  # confidential+ needs one
+    doc = make_doc(seed_blocks["confluence"], classification=classification, grants=[grant])
+    decision = _decide(policy, people["jordan"], doc, now)
+    assert decision.permission_captured_at == now
+    assert decision.permission_expires_at == now + DEFAULT_MAX_PERMISSION_AGE[classification]
+    # The decision flips exactly after that instant.
+    assert _decide(policy, people["jordan"], doc, decision.permission_expires_at).allowed
+    later = decision.permission_expires_at + timedelta(seconds=1)
+    assert _decide(policy, people["jordan"], doc, later).matched_rule == STALE_RULE
+
+
+def test_uploads_and_unaged_policies_report_no_expiry(people, make_doc, seed_blocks, now):
+    upload = make_doc(seed_blocks["upload"], owner="alex.tan")
+    assert (
+        DefaultAccessPolicy().decide(people["alex"], upload, now=now).permission_expires_at is None
+    )
+    imported = make_doc(seed_blocks["confluence"])
+    unaged = DefaultAccessPolicy(max_permission_age=None)
+    assert unaged.decide(people["alex"], imported, now=now).permission_expires_at is None
+    assert (
+        DefaultAccessPolicy().decide(people["alex"], make_doc(None), now=now).permission_expires_at
+        is None
+    )

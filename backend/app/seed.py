@@ -1,6 +1,7 @@
 """Seed loader (`make seed` -> `ROLE=seed` -> `python -m app.seed`). Idempotent.
 
-1. principals + groups + memberships from `principals.yaml`;
+1. principals + groups + memberships from `principals.yaml`, and each group's optional
+   `parents` and `platform_ids` (group resolution, `services.group_directory`);
 2. freshness policies from `policies.yaml` (`freshness_store.put_policy`);
 3. for each `corpus/<source>/source.yaml`: register the source (`local_path` = that directory)
    and run a `reconcile` sync through the `gbrain_import` connector (pages, permission snapshots,
@@ -22,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from access_control import Principal
+from access_control import GroupDefinition, Principal
 from freshness import FreshnessPolicy
 from pydantic import BaseModel, Field
 
@@ -66,9 +67,22 @@ def _dir_digest(directory: Path) -> str:
 
 async def _load_principals(services: Services, path: Path, summary: SeedSummary) -> None:
     data = _load_yaml(path) or {}
-    for group in data.get("groups") or []:
+    groups = data.get("groups") or []
+    for group in groups:
         await services.repo.upsert_group(Group(id=str(group["id"]), name=str(group["name"])))
         summary.groups += 1
+    # Nesting and platform ids (group resolution) once every group exists.
+    for group in groups:
+        if group.get("parents") or group.get("platform_ids"):
+            await services.group_directory.put(
+                GroupDefinition(
+                    id=str(group["id"]),
+                    parent_ids=[str(p) for p in group.get("parents") or []],
+                    platform_ids={
+                        str(k): str(v) for k, v in (group.get("platform_ids") or {}).items()
+                    },
+                )
+            )
     for item in data.get("principals") or []:
         principal = Principal(
             id=str(item["id"]),

@@ -1,6 +1,6 @@
 # Data Model
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 ## Overview
 
@@ -15,7 +15,7 @@ issue and Drive file is a page. The model is a port of GBrain's (see
 migration range.
 
 ```text
-principals ─< group_memberships >─ groups
+principals ─< group_memberships >─ groups ─< access_group_parents, access_group_platform_ids [0201 access]
     │
     ├─< uploads >── pages            sources ─< pages ─< content_chunks
     ├─< queries                                  │  ├─< links (from/to)
@@ -70,7 +70,7 @@ page's `source_kind` straight to the freshness lib. The superseded TypeScript sp
 
 | Table               | Column                     | Type        | Null | Notes                                                              |
 | ------------------- | -------------------------- | ----------- | ---- | ------------------------------------------------------------------ |
-| `principals`        | `id`                       | text        | no   | PK, e.g. `john.tan`                                              |
+| `principals`        | `id`                       | text        | no   | PK, e.g. `john.tan`                                                |
 |                     | `display_name`             | text        | no   |                                                                    |
 |                     | `email`                    | text        | yes  |                                                                    |
 |                     | `roles`                    | text[]      | no   | default `{}`; `employee, manager, auditor, admin, contractor`      |
@@ -329,6 +329,39 @@ required, `omit`. Standard: 86,400 s, 3,600 s, no live check, `allow_with_warnin
 Indexes: partial (`document_id`) WHERE `revoked_at IS NULL`; UNIQUE (`document_id`,
 `subject_type`, `subject_id`, `effect`, `scope`) WHERE `revoked_at IS NULL` (re-seeding restores a
 grant revoked during a demo instead of duplicating an active one).
+
+### `access_group_parents` and `access_group_platform_ids` (0201, group resolution)
+
+Inputs for `access_control.resolve_groups` (D-023), read by `SqlGroupDirectory`.
+
+| Table                       | Column              | Type | Null | Notes                                                                |
+| --------------------------- | ------------------- | ---- | ---- | -------------------------------------------------------------------- |
+| `access_group_parents`      | `group_id`          | text | no   | FK `groups` ON DELETE CASCADE; its members are members of the parent |
+|                             | `parent_group_id`   | text | no   | FK `groups` ON DELETE CASCADE; PK (`group_id`, `parent_group_id`)    |
+| `access_group_platform_ids` | `group_id`          | text | no   | FK `groups` ON DELETE CASCADE                                        |
+|                             | `source_kind`       | text | no   | source kind; PK (`group_id`, `source_kind`)                          |
+|                             | `platform_group_id` | text | no   | the group's id on that platform (Drive address, Confluence/Jira id)  |
+
+Cycles are allowed (resolution tolerates them). Deleting a group removes its links, which can
+only narrow access. In `principals.yaml` a group may carry `parents: [ids]` and
+`platform_ids: {kind: id}`; the seed loader writes them after every group exists.
+
+Resolution happens whenever the app loads a principal for an access decision: `Principal.groups`
+becomes the direct groups plus every ancestor, and `Principal.platform_groups[kind]` lists, for
+each platform where a group has a bound id, that bound id (or the local id for an unbound group).
+Confluence, Jira and Drive group entries match `platform_groups[kind]` when present, else
+`groups`. A bound id replaces the local id on its platform, so a local name never matches an
+unrelated platform group.
+
+### Decisions and drift (no table)
+
+`AccessDecision` carries `permission_captured_at`, `permission_expires_at` (captured_at + the
+classification's maximum age; null for uploads) and `grant_ids` (the active allow grants that
+satisfied `R5`; empty otherwise). A source ACL change between captures (by
+`permission_fingerprint`) is audited as `access.permission_drift` with fingerprints, versions,
+`observed_via` (`refresh` or `ingest`) and `freshness_notified`; when a refresh saw it, a
+freshness `metadata_change` event with id `permission-drift:<external_object_id>:<fingerprint>`
+is accepted for the object (D-024).
 
 ## Groundedness range (0300–0399), owner Raphael
 

@@ -30,6 +30,7 @@ from access_control import (
     Principal,
     SourceKind,
     SubjectType,
+    resolve_groups,
 )
 
 from app.core.auth import has_role
@@ -117,6 +118,15 @@ async def visible_page(
     if not decision.allowed:
         raise document_not_found()
     return page, decision
+
+
+async def with_resolved_groups(
+    services: Services, principals: Sequence[Principal]
+) -> list[Principal]:
+    """Each principal with nested groups expanded and platform group ids bound (D-023), as the
+    policy needs them. Run on every principal loaded for an access decision."""
+    definitions = await services.group_directory.list_definitions()
+    return [resolve_groups(p, definitions) for p in principals]
 
 
 def can_manage(principal: Principal, page: Page) -> bool:
@@ -267,25 +277,15 @@ def redact_audit_body(body: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------- access map
-def _grant_subject_matches(grant: Grant, principal: Principal) -> bool:
-    match grant.subject_type:
-        case SubjectType.principal:
-            return grant.subject_id == principal.id
-        case SubjectType.group:
-            return grant.subject_id in principal.groups
-        case SubjectType.role:
-            return grant.subject_id in principal.roles
-    return False
-
-
-def _grant_refs(context: DocumentAccessContext, principal: Principal) -> list[AccessMapGrantRef]:
+def _grant_refs(
+    context: DocumentAccessContext, decision: AccessDecision
+) -> list[AccessMapGrantRef]:
+    """The grants the policy itself reported as satisfying the decision (`R5` only)."""
+    used = set(decision.grant_ids)
     return [
         AccessMapGrantRef(grant_id=g.id, subject_type=g.subject_type, subject_id=g.subject_id)
         for g in context.grants
-        if g.effect == Effect.allow
-        and g.revoked_at is None
-        and g.scope == "read"
-        and _grant_subject_matches(g, principal)
+        if g.id in used
     ]
 
 
@@ -300,10 +300,13 @@ async def access_map(services: Services, principal: Principal) -> AccessMap:
         raise Forbidden()
     now = services.clock.now()
     pages = await services.repo.list_pages(limit=ALL_PAGES_LIMIT)
-    _, visible = await filter_pages(services, principal, pages, now=now)
+    caller_result, visible = await filter_pages(services, principal, pages, now=now)
+    caller_decisions = {d.document_id: d for d in caller_result.decisions if d.allowed}
     visible.sort(key=lambda p: (p.source_id, p.title, p.id))
     contexts = await build_contexts(services, visible)
-    people = [p for p in await services.repo.list_principals() if p.is_active]
+    people = await with_resolved_groups(
+        services, [p for p in await services.repo.list_principals() if p.is_active]
+    )
 
     edges: list[AccessMapEdge] = []
     for person in people:
@@ -317,9 +320,7 @@ async def access_map(services: Services, principal: Principal) -> AccessMap:
                     principal_id=person.id,
                     document_id=decision.document_id,
                     rule=decision.matched_rule,
-                    via=_grant_refs(context, person)
-                    if decision.matched_rule.startswith("R5:")
-                    else [],
+                    via=_grant_refs(context, decision),
                 )
             )
 
@@ -345,6 +346,10 @@ async def access_map(services: Services, principal: Principal) -> AccessMap:
                 source_id=p.source_id,
                 source_kind=str(p.source_kind),
                 classification=str(p.classification),
+                permissions_synced_at=caller_decisions[p.id].permission_captured_at
+                if p.source_kind != SourceKind.upload
+                else None,
+                permissions_expire_at=caller_decisions[p.id].permission_expires_at,
             )
             for p in visible
         ],
@@ -518,7 +523,11 @@ async def approval_effect(services: Services, req: AccessRequest) -> tuple[bool,
     page = await services.repo.get_page(req.document_id)
     requester = await services.repo.get_principal(req.principal_id)
     if page is None or requester is None:
-        return False, "Approved, but the requester's access could not be checked."
+        return False, "Approved, but we couldn't check whether the requester can open it now."
+    name = requester.display_name
+    if not requester.is_active:
+        return False, f"Approved, but {name}'s account is inactive, so they still can't open it."
+    (requester,) = await with_resolved_groups(services, [requester])
     (context,) = await build_contexts(services, [page])
     decision = services.access_policy.decide(requester, context, now=services.clock.now())
     if decision.allowed:
@@ -526,17 +535,28 @@ async def approval_effect(services: Services, req: AccessRequest) -> tuple[bool,
     platform = _PLATFORM_NAMES.get(page.source_kind, "the source system")
     if decision.reason == DenyReason.no_source_membership:
         return False, (
-            f"Approved, but {requester.display_name} still can't open this document: "
-            f"{platform} doesn't share it with them. Ask the owner to share it in {platform}."
+            f"Approved, but {name} still can't open this document: {platform} doesn't share it "
+            f"with them. Ask the owner to share it in {platform}."
         )
     if decision.reason == DenyReason.unknown_permissions:
         return False, (
-            "Approved, but this document's permissions can't be confirmed right now, so it "
-            "stays closed until the next successful sync."
+            f"Approved, but {platform} hasn't confirmed this document's permissions recently, "
+            "so it stays closed to everyone until the next successful sync."
         )
     if decision.reason == DenyReason.explicit_deny:
-        return False, "Approved, but an explicit deny rule still blocks this person."
-    return False, "Approved, but another access rule still blocks this person."
+        return False, (
+            f"Approved, but a deny grant on this document still blocks {name}. "
+            "Revoke it to let them in."
+        )
+    return False, f"Approved, but another access rule still blocks {name}."
+
+
+async def denial_note(services: Services, req: AccessRequest) -> str:
+    """What the approver is told after denying: nothing changes, and nobody is told. The
+    requester has no view of decided requests, so a denial never confirms the document exists."""
+    requester = await services.repo.get_principal(req.principal_id)
+    name = requester.display_name if requester is not None else "The requester"
+    return f"Denied. Nothing changes for {name}, and they aren't notified."
 
 
 async def request_access(
