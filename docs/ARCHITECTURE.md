@@ -401,8 +401,10 @@ This is an available orchestration seam, not a claim that a live provider check
 is already wired into the app. Slack/Drive normalisers preserve guest, expiry
 and discovery restrictions; deterministic fingerprints track ACL-only changes.
 
-The five-slide editable PPT is
-`output/presentations/tencent-internal-brain-architecture-delivery.pptx`.
-It shows implemented code and marks the remaining live platform/authentication
-boundaries. See [handoff](ACCESS_CONTROL_HANDOFF.md) and
+The editable architecture deck is
+[`docs/presentations/internal-brain-architecture.pptx`](presentations/internal-brain-architecture.pptx)
+(15 slides; the submission copy without the internal status slide is
+`internal-brain-architecture-submission.pptx`). It shows the implemented pipeline,
+trust boundaries and native permission handling, and marks the remaining live
+platform/authentication boundaries. See [handoff](ACCESS_CONTROL_HANDOFF.md) and
 [research](ACCESS_CONTROL_RESEARCH.md).
