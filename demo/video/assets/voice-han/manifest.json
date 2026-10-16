@@ -1,0 +1,68 @@
+{
+  "s1-open": {
+    "sha": "c3444c47c5f92edd",
+    "duration_s": 23.310091,
+    "chars": 281,
+    "raw_duration_s": 27.631746
+  },
+  "s2-first-question": {
+    "sha": "233bc9c12bfad78c",
+    "duration_s": 32.396032,
+    "chars": 385,
+    "raw_duration_s": 39.241723
+  },
+  "s3-pipeline": {
+    "sha": "0a3151f6db921ac6",
+    "duration_s": 29.672517,
+    "chars": 377,
+    "raw_duration_s": 33.436735
+  },
+  "s4-access": {
+    "sha": "6658f5345dae348c",
+    "duration_s": 42.567415,
+    "chars": 545,
+    "raw_duration_s": 52.012698
+  },
+  "s5-revocation": {
+    "sha": "c9ca9c158401076c",
+    "duration_s": 46.842834,
+    "chars": 615,
+    "raw_duration_s": 55.913651
+  },
+  "s6-freshness": {
+    "sha": "01e75c73390c37e8",
+    "duration_s": 36.636916,
+    "chars": 523,
+    "raw_duration_s": 40.681361
+  },
+  "s7-groundedness": {
+    "sha": "f1991b884fb4ef61",
+    "duration_s": 48.729773,
+    "chars": 644,
+    "raw_duration_s": 55.588571
+  },
+  "s8-verification": {
+    "sha": "fd08dc82172dfcfe",
+    "duration_s": 37.343673,
+    "chars": 500,
+    "raw_duration_s": 45.464671
+  },
+  "s9-audit": {
+    "sha": "35f100fd431be007",
+    "duration_s": 40.126984,
+    "chars": 539,
+    "raw_duration_s": 45.325351
+  },
+  "s10-stack": {
+    "sha": "a4f6b620a48037c6",
+    "duration_s": 24.110998,
+    "chars": 267,
+    "raw_duration_s": 27.306667
+  },
+  "s11-how-we-built-it": {
+    "sha": "175a444ecc00c55b",
+    "duration_s": 12.50415,
+    "chars": 198,
+    "raw_duration_s": 13.746213
+  }
+}

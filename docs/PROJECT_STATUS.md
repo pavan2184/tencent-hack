@@ -253,3 +253,23 @@ emits verbatim source markup and whole tables as one claim (`backend/app/service
 **Rename leftovers:** identifiers upstream left as `internal-brain`/`internal_brain` (MCP
 server name, Celery app, ADP visitor id, frontend package name, lib docstrings, two docs) are
 now `brain-sauce`/`brain_sauce`; `test_mcp.py` updated (11 passed).
+
+## Demo video v3: plain-language story, subtitles, mascot, two voices (16 October 2026)
+
+Raphael judged v2 too technical for the judging panel. v3 (`demo/video/`) retells the same
+scenario in plain language around John, Mei and Sam (~4,900 characters, eleven scenes) with
+burned-in captions one sentence at a time (`script/captions.py`, timed from the `S` table), and
+the mascot in place of the text chrome: a small character + wordmark lockup top-left on every
+scene (`assets/mascot/*-small.png`) and the full character on the end card. Dense scenes were
+redrawn: platform cards and "the source is the ceiling" instead of the ten-rule table, four
+plain rules instead of the six prompt rules, three check questions with a tick or cross instead
+of the verifier table, six tiles for the package. Every `at(scene, phrase)` cue was remapped to
+the v3 text. Two recordings of the same script: Ziyu (`assets/voice/`, speed 1.2 + 1.0417
+tempo, 6 min 0 s) and Han (`OAQQSa5rh6bJe9HgSD5E`, `assets/voice-han/`, speed 0.8 + 1.1 tempo,
+6 min 35 s), selected through `voices.han` in `narration.json` and `--voice han` on `tts.py`,
+`tighten.py` and the new `script/schedule.py`, which now writes the schedule instead of hand
+edits. `npx hyperframes check` passes both variants (0 layout issues, all text AA). Renders:
+`out/brain-sauce-demo-ziyu.mp4` and `out/brain-sauce-demo-han.mp4` (git-ignored). Bug found and
+fixed on the way: `tighten.py` rebuilt a stale `<scene>.raw.mp3` after a re-record, restoring the
+old audio; `tts.py` now removes the raw clip when it re-records a scene.
+

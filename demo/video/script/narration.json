@@ -17,47 +17,76 @@
   "scenes": [
     {
       "id": "s1-open",
-      "text": "This is BrainSauce. It answers questions from the documents a company already keeps in Confluence, Jira, Slack, Drive and email, and every answer arrives with its evidence: which documents it used, how fresh each was, and what the asker was allowed to see."
+      "title": "Open",
+      "text": "This is Brain Sauce. A company's knowledge lives in Confluence, Jira, Slack, Google Drive and email. Brain Sauce answers questions from all of it, and every answer comes with its receipts: which documents it used, how fresh they were, and what the person asking was allowed to see."
     },
     {
       "id": "s2-first-question",
-      "text": "John Tan runs finance operations and asks about the Rail-B cutover. The facts sit in an email, a Jira issue, two Slack channels and a vendor list. The answer brings them together as plain sentences, each ending in a citation, with a freshness receipt and an access summary underneath. The same question works over REST and from an MCP client."
+      "title": "First question",
+      "text": "John Tan runs finance operations and asks about next week's payment switch-over. The answer is spread across an email, a ticket, two chat channels and a vendor list. Brain Sauce writes it as plain sentences, and each sentence points to the document it came from. Below the answer sits a receipt: every document it looked at, how old each one was, and how many John was allowed to read."
     },
     {
       "id": "s3-pipeline",
-      "text": "Each question runs through one pipeline. Hybrid search over-fetches candidates. Access control removes what the asker may not read, before any model is called or any document text is loaded. Freshness checks the survivors, a sanitiser screens the text for prompt injection, one model call writes the answer, deterministic code verifies it, and the event joins a hash-chained audit log."
+      "title": "How it works",
+      "text": "Every question takes the same path. First Brain Sauce finds candidate documents. Then it removes everything the person may not read, before any AI model sees a word. It checks that what is left is still current, screens it for hidden instructions, lets the model write one answer, checks every sentence against the evidence, and records the whole thing in a tamper-evident log."
     },
     {
       "id": "s4-access",
-      "text": "Permissions are stored in each platform's own shape, never flattened into one list. At query time a ten-rule policy evaluates every candidate for the asker in a fixed order, from explicit denies down to membership on the source platform, and the source platform sets the ceiling: a local grant cannot widen what Drive allows, and an administrator does not read everything. Anything unknown denies. A permission snapshot older than its classification permits, five minutes for confidential documents, denies too. A document you cannot read returns the same 404 as one that does not exist."
+      "title": "Permissions",
+      "text": "Brain Sauce never copies permissions into a list of its own. It reads each platform's own rules, Confluence restrictions, Jira security levels, Slack channel membership, Drive sharing, and treats them as the ceiling. An administrator does not get to read everything, and a local shortcut cannot open a document the source keeps closed. Permissions are re-read every time a document syncs, and for confidential files a reading older than five minutes no longer counts. A document you cannot read looks exactly like a document that does not exist."
     },
     {
       "id": "s5-revocation",
-      "text": "Mei Chen is an external contractor and asks for the Q3 board deck figures. The deck is confidential and Drive does not share it with Mei, so the answer abstains, and nothing confirms the deck exists. John asks the same question and gets the revenue figure, cited to the deck, which Drive shares with the leadership group. Now the Drive owner removes that group from the share. Nothing changes inside BrainSauce. The next sync reads the new permissions, John's next answer no longer uses the deck, and the earlier answer in John's history is withheld, because a saved answer is only as visible as its least visible evidence."
+      "title": "Access removed at the source",
+      "text": "Mei Chen is an outside contractor and asks for the Q3 board deck figures. The deck is confidential and not shared with Mei, so Brain Sauce declines, and nothing in the reply hints that the deck exists. John asks the same question and gets the revenue figure, because Drive shares the deck with the leadership group. Now the Drive owner removes that group from the share. Nobody touches Brain Sauce. On the next sync it reads the new permissions, John's next answer no longer uses the deck, and the earlier answer in John's history is hidden too, because a saved answer is only as visible as the documents behind it."
     },
     {
       "id": "s6-freshness",
-      "text": "Every indexed object carries a freshness state, and policies set an age budget per platform and per evidence class. Critical evidence has an index budget of one hour and must be live-verified at query time. This failover runbook was indexed at version seven. The provider now reports version eight, so the runbook is marked stale, left out of the answer, and the receipt says why. An unknown state is never treated as fresh. On our public demo, an edit to a Confluence page reached the next answer about sixty seconds later, with no manual sync."
+      "title": "Freshness",
+      "text": "Documents change. Every indexed document carries a freshness state, and critical ones, such as a payment runbook, are checked against the source at the moment of the question. This failover runbook was indexed at version seven, and the source now has version eight. So Brain Sauce marks it stale, leaves it out of the answer, and says so on the receipt. Nothing old is passed off as current. On our public demo, an edit to a Confluence page showed up in the next answer about sixty seconds later, with nobody pressing sync."
     },
     {
       "id": "s7-groundedness",
-      "text": "Groundedness is where we made our most deliberate design decision. The common approach is a second model that judges each claim: up to eight more sequential calls per answer, with a verdict that changes from run to run. We made the groundedness library model-free. One model call writes the answer, under a prompt that allows only the supplied evidence, copies numbers, dates and names exactly, ends every sentence with an evidence marker, and permits a single word, ABSTAIN. Pure Python then attaches each sentence to its evidence, and the same input produces the same grounding report, every time."
+      "title": "Proving the answer",
+      "text": "An assistant that answers from company documents has to show its working. The common fix is a second AI model that grades the first one, which costs up to eight more calls per answer and gives a different grade every time. We did it without a second model. One model writes the answer under strict rules: use only the supplied documents, copy numbers, dates and names exactly, end every sentence with a pointer to its source, and say ABSTAIN when the documents do not answer the question. Then ordinary code, with no AI in it, checks each sentence against its source. The same question with the same documents gives the same report, every time."
     },
     {
       "id": "s8-verification",
-      "text": "A lexical verifier scores every citation on content-token overlap, with negation cues for contradictions, and a numeric gate: a claim stating a number, a date or a time the evidence does not contain is never marked supported. Coverage below sixty percent, or any contradiction, means abstain. When the model adds unsupported claims, the pipeline keeps only the fully supported claims that address the question, re-verifies that subset, and labels the answer partial. No second model call is made, and quarantined injection text can never support a claim."
+      "title": "The checks",
+      "text": "The checks are simple to explain. Does the sentence use the words of its source? Does the source say the opposite? Does the sentence state a number, a date or a time the source does not contain? Fail that last check and the sentence can never be marked supported. If too few sentences pass, Brain Sauce abstains. If some pass and some do not, it keeps only the supported ones and labels the answer partial. Any document that tries to smuggle in instructions is quarantined and can never back a claim."
     },
     {
       "id": "s9-audit",
-      "text": "Every ask, decision, revocation and reveal is appended to an audit log. Each event hashes the previous hash, its sequence number and its payload, so a modified, deleted or reordered event is detectable, and the whole chain verifies in one call. Sam Lee works in compliance and sees who asked, which documents were candidates, each allow or deny with its rule, and the receipt. The answer text is withheld, because Sam cannot open the board deck. Sam enters a reason and reveals it, and the reveal is itself recorded in the chain."
+      "title": "Audit",
+      "text": "Everything is written to an audit log where each entry is chained to the one before, so a changed, deleted or reordered entry shows up, and the whole log can be verified with one click. Sam Lee works in compliance. For John's question Sam sees who asked, which documents were considered, which were allowed or refused and why, and the freshness receipt. The answer text itself is hidden, because Sam cannot open the board deck. Sam types a reason and reveals it, and that reveal becomes an entry in the same log. Reading the log is logged."
     },
     {
       "id": "s10-stack",
-      "text": "Three pure Python libraries, access control, freshness and groundedness, depend on Pydantic alone and test without a network. A FastAPI service composes them, with Postgres and pgvector, Celery workers, a Next.js front end and an MCP server with eighteen tools, in one Docker Compose file. Generation runs on the Tencent Cloud ADP Chat API, and retrieval in the demo uses local deterministic vectors, so the whole demo runs on the free plan."
+      "title": "Built on",
+      "text": "Brain Sauce runs as one package: three small libraries for permissions, freshness and grounding, a web app, an API, and a connector for AI agents, all in one Docker Compose file. Answers are generated on Tencent Cloud ADP, and the demo runs entirely on the free plan."
     },
     {
       "id": "s11-how-we-built-it",
-      "text": "We wrote the architecture, the data model and the API contract before the code, so three people could build three libraries in parallel against shared interfaces and mock providers. Every library boots without secrets and tests offline. That is BrainSauce."
+      "title": "How we built it",
+      "text": "We wrote the architecture, the data model and the API contract before the code, so three people could build three parts in parallel and test them without any secrets or network. That is Brain Sauce."
     }
-  ]
+  ],
+  "version": "v3 plain-language, 2026-10-16",
+  "voices": {
+    "han": {
+      "voice_id": "OAQQSa5rh6bJe9HgSD5E",
+      "voice_name": "Han - Thoughtful, Clear and Profound",
+      "voice_settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.8,
+        "style": 0.0,
+        "speed": 0.8
+      },
+      "post": {
+        "tempo": 1.0,
+        "max_pause_s": 0.4,
+        "note": "Han speaks ~20 chars/s at speed 1.0 with no long pauses; 0.8 lands near 16 chars/s"
+      }
+    }
+  }
 }

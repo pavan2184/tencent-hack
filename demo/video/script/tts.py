@@ -18,8 +18,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "script" / "narration.json"
-OUT = ROOT / "assets" / "voice"
-MANIFEST = OUT / "manifest.json"
 
 
 def api_key() -> str:
@@ -49,16 +47,22 @@ def duration_s(path: Path) -> float:
 
 def main() -> None:
     force = "--force" in sys.argv
+    voice_key = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--voice=")), "")
     spec = json.loads(SCRIPT.read_text())
-    OUT.mkdir(parents=True, exist_ok=True)
-    manifest: dict = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
+    # The default voice is the top level of narration.json; alternates live under "voices" and
+    # write to assets/voice-<key>/ so several recordings of one script can coexist.
+    voice = spec["voices"][voice_key] if voice_key else spec
+    out = ROOT / "assets" / (f"voice-{voice_key}" if voice_key else "voice")
+    manifest_path = out / "manifest.json"
+    out.mkdir(parents=True, exist_ok=True)
+    manifest: dict = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     key = api_key()
     scenes = spec["scenes"]
     total_chars = 0
     for i, scene in enumerate(scenes):
         text = scene["text"]
         digest = hashlib.sha256(text.encode()).hexdigest()[:16]
-        mp3 = OUT / f"{scene['id']}.mp3"
+        mp3 = out / f"{scene['id']}.mp3"
         entry = manifest.get(scene["id"])
         if not force and mp3.exists() and entry and entry.get("sha") == digest:
             print(f"skip   {scene['id']} ({entry['duration_s']:.2f}s, cached)")
@@ -69,14 +73,14 @@ def main() -> None:
             # previous/next text keep prosody continuous across per-scene requests; no extra cost.
             "previous_text": scenes[i - 1]["text"] if i > 0 else None,
             "next_text": scenes[i + 1]["text"] if i + 1 < len(scenes) else None,
-            "voice_settings": spec.get(
+            "voice_settings": voice.get(
                 "voice_settings",
                 {"stability": 0.5, "similarity_boost": 0.8, "style": 0.0, "speed": 1.0},
             ),
         }
         body = {k: v for k, v in body.items() if v is not None}
         url = (
-            f"https://api.elevenlabs.io/v1/text-to-speech/{spec['voice_id']}"
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice['voice_id']}"
             f"?output_format={spec['output_format']}"
         )
         # curl rather than urllib: the python.org interpreter ships without CA certificates.
@@ -89,11 +93,13 @@ def main() -> None:
             input=json.dumps(body).encode(),
             check=True,
         )
+        # A stale raw clip from an earlier recording would make tighten.py rebuild the old audio.
+        (out / f"{scene['id']}.raw.mp3").unlink(missing_ok=True)
         total_chars += len(text)
         d = duration_s(mp3)
         manifest[scene["id"]] = {"sha": digest, "duration_s": d, "chars": len(text)}
         print(f"wrote  {scene['id']} {d:.2f}s {len(text)} chars")
-    MANIFEST.write_text(json.dumps(manifest, indent=2))
+    manifest_path.write_text(json.dumps(manifest, indent=2))
     total = sum(m["duration_s"] for m in manifest.values())
     print(f"billed ~{total_chars} chars this run; total voice {total:.1f}s")
 

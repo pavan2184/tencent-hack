@@ -86,27 +86,30 @@ def main() -> None:
     ap.add_argument("--min-silence", type=float, default=0.5)
     ap.add_argument("--tempo", type=float, default=1.0, help="extra atempo factor (1.0 = none)")
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--voice", default="", help="alternate voice key: reads assets/voice-<key>/")
     args = ap.parse_args()
-    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
+    voice_dir = ROOT / "assets" / (f"voice-{args.voice}" if args.voice else "voice")
+    manifest_path = voice_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     before_total = after_total = 0.0
     for scene_id in manifest:
-        src = VOICE / f"{scene_id}.mp3"
-        raw = VOICE / f"{scene_id}.raw.mp3"
+        src = voice_dir / f"{scene_id}.mp3"
+        raw = voice_dir / f"{scene_id}.raw.mp3"
         if raw.exists():
             src = raw
-        dst = VOICE / f"{scene_id}.tight.mp3"
+        dst = voice_dir / f"{scene_id}.tight.mp3"
         before, after = tighten(src, dst, args.max_pause, args.min_silence, args.tempo)
         before_total += before
         after_total += after
         print(f"{scene_id:24s} {before:7.2f}s -> {after:7.2f}s  (-{(1 - after / before) * 100:4.1f}%)")
         if args.apply:
             if not raw.exists():
-                shutil.copy(VOICE / f"{scene_id}.mp3", raw)
-            shutil.move(dst, VOICE / f"{scene_id}.mp3")
+                shutil.copy(voice_dir / f"{scene_id}.mp3", raw)
+            shutil.move(dst, voice_dir / f"{scene_id}.mp3")
             manifest[scene_id]["duration_s"] = after
             manifest[scene_id]["raw_duration_s"] = before
     if args.apply:
-        MANIFEST.write_text(json.dumps(manifest, indent=2))
+        manifest_path.write_text(json.dumps(manifest, indent=2))
     print(f"total {before_total:.1f}s -> {after_total:.1f}s")
 
 

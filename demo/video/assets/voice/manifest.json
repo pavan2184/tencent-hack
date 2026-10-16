@@ -1,68 +1,68 @@
 {
   "s1-open": {
-    "sha": "396e1ad12a2c4f1c",
-    "duration_s": 15.753741,
-    "chars": 256,
-    "raw_duration_s": 18.018685
+    "sha": "c3444c47c5f92edd",
+    "duration_s": 18.71712,
+    "chars": 281,
+    "raw_duration_s": 22.709116
   },
   "s2-first-question": {
-    "sha": "99eefaf7f1ab90b4",
-    "duration_s": 25.968526,
-    "chars": 342,
-    "raw_duration_s": 29.442902
+    "sha": "233bc9c12bfad78c",
+    "duration_s": 27.000136,
+    "chars": 385,
+    "raw_duration_s": 30.51102
   },
   "s3-pipeline": {
-    "sha": "ab1354e3f56d23d1",
-    "duration_s": 27.50932,
-    "chars": 385,
-    "raw_duration_s": 31.439819
+    "sha": "0a3151f6db921ac6",
+    "duration_s": 25.566803,
+    "chars": 377,
+    "raw_duration_s": 31.021859
   },
   "s4-access": {
-    "sha": "9cee9dd5a70346c7",
-    "duration_s": 40.747483,
-    "chars": 587,
-    "raw_duration_s": 47.647347
+    "sha": "6658f5345dae348c",
+    "duration_s": 32.109796,
+    "chars": 545,
+    "raw_duration_s": 36.641088
   },
   "s5-revocation": {
-    "sha": "ac4051981554eebc",
-    "duration_s": 42.005964,
-    "chars": 623,
-    "raw_duration_s": 47.740227
+    "sha": "c9ca9c158401076c",
+    "duration_s": 43.981134,
+    "chars": 615,
+    "raw_duration_s": 48.994104
   },
   "s6-freshness": {
-    "sha": "12a65f773905f726",
-    "duration_s": 43.959478,
-    "chars": 545,
-    "raw_duration_s": 49.783583
+    "sha": "01e75c73390c37e8",
+    "duration_s": 38.493878,
+    "chars": 523,
+    "raw_duration_s": 43.281995
   },
   "s7-groundedness": {
-    "sha": "9a5984a75469135a",
-    "duration_s": 46.432041,
-    "chars": 599,
-    "raw_duration_s": 54.752653
+    "sha": "f1991b884fb4ef61",
+    "duration_s": 45.689274,
+    "chars": 644,
+    "raw_duration_s": 52.384218
   },
   "s8-verification": {
-    "sha": "ac45e3f83c054544",
-    "duration_s": 41.147415,
-    "chars": 554,
-    "raw_duration_s": 46.857868
+    "sha": "fd08dc82172dfcfe",
+    "duration_s": 33.283016,
+    "chars": 500,
+    "raw_duration_s": 39.055964
   },
   "s9-audit": {
-    "sha": "adb37d361d182951",
-    "duration_s": 40.628027,
-    "chars": 529,
-    "raw_duration_s": 47.508027
+    "sha": "35f100fd431be007",
+    "duration_s": 40.622608,
+    "chars": 539,
+    "raw_duration_s": 46.30059
   },
   "s10-stack": {
-    "sha": "3c9a1dfebdcbda33",
-    "duration_s": 37.586916,
-    "chars": 441,
-    "raw_duration_s": 41.935238
+    "sha": "a4f6b620a48037c6",
+    "duration_s": 19.956304,
+    "chars": 267,
+    "raw_duration_s": 23.173515
   },
   "s11-how-we-built-it": {
-    "sha": "9864b5f6bf921db7",
-    "duration_s": 18.184376,
-    "chars": 256,
-    "raw_duration_s": 20.52644
+    "sha": "175a444ecc00c55b",
+    "duration_s": 14.594354,
+    "chars": 198,
+    "raw_duration_s": 16.393288
   }
 }
