@@ -34,8 +34,10 @@ only ever receives evidence the asker may read.
 
 The lib's contract is `sanitize → ground → verify → should_abstain`. In the app, grounding happens
 inside the composer: `ModelComposer` generates and then calls `ground`, and `ExtractiveComposer`
-builds a cited answer directly from evidence sentences. The order runs after access filtering and
-freshness checks, so restricted evidence is gone before anything here runs.
+builds a cited answer directly from evidence sentences. It skips sentences on heading, table and
+message-header (`From:`, `Subject:` ...) lines, which are layout rather than statements. The order
+runs after access filtering and freshness checks, so restricted evidence is gone before anything
+here runs.
 
 ```python
 from groundedness import (
