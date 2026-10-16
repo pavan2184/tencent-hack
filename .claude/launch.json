@@ -6,6 +6,25 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "api-memory",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "REPO_BACKEND=memory",
+        "PROVIDER_MODE=mock",
+        "CELERY_TASK_ALWAYS_EAGER=true",
+        "uv",
+        "--directory",
+        "backend",
+        "run",
+        "uvicorn",
+        "app.main:app",
+        "--port",
+        "8000"
+      ],
+      "port": 8000,
+      "url": "http://localhost:8000"
     }
   ]
 }

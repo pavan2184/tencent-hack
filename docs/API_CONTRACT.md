@@ -412,6 +412,70 @@ the approver why (for example "Google Drive doesn't share it with them") so they
 the source.
 Errors: `404`, `403`, `409` (already decided).
 
+### GET /api/access/map
+
+Auth: `manager` or `admin`; everyone else gets `403`. Source access is a ceiling for the caller
+too, so `documents` holds only the documents the caller can read (no titles or counts of any
+other document). Every active principal is evaluated against those documents with the same
+policy `filter` as retrieval, and `edges` holds **allow decisions only**: a missing edge means
+no access, and no deny reason is ever serialised. `via` lists the active allow grants behind an
+`R5:explicit_grant` edge (empty for every other rule). `sources` holds only sources with a
+mapped document. Audited `access.map` (payload: `mapped_document_ids`, `principal_ids`,
+`edge_count`, `policy_version`). Never cached: a revocation shows on the next call.
+
+```json
+{
+  "policy_version": "ac-v2",
+  "generated_at": "2026-10-12T09:00:00Z",
+  "principals": [
+    {
+      "id": "john.tan",
+      "display_name": "John Tan",
+      "roles": ["employee", "manager"],
+      "groups": ["finance-ops", "leadership"]
+    }
+  ],
+  "groups": [{ "id": "leadership", "name": "Leadership" }],
+  "sources": [
+    {
+      "id": "gdrive-finance",
+      "name": "Google Drive — Finance shared drive",
+      "kind": "gdrive"
+    }
+  ],
+  "documents": [
+    {
+      "id": "0b9a8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+      "title": "Q3 2026 Board Deck — Financial Results",
+      "slug": "files/board-deck-q3",
+      "source_id": "gdrive-finance",
+      "source_kind": "gdrive",
+      "classification": "confidential"
+    }
+  ],
+  "edges": [
+    {
+      "principal_id": "john.tan",
+      "document_id": "0b9a8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+      "rule": "R5:explicit_grant",
+      "via": [
+        {
+          "grant_id": "e7d6c5b4-a392-4180-9f7e-6d5c4b3a2918",
+          "subject_type": "group",
+          "subject_id": "leadership"
+        }
+      ]
+    },
+    {
+      "principal_id": "root.admin",
+      "document_id": "0b9a8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+      "rule": "R3:owner",
+      "via": []
+    }
+  ]
+}
+```
+
 ### POST /api/ask
 
 Purpose: the governed pipeline. Request:

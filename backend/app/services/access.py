@@ -34,6 +34,15 @@ from access_control import (
 
 from app.core.auth import has_role
 from app.core.errors import Conflict, Forbidden, NotFound
+from app.schemas.access import (
+    AccessMap,
+    AccessMapDocument,
+    AccessMapEdge,
+    AccessMapGrantRef,
+    AccessMapGroup,
+    AccessMapPrincipal,
+    AccessMapSource,
+)
 from app.schemas.domain import AuditEvent, Page, QueryRecord
 from app.services import audit
 
@@ -255,6 +264,105 @@ def redact_audit_body(body: dict[str, Any]) -> dict[str, Any]:
         }
         redacted["reconstruction"] = {**reconstruction, "query": query}
     return redacted
+
+
+# ---------------------------------------------------------------------------- access map
+def _grant_subject_matches(grant: Grant, principal: Principal) -> bool:
+    match grant.subject_type:
+        case SubjectType.principal:
+            return grant.subject_id == principal.id
+        case SubjectType.group:
+            return grant.subject_id in principal.groups
+        case SubjectType.role:
+            return grant.subject_id in principal.roles
+    return False
+
+
+def _grant_refs(context: DocumentAccessContext, principal: Principal) -> list[AccessMapGrantRef]:
+    return [
+        AccessMapGrantRef(grant_id=g.id, subject_type=g.subject_type, subject_id=g.subject_id)
+        for g in context.grants
+        if g.effect == Effect.allow
+        and g.revoked_at is None
+        and g.scope == "read"
+        and _grant_subject_matches(g, principal)
+    ]
+
+
+async def access_map(services: Services, principal: Principal) -> AccessMap:
+    """Who can read what, and by which rule, over the documents the CALLER can read.
+
+    Managers and admins only. Source access is a ceiling for the caller too, so documents the
+    caller cannot read never appear (no titles, no counts). Every active principal is evaluated
+    with the same policy `filter` as retrieval; only allow decisions are returned.
+    """
+    if not has_role(principal, *MANAGE_ROLES):
+        raise Forbidden()
+    now = services.clock.now()
+    pages = await services.repo.list_pages(limit=ALL_PAGES_LIMIT)
+    _, visible = await filter_pages(services, principal, pages, now=now)
+    visible.sort(key=lambda p: (p.source_id, p.title, p.id))
+    contexts = await build_contexts(services, visible)
+    people = [p for p in await services.repo.list_principals() if p.is_active]
+
+    edges: list[AccessMapEdge] = []
+    for person in people:
+        result = services.access_policy.filter(person, contexts, now=now)
+        allowed = set(result.allowed_ids)
+        for context, decision in zip(contexts, result.decisions, strict=True):
+            if decision.document_id not in allowed:
+                continue
+            edges.append(
+                AccessMapEdge(
+                    principal_id=person.id,
+                    document_id=decision.document_id,
+                    rule=decision.matched_rule,
+                    via=_grant_refs(context, person)
+                    if decision.matched_rule.startswith("R5:")
+                    else [],
+                )
+            )
+
+    source_ids = {p.source_id for p in visible}
+    access = AccessMap(
+        policy_version=services.access_policy.policy_version,
+        generated_at=now,
+        principals=[
+            AccessMapPrincipal(id=p.id, display_name=p.display_name, roles=p.roles, groups=p.groups)
+            for p in people
+        ],
+        groups=[AccessMapGroup(id=g.id, name=g.name) for g in await services.repo.list_groups()],
+        sources=[
+            AccessMapSource(id=s.id, name=s.name, kind=str(s.kind))
+            for s in await services.repo.list_sources()
+            if s.id in source_ids
+        ],
+        documents=[
+            AccessMapDocument(
+                id=p.id,
+                title=p.title,
+                slug=p.slug,
+                source_id=p.source_id,
+                source_kind=str(p.source_kind),
+                classification=str(p.classification),
+            )
+            for p in visible
+        ],
+        edges=edges,
+    )
+    await audit.record(
+        services,
+        actor_id=principal.id,
+        action="access.map",
+        subject_type="access_map",
+        payload={
+            "mapped_document_ids": [p.id for p in visible],
+            "principal_ids": [p.id for p in people],
+            "edge_count": len(edges),
+            "policy_version": access.policy_version,
+        },
+    )
+    return access
 
 
 # ---------------------------------------------------------------------------- grants

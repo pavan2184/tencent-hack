@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Search, X } from "lucide-react";
+import { ArrowUpRight, Check, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { GrantEditor } from "@/components/GrantEditor";
@@ -33,6 +33,17 @@ export default function AccessPage() {
         title="Access,"
         accent="granted and requested."
         description="Explicit grants per document, and the access-request inbox. Revocations apply to the next question."
+        actions={
+          manager && (
+            <Link
+              href="/access/map"
+              className="link inline-flex items-center gap-0.5 text-sm"
+            >
+              Open the access map
+              <ArrowUpRight className="size-3.5" aria-hidden />
+            </Link>
+          )
+        }
       />
       <GrantsExplorer canEdit={manager} />
       <RequestInbox canDecide={manager} />
