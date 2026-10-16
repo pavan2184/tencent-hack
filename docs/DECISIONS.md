@@ -379,3 +379,18 @@ chain. Approval responses add `effective` and an actionable `note` naming the so
 **Consequences.** The audit inquiry demo needs one recorded reveal to show the answer, which is
 also evidence that access to the log is itself logged. The response copy differs from the stored
 payload, so clients cannot re-hash a withheld event themselves; `/api/audit/verify` still does.
+
+### D-020 - Housend-derived visual language for the web UI
+
+Status: Accepted
+Date: 2026-10-16
+
+The web UI adopts a design language distilled from the Housend Webflow template
+(housend.webflow.io). It uses one grotesque (Inter Tight via `next/font`), two-tone
+display headlines and a near-monochrome neutral ramp. A single muted green accent is
+used sparingly. Surfaces are flat, with 4px cards, pill buttons and fields, and
+circular arrow chips. Tokens live in `frontend/app/globals.css`: the Tailwind
+`neutral` ramp is retuned to the Housend greys, and `accent` / `accent-strong` /
+`accent-soft` are added. `accent-strong` is the AA-safe shade for small text. New
+UI should use these tokens rather than `slate-*` or `sky-*`. Status colours (amber,
+red) stay functional and are not themed away.

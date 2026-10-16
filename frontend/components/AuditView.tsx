@@ -42,9 +42,9 @@ export function AuditView() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-6">
           <form onSubmit={onFilter} className="flex flex-1 flex-wrap gap-2">
             {(Object.keys(EMPTY_FILTERS) as (keyof typeof EMPTY_FILTERS)[]).map(
               (key) => (
@@ -75,10 +75,10 @@ export function AuditView() {
           </Button>
         </CardHeader>
         {(verify.data || verify.error) && (
-          <CardContent className="border-b border-slate-100 py-3">
+          <CardContent className="border-t border-neutral-200 py-4">
             {verify.error && <ErrorState error={verify.error} />}
             {verify.data && (
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
                 <Badge tone={verify.data.ok ? "success" : "danger"}>
                   {verify.data.ok ? "chain intact" : "chain broken"}
                 </Badge>
@@ -102,7 +102,7 @@ export function AuditView() {
 
       <div
         className={
-          selectedId ? "grid gap-5 xl:grid-cols-[1fr_30rem]" : undefined
+          selectedId ? "grid items-start gap-6 xl:grid-cols-[1fr_30rem]" : undefined
         }
       >
         <Card>

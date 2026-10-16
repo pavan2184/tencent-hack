@@ -28,9 +28,10 @@ export default function AccessPage() {
   const manager = canManage(me);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
-        title="Access"
+        title="Access,"
+        accent="granted and requested."
         description="Explicit grants per document, and the access-request inbox. Revocations apply to the next question."
       />
       <GrantsExplorer canEdit={manager} />
@@ -57,13 +58,13 @@ function GrantsExplorer({ canEdit }: { canEdit: boolean }) {
             Look up the grants on a document by id.
           </CardDescription>
         </div>
-        <form onSubmit={onSubmit} className="flex gap-2">
+        <form onSubmit={onSubmit} className="flex w-full gap-2 sm:w-auto">
           <Input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Document id"
             aria-label="Document id"
-            className="w-80 font-mono text-xs"
+            className="min-w-0 flex-1 font-mono text-xs sm:w-80 sm:flex-none"
           />
           <Button type="submit" variant="secondary" disabled={!draft.trim()}>
             <Search className="size-4" aria-hidden />
@@ -121,7 +122,7 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
         {notice && (
           <p
             role="status"
-            className="mx-3 my-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            className="mx-3 my-2 rounded-sm bg-amber-50 px-4 py-3 text-sm text-amber-900"
           >
             {notice}
           </p>
@@ -155,7 +156,7 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
                   <TD>
                     <Link
                       href={`/documents/${encodeURIComponent(request.document_id)}`}
-                      className="font-mono text-xs text-sky-700 hover:underline"
+                      className="font-mono text-xs link"
                     >
                       {request.document_id}
                     </Link>
@@ -167,7 +168,7 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
                   <TD>
                     <DecisionBadge value={request.status} />
                     {request.decided_by && (
-                      <span className="block text-xs text-slate-400">
+                      <span className="block text-xs text-neutral-400">
                         by {request.decided_by}
                       </span>
                     )}

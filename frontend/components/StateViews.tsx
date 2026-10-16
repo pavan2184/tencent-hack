@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
     <div
-      className="flex items-center gap-2 py-6 text-sm text-slate-500"
+      className="flex items-center gap-2 py-6 text-sm text-neutral-500"
       role="status"
     >
       <LoaderCircle className="size-4 animate-spin" aria-hidden />
@@ -17,7 +17,7 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-2 py-6 text-sm text-slate-500">
+    <div className="flex items-center gap-2 py-6 text-sm text-neutral-500">
       <Inbox className="size-4" aria-hidden />
       {children}
     </div>
@@ -38,7 +38,7 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "flex gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800",
+        "flex gap-2.5 rounded-sm bg-red-50 px-4 py-3 text-sm text-red-800",
         className,
       )}
     >

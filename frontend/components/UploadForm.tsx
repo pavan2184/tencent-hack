@@ -42,7 +42,7 @@ export function UploadForm({ onUploaded }: { onUploaded: () => void }) {
           type="file"
           accept=".md,.txt,text/markdown,text/plain"
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          className="h-auto py-1.5 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs"
+          className="h-auto py-2 pl-2 file:mr-3 file:rounded-full file:border-0 file:bg-neutral-900 file:px-3.5 file:py-1.5 file:text-xs file:text-white"
         />
       </div>
       <div className="space-y-1">
@@ -82,7 +82,7 @@ export function UploadForm({ onUploaded }: { onUploaded: () => void }) {
         <ErrorState error={upload.error} title="Upload rejected" />
       )}
       {upload.data && !upload.pending && !upload.error && (
-        <p className="text-sm text-emerald-700">
+        <p className="text-sm text-accent-strong">
           Uploaded “{upload.data.title}” · ingest {upload.data.ingest_status}
         </p>
       )}

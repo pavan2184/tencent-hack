@@ -56,7 +56,7 @@ export function RequestAccessForm() {
       </Button>
       {request.error && <ErrorState error={request.error} />}
       {submitted && (
-        <p className="text-sm text-emerald-700">Request submitted.</p>
+        <p className="text-sm text-accent-strong">Request submitted.</p>
       )}
     </form>
   );
