@@ -96,7 +96,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="Internal Brain",
+        title="Brain Sauce",
         version=__version__,
         description="Governed MCP + REST over an everything-is-a-document corporate brain.",
         lifespan=lifespan,

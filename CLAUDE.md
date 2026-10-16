@@ -1,10 +1,10 @@
 # Project Context for Claude
 
-Last updated: 2026-10-12
+Last updated: 2026-10-16
 
 ## What this is
 
-The Internal Brain: a governed MCP + REST + web layer over an "everything is a document"
+Brain Sauce (our entry for Aspire's "The Internal Brain" challenge): a governed MCP + REST + web layer over an "everything is a document"
 corporate brain, for the Tencent Cloud AI CAN DO IT Hackathon Singapore 2026 (FinTech track,
 deadline 16 October 2026). GBrain's page model is ported to Python. Every question runs one
 governed pipeline: hybrid search → `access_control.filter` (**no LLM call before this**) →

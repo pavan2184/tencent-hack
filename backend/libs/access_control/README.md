@@ -1,6 +1,6 @@
 # Access control
 
-Chai's Tencent Internal Brain library. Pure Python/Pydantic, no app imports or
+Chai's Tencent Brain Sauce library. Pure Python/Pydantic, no app imports or
 network clients. Existing store interfaces and deny-reason values are preserved.
 Default policy is now `ac-v2`.
 

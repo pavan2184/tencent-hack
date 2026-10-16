@@ -1,6 +1,6 @@
 # freshness
 
-Data-freshness state machine and freshness receipts for the Internal Brain.
+Data-freshness state machine and freshness receipts for Brain Sauce.
 **Owner: Pavan.** Pure Python 3.12 + pydantic v2. **Never imports `app`** (enforced by
 `tests/test_models.py::test_no_app_import`). Postgres migration range: **0100–0199**.
 
