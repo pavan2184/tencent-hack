@@ -10,6 +10,9 @@
 #   gdrive     -> Google account email (ACL user entries; domain entries match its domain)
 #   email      -> mailbox address (from_/to/cc/bcc)
 # Group ids are matched directly against platform group entries (Confluence groups, Drive groups).
+#
+# Ten personas, nine active. Each one anchors at least one access story; the full persona x
+# document matrix and the rule each page exercises are in corpus/README.md.
 
 groups:
   - { id: engineering, name: Engineering }
@@ -46,7 +49,8 @@ principals:
       gdrive: john.tan@example-harbor.com
       email: john.tan@example-harbor.com
 
-  # Compliance auditor. Reads the audit trail (demo scenario 5); little document access by design.
+  # Compliance auditor. Reads the audit trail (demo scenario 5). Sees the restricted STR register
+  # only through a role grant to `auditor` (rule R5), not through the compliance group.
   - id: sam.lee
     display_name: Sam Lee
     email: sam.lee@example-harbor.com
@@ -82,8 +86,10 @@ principals:
       gdrive: jordan.lim@example-harbor.com
       email: jordan.lim@example-harbor.com
 
-  # External contractor with no groups and an outside email domain: the "cannot see" persona used
-  # for negative permission enforcement without existence leaks (demo scenario 3).
+  # External Rail-B integration contractor with no groups and an outside email domain (demo
+  # scenario 3). Sees exactly one Drive file, shared with the contractor address until 31 December;
+  # the share of the Vegaline due-diligence summary expired on 30 September. Everything else is
+  # invisible, and missing and denied documents look identical.
   - id: mei.chen
     display_name: Mei Chen
     email: mei.chen@contractor-example.com
@@ -91,3 +97,63 @@ principals:
     groups: []
     external_identities:
       slack: U_MEI
+
+  # CFO on the leadership team. Not in the OPS Confluence space or any Jira project. Reads
+  # leadership-granted Drive files, the John <-> Daniel DM, and the cutover approval email only
+  # because of the bcc line. Has the manager role, so the access map opens.
+  - id: daniel.wong
+    display_name: Daniel Wong
+    email: daniel.wong@example-harbor.com
+    roles: [employee, manager]
+    groups: [leadership]
+    external_identities:
+      slack: U_DANIEL
+      jira: daniel.wong
+      confluence: daniel.wong
+      gdrive: daniel.wong@example-harbor.com
+      email: daniel.wong@example-harbor.com
+
+  # Head of Compliance and MLRO. Owns the COMP Confluence space pages, including the restricted
+  # STR register (rule R3 owner). Not in the OPS space, so the KYC runbook stays out of reach.
+  - id: nora.ibrahim
+    display_name: Nora Ibrahim
+    email: nora.ibrahim@example-harbor.com
+    roles: [employee, manager]
+    groups: [compliance]
+    external_identities:
+      slack: U_NORA
+      jira: nora.ibrahim
+      confluence: nora.ibrahim
+      gdrive: nora.ibrahim@example-harbor.com
+      email: nora.ibrahim@example-harbor.com
+
+  # Payments SRE and primary on-call for the cutover. Same groups as Alex, but an explicit deny
+  # (declared conflict of interest) blocks the Orionix renewal brief that engineering is granted:
+  # rule R2 beats the group allow.
+  - id: ravi.kumar
+    display_name: Ravi Kumar
+    email: ravi.kumar@example-harbor.com
+    roles: [employee]
+    groups: [engineering]
+    external_identities:
+      slack: U_RAVI
+      jira: ravi.kumar
+      confluence: ravi.kumar
+      gdrive: ravi.kumar@example-harbor.com
+      email: ravi.kumar@example-harbor.com
+
+  # Former treasury analyst who left on 30 September 2026. The captured #treasury-ops roster still
+  # lists U_LENA, but the directory marks the account inactive, so rule R1 denies every document
+  # before any source ACL is read. Hidden from the persona switcher and the access map.
+  - id: lena.koh
+    display_name: Lena Koh
+    email: lena.koh@example-harbor.com
+    roles: [employee]
+    groups: [finance-ops]
+    is_active: false
+    external_identities:
+      slack: U_LENA
+      jira: lena.koh
+      confluence: lena.koh
+      gdrive: lena.koh@example-harbor.com
+      email: lena.koh@example-harbor.com

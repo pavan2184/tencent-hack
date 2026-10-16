@@ -12,6 +12,7 @@ from app.tests.conftest import run
 DECK = ("gdrive-finance", "files/board-deck-q3")
 VENDORS = ("gdrive-finance", "files/vendor-list")
 PAY_150 = ("jira-payments", "issues/pay-150")
+ORIONIX = ("gdrive-finance", "files/orionix-renewal-brief")
 ADMIN = {"X-Actor-Id": "root.admin"}
 JOHN = {"X-Actor-Id": "john.tan"}
 
@@ -38,8 +39,11 @@ def test_manager_map_shows_rules_and_grant_subjects(seeded: Any, client: Any) ->
     deck, pay150 = _id(seeded, DECK), _id(seeded, PAY_150)
 
     assert body["policy_version"] == "ac-v2"
-    assert len(body["documents"]) == 11  # john can read the whole seeded corpus
+    # john reads every seeded document except the compliance-restricted STR register.
+    assert len(body["documents"]) == 23
+    assert "registers/str-register-q3-2026" not in {d["slug"] for d in body["documents"]}
     assert {p["id"] for p in body["principals"]} >= {"alex.tan", "john.tan", "root.admin"}
+    assert "lena.koh" not in {p["id"] for p in body["principals"]}  # inactive
     assert {s["id"] for s in body["sources"]} == {d["source_id"] for d in body["documents"]}
 
     edges = _edges(body)
@@ -56,6 +60,13 @@ def test_manager_map_shows_rules_and_grant_subjects(seeded: Any, client: Any) ->
         "rule": "R3:owner",
         "via": [],
     }
+    # Ethical wall: engineering is granted the Orionix brief, but Ravi's explicit deny wins.
+    orionix = _id(seeded, ORIONIX)
+    assert edges[("alex.tan", orionix)]["rule"] == "R5:explicit_grant"
+    assert [(v["subject_type"], v["subject_id"]) for v in edges[("alex.tan", orionix)]["via"]] == [
+        ("group", "engineering")
+    ]
+    assert ("ravi.kumar", orionix) not in edges
     # Allow edges only: nobody denied appears, and no edge carries a deny reason.
     assert ("alex.tan", deck) not in edges and ("mei.chen", deck) not in edges
     assert all("reason" not in e and "decision" not in e for e in body["edges"])
@@ -91,4 +102,4 @@ def test_revocation_removes_edge_on_next_map(seeded: Any, client: Any) -> None:
     assert ("root.admin", deck) in _edges(admin_after)
     john_after = client.get("/api/access/map", headers=JOHN).json()
     assert deck not in {d["id"] for d in john_after["documents"]}
-    assert len(john_after["documents"]) == 10
+    assert len(john_after["documents"]) == 22

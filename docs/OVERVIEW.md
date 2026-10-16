@@ -65,9 +65,9 @@ The same pipeline backs `POST /api/ask` and the MCP `query` tool.
 
 ## Demo plan
 
-- `make seed` loads six personas (employee, manager, auditor, admin, a finance-ops member, a
-  contractor) and a synthetic "Example Harbor Finance" corpus across Confluence, Jira, Slack,
-  Google Drive and email sources.
+- `make seed` loads ten personas (engineers, Finance Ops, the CFO, Compliance, an auditor, an
+  admin, a contractor and one deactivated leaver) and a synthetic "Example Harbor Finance" corpus
+  of 24 pages across Confluence, Jira, Slack, Google Drive and email sources.
 - The user plays different roles via the persona switcher.
 - Uploads are open but capped (file size, total files, per-actor per day, embedding budget) to stay
   inside the Tencent free trial. **Cap numbers are TBD** (`UPLOAD_*` in `.env.example`).

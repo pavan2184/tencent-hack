@@ -17,11 +17,61 @@ def demo_report():
 
 def test_actual_corpus_revocation_and_pre_model_filter(demo_report):
     report = demo_report
-    assert report["documents"] == 11
+    assert report["documents"] == 24
     assert report["before_board_allowed"] and not report["after_board_allowed"]
-    assert report["outsider_allowed_count"] == 0
+    assert report["outsider_allowed_ids"] == ["1RailBTestPlanExampleHarbor"]
     assert not report["revoked_body_in_model_context"]
     assert report["audit_rule"] == "R7:confidential"
+
+
+@pytest.mark.parametrize(
+    "story,decision,rule",
+    [
+        ("inactive_principal", "deny", "R1:inactive_principal"),
+        ("ethical_wall_deny", "deny", "R2:explicit_deny"),
+        ("group_grant", "allow", "R5:explicit_grant"),
+        ("role_grant", "allow", "R5:explicit_grant"),
+        ("restricted_page_owner", "allow", "R3:owner"),
+        ("inherited_confluence_restriction", "deny", "R8:confluence"),
+        ("expired_drive_share", "deny", "R8:gdrive"),
+        ("live_drive_share", "allow", "R8:gdrive"),
+        ("link_only_drive_share", "deny", "R8:gdrive"),
+        ("direct_message_outsider", "deny", "R8:slack"),
+        ("email_bcc", "allow", "R8:email"),
+        ("admin_without_source_access", "deny", "R8:slack"),
+    ],
+)
+def test_corpus_exercises_each_access_story(demo_report, story, decision, rule):
+    result = demo_report["access_stories"][story]
+    assert (result["decision"], result["rule"]) == (decision, rule)
+
+
+PUBLIC_SLACK = {"C_GENERAL:2026-10-10", "C_GENERAL:2026-10-11", "C_PAYMENTS_ENG:2026-10-11"}
+OPS_SPACE = {"CONF-OPS-1007", "CONF-OPS-1031", "CONF-OPS-1042", "CONF-OPS-1120"}
+OPS_FINANCE_ONLY = {"CONF-OPS-1088", "CONF-OPS-1104"}
+PAY_OPEN = {"PAY-150", "PAY-155"}
+VENDORS = "1VendorListExampleHarbor"
+TEST_PLAN = "1RailBTestPlanExampleHarbor"
+DUE_DILIGENCE = "1VegalineDueDiligenceExampleHarbor"
+ORIONIX = "1OrionixRenewalBriefExampleHarbor"
+CUTOVER_EMAIL = "<20261010.cutover.4417@example-harbor.com>"
+APPROVAL_EMAIL = "<20261012.approval.5120@example-harbor.com>"
+FINANCE_OPS = {
+    *PUBLIC_SLACK,
+    *OPS_SPACE,
+    *OPS_FINANCE_ONLY,
+    *PAY_OPEN,
+    "PAY-142",
+    "C_TREASURY_OPS:2026-10-09",
+    "CONF-COMP-2001",
+    VENDORS,
+    TEST_PLAN,
+    DUE_DILIGENCE,
+    "1RailBSupportFaqExampleHarbor",
+    CUTOVER_EMAIL,
+    APPROVAL_EMAIL,
+}
+COMPLIANCE = {*PUBLIC_SLACK, "CONF-COMP-2001", "CONF-COMP-2014", VENDORS, DUE_DILIGENCE}
 
 
 @pytest.mark.parametrize(
@@ -29,49 +79,36 @@ def test_actual_corpus_revocation_and_pre_model_filter(demo_report):
     [
         (
             "alex.tan",
-            {
-                "CONF-OPS-1007",
-                "CONF-OPS-1042",
-                "1VendorListExampleHarbor",
-                "PAY-150",
-                "C_GENERAL:2026-10-10",
-                "C_GENERAL:2026-10-11",
-            },
+            {*PUBLIC_SLACK, *OPS_SPACE, *PAY_OPEN, VENDORS, TEST_PLAN, ORIONIX},
         ),
+        # Same groups as Alex; the explicit deny removes only the Orionix brief.
+        ("ravi.kumar", {*PUBLIC_SLACK, *OPS_SPACE, *PAY_OPEN, VENDORS, TEST_PLAN}),
         (
             "john.tan",
             {
-                "CONF-OPS-1007",
-                "CONF-OPS-1088",
-                "CONF-OPS-1042",
-                "<20261010.cutover.4417@example-harbor.com>",
+                *FINANCE_OPS,
                 "1BoardDeckQ3ExampleHarbor",
-                "1VendorListExampleHarbor",
-                "PAY-142",
-                "PAY-150",
-                "C_GENERAL:2026-10-10",
-                "C_GENERAL:2026-10-11",
-                "C_TREASURY_OPS:2026-10-09",
+                ORIONIX,
+                "D_JOHN_DANIEL:2026-10-11",
             },
         ),
-        ("sam.lee", {"1VendorListExampleHarbor", "C_GENERAL:2026-10-10", "C_GENERAL:2026-10-11"}),
-        ("root.admin", {"1BoardDeckQ3ExampleHarbor", "1VendorListExampleHarbor"}),
+        ("jordan.lim", FINANCE_OPS),
         (
-            "jordan.lim",
+            "daniel.wong",
             {
-                "CONF-OPS-1007",
-                "CONF-OPS-1088",
-                "CONF-OPS-1042",
-                "<20261010.cutover.4417@example-harbor.com>",
-                "1VendorListExampleHarbor",
-                "PAY-142",
-                "PAY-150",
-                "C_GENERAL:2026-10-10",
-                "C_GENERAL:2026-10-11",
-                "C_TREASURY_OPS:2026-10-09",
+                *PUBLIC_SLACK,
+                VENDORS,
+                APPROVAL_EMAIL,
+                "1BoardDeckQ3ExampleHarbor",
+                ORIONIX,
+                "D_JOHN_DANIEL:2026-10-11",
             },
         ),
-        ("mei.chen", set()),
+        ("nora.ibrahim", COMPLIANCE),
+        ("sam.lee", COMPLIANCE),
+        ("root.admin", {"1BoardDeckQ3ExampleHarbor", VENDORS}),
+        ("mei.chen", {TEST_PLAN}),
+        ("lena.koh", set()),
     ],
 )
 def test_actual_persona_document_visibility_matrix(demo_report, actor, expected):

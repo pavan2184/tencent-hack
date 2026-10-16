@@ -127,7 +127,8 @@ marker is answered, its citation auto-attached and `supported`, composer `model-
 | `test_ask_pipeline.py`         | the five scenarios above                                                                                                                            |
 | `test_pipeline_invariants.py`  | access before any LLM; injection fixture quarantined; `ModelComposer` deadline fallback; unmarked model reply grounded                              |
 | `test_audit_chain.py`          | append/verify; tampering with a payload, deleting a row, or reordering is detected at the right `seq`                                               |
-| `test_seed.py`                 | seed is idempotent; 6 principals, 4 groups, 16 policies, 6 sources, 11 pages; grants restored on re-seed                                            |
+| `test_seed.py`                 | seed is idempotent; 10 principals, 4 groups, 16 policies, 7 sources, 24 pages; grants restored on re-seed                                           |
+| `test_seed_stories.py`         | the corpus access and freshness stories over REST: ethical wall, DM, bcc, inherited and restricted pages, Drive expiry and link-only, inactive actor |
 | `test_connectors_and_tasks.py` | `gbrain_import` list/fetch/head (incl. `simulate`); stubs raise `NotImplementedError`; tasks registered; webhook `202`/duplicate/`501`              |
 | `test_mcp.py`                  | lifespan `initialize` → `tools/list` → `tools/call whoami` (`X-Actor-Id: alex.tan`) → `tools/call query` → envelope keys                            |
 
@@ -185,8 +186,9 @@ initializes an MCP session, lists tools (must include `query`) and calls `whoami
 
 The library now has 174 tests, including source ceilings, stale/wrong-kind ACLs,
 unknown Slack rosters, Drive expiry/deletion/discovery, malformed store responses,
-query-time grant/group/source revocation and conflicting duplicate ids. The six
-real synthetic personas are checked against all 11 corpus documents.
+query-time grant/group/source revocation and conflicting duplicate ids. The ten
+real synthetic personas are checked against all 24 corpus documents (updated 16 October 2026),
+and each access story in `backend/seed/corpus/README.md` is pinned to its rule.
 
 The full offline backend suite passes 549 tests, with 11 database tests skipped
 without `DATABASE_URL`. Core REST tests cover source restrictions after a local

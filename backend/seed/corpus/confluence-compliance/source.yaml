@@ -1,0 +1,4 @@
+id: confluence-compliance
+name: Confluence — COMP space
+kind: confluence
+description: Example Harbor Finance compliance space (monitoring standards and registers). Visible to Compliance and Finance Ops; registers are page-restricted to Compliance.

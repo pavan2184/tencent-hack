@@ -121,7 +121,7 @@ These were open on 2026-09-23 and were resolved on 2026-10-12.
   raw per-platform permissions, so platform semantics are still enforced and demonstrated. This
   replaces the superseded spec's "Confluence and Slack live" target.
 - **Which identity provider and role model drive the permission-change scenario?** No identity
-  provider. Six seeded personas (`backend/seed/principals.yaml`) are selected with the
+  provider. Ten seeded personas (`backend/seed/principals.yaml`, nine active) are selected with the
   `X-Actor-Id` header (MCP: the same header or `?actor=`), resolved by one dependency,
   `app/core/auth.get_principal`. Roles: `employee`, `manager`, `auditor`, `admin`, `contractor`;
   groups: `engineering`, `finance-ops`, `leadership`, `compliance`. The permission change is the

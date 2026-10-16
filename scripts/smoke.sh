@@ -27,6 +27,9 @@ CODE=000
 NONEXISTENT_ID=00000000-0000-4000-8000-000000000000
 DECK_SLUG=files/board-deck-q3
 RUNBOOK_SLUG=runbooks/payment-rail-failover
+ORIONIX_SLUG=files/orionix-renewal-brief
+TEST_PLAN_SLUG=files/rail-b-integration-test-plan
+OLD_ESCALATION_SLUG=runbooks/rail-a-escalation-contacts-2025
 
 step() {
   STEP=$((STEP + 1))
@@ -246,6 +249,34 @@ MD
   expect 200
   jq -e '.ok == true' "$TMP/body" >/dev/null 2>&1 || fail "audit chain broken"
   ok "$(jq -r '"ok=\(.ok) length=\(.length) head=\(.head_hash[0:12])"' "$TMP/body")"
+
+  # Seed access and freshness stories (backend/seed/corpus/README.md).
+  step "ethical wall: Orionix brief (alex vs ravi)"
+  call GET "/api/documents?source_id=gdrive-finance&limit=100" alex.tan
+  expect 200
+  local brief_id
+  brief_id=$(jq -r --arg s "$ORIONIX_SLUG" '[.items[] | select(.slug == $s) | .id][0] // empty' "$TMP/body")
+  [[ -n "$brief_id" ]] || fail "Orionix brief not visible to alex.tan (engineering grant)"
+  call GET "/api/documents/$brief_id" ravi.kumar
+  expect 404
+  ok "alex=200 (group grant) ravi=404 (explicit deny)"
+
+  step "contractor sees one shared file (mei.chen)"
+  call GET "/api/documents?limit=100" mei.chen
+  expect 200
+  jq -e --arg s "$TEST_PLAN_SLUG" '[.items[].slug] == [$s]' "$TMP/body" >/dev/null 2>&1 ||
+    fail "mei.chen should see only $TEST_PLAN_SLUG"
+  ok "documents=$(jq -r '[.items[].slug] | join(",")' "$TMP/body")"
+
+  step "ask: escalation contacts (alex.tan)"
+  ask alex.tan "Who do we escalate Rail-A incidents to?"
+  expect 200
+  jq -e --arg s "$OLD_ESCALATION_SLUG" '[.citations[] | select(.slug == $s)] | length == 0' \
+    "$TMP/body" >/dev/null 2>&1 || fail "page deleted upstream was cited"
+  jq -e --arg s "$OLD_ESCALATION_SLUG" \
+    '[.freshness_receipt.evidence_items[]? | select(.page_slug == $s and .safe_to_use == false)] | length > 0' \
+    "$TMP/body" >/dev/null 2>&1 || fail "receipt does not mark the deleted escalation page unsafe"
+  ok "citations=$(jq -r '.citations | length' "$TMP/body") deleted page omitted"
 
   echo "REST smoke passed."
 }
