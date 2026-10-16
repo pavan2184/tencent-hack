@@ -72,6 +72,38 @@ def load_seed(now: datetime):
     return principals, docs, bodies
 
 
+# One (actor, document) pair per access story the corpus is built to show; see
+# backend/seed/corpus/README.md. Evaluated before any revocation.
+ACCESS_STORIES = {
+    "inactive_principal": ("lena.koh", "C_TREASURY_OPS:2026-10-09"),
+    "ethical_wall_deny": ("ravi.kumar", "1OrionixRenewalBriefExampleHarbor"),
+    "group_grant": ("alex.tan", "1OrionixRenewalBriefExampleHarbor"),
+    "role_grant": ("sam.lee", "CONF-COMP-2014"),
+    "restricted_page_owner": ("nora.ibrahim", "CONF-COMP-2014"),
+    "inherited_confluence_restriction": ("alex.tan", "CONF-OPS-1104"),
+    "expired_drive_share": ("mei.chen", "1VegalineDueDiligenceExampleHarbor"),
+    "live_drive_share": ("mei.chen", "1RailBTestPlanExampleHarbor"),
+    "link_only_drive_share": ("alex.tan", "1RailBSupportFaqExampleHarbor"),
+    "direct_message_outsider": ("jordan.lim", "D_JOHN_DANIEL:2026-10-11"),
+    "email_bcc": ("daniel.wong", "<20261012.approval.5120@example-harbor.com>"),
+    "admin_without_source_access": ("root.admin", "C_GENERAL:2026-10-10"),
+}
+
+
+async def _stories(service: AccessControlService, docs, now: datetime) -> dict:
+    by_id = {doc.document_id: doc for doc in docs}
+    stories = {}
+    for name, (actor, doc_id) in ACCESS_STORIES.items():
+        (decision,) = (await service.filter(actor, [by_id[doc_id]], now=now)).decisions
+        stories[name] = {
+            "actor": actor,
+            "document_id": doc_id,
+            "decision": str(decision.decision),
+            "rule": decision.matched_rule,
+        }
+    return stories
+
+
 async def run_demo() -> dict:
     now = datetime(2026, 10, 12, 9, tzinfo=UTC)
     principals, docs, bodies = load_seed(now)
@@ -87,13 +119,15 @@ async def run_demo() -> dict:
         principal.id: (await service.filter(principal.id, docs, now=now)).allowed_ids
         for principal in principals
     }
+    stories = await _stories(service, docs, now)
     before = await service.filter("john.tan", docs, now=now)
     outsider = await service.filter("mei.chen", docs, now=now)
     await grants.revoke(board.grants[0].id, by="root.admin", at=now)
     after = await service.filter("john.tan", docs, now=now)
     assert board.document_id in before.allowed_ids
     assert board.document_id not in after.allowed_ids
-    assert outsider.allowed_ids == []
+    # The contractor sees only the file shared with the contractor address, never the deck.
+    assert outsider.allowed_ids == ["1RailBTestPlanExampleHarbor"]
     model_context = [bodies[doc_id] for doc_id in after.allowed_ids]
     assert bodies[board.document_id] not in model_context
     return {
@@ -104,6 +138,8 @@ async def run_demo() -> dict:
         "before_board_allowed": True,
         "after_board_allowed": False,
         "outsider_allowed_count": len(outsider.allowed_ids),
+        "outsider_allowed_ids": outsider.allowed_ids,
+        "access_stories": stories,
         "revoked_body_in_model_context": False,
         "audit_rule": next(
             d.matched_rule for d in after.decisions if d.document_id == board.document_id

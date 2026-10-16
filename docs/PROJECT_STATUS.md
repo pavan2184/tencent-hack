@@ -229,3 +229,49 @@ claim too. `sentence_spans` and the verifier are unchanged, so verify scores do 
 composer id stays `extractive-v1` (Raphael to decide whether it should be bumped). Tests: three
 new cases in `libs/groundedness/tests/test_compose.py`; full backend suite 686 passed, 11 skipped.
 Timeline rows (`**2026-10-10** | Slack — ...`) can still be picked.
+
+## Seed corpus expansion (Chai, 16 October 2026)
+
+The demo corpus now covers each access rule and freshness branch the pipeline enforces, not just
+the five scenarios. It grew from 6 personas, 6 sources and 11 pages to 10 personas (9 active),
+7 sources (new `confluence-compliance`) and 24 pages. The five scenarios and their facts are
+unchanged.
+
+- New personas: `daniel.wong` (CFO, manager), `nora.ibrahim` (Head of Compliance, manager),
+  `ravi.kumar` (payments SRE) and `lena.koh` (inactive leaver still on the `#treasury-ops` roster).
+  `mei.chen` now has one live Drive share (the Rail-B test plan) and one expired share.
+- New access stories, each pinned to its rule: an ethical-wall explicit deny beating a group grant
+  (R2), a restricted STR register read through an `auditor` role grant (R5, R6 after revocation),
+  an inherited Confluence restriction, an expired and a link-only Drive share, a DM, an email bcc,
+  and an inactive account (R1).
+- New freshness stories: standard evidence with a newer live version is used with a warning (the
+  September incident review), and a critical page deleted upstream is omitted (2025 escalation
+  contacts).
+- The facts line up across sources (approval email, CFO DM, PAY-155, `#payments-eng`, the liquidity
+  policy), so the unified cited query draws on more of them.
+- `backend/seed/corpus/README.md` now has the persona table, story tables, the visibility matrix
+  (generated from the real policy) and questions to ask. `make smoke` has three more steps
+  (ethical wall, contractor scope, deleted page omitted).
+
+Pages whose ACLs changed (PAY-142, PAY-150, both `#general` days, `#treasury-ops`) have bumped
+provider versions, because a same-version re-sync is a no-op. A plain `make seed` therefore
+upgrades an existing stack, and no `make reset` is needed.
+
+Verification:
+
+- Offline: 711 passed, 11 skipped after merging main (708 on the branch alone); Ruff check and
+  format are clean.
+- Access-control library: `test_seed_demo.py` now has 23 tests (persona matrix and 12 access
+  stories). New `app/tests/test_seed_stories.py` has 9 REST tests.
+- `make smoke` against the in-memory API: 15/15 steps pass.
+- Throwaway `pgvector/pgvector:pg16` container: migrate and seed on the SQL repo gave
+  10/7/24/5 grants (21 fresh, 3 stale), and a re-seed replayed. Seeding the old corpus first and
+  then the new one re-applied the bumped pages, and the new ACLs took effect. The container was
+  removed. The shared Docker stack on ports 5433/8000 was not touched.
+- The access map rendered the new corpus in the browser: John sees 23 documents and 89 paths, and
+  Ravi's panel omits the Orionix brief.
+
+For Pavan (freshness): live verification of a provider-deleted object returns `stale`
+(`provider_deleted`), not a tombstone. Standard evidence in that state is therefore allowed with a
+warning, which is why the deleted seed page is critical. Should a provider deletion always
+omit, whatever the class?

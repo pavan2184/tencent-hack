@@ -12,13 +12,18 @@ from app.tests.conftest import SEED_DIR, run
 
 def test_seed_counts(seeded: Any) -> None:
     repo = seeded.repo
-    assert len(run(repo.list_principals())) == 6
+    assert len(run(repo.list_principals())) == 10
     assert len(run(repo.list_groups())) == 4
     sources = run(repo.list_sources())
-    assert len(sources) == 6
-    assert {s.id for s in sources} >= {"confluence-ops", "gdrive-finance", "uploads"}
+    assert len(sources) == 7
+    assert {s.id for s in sources} >= {
+        "confluence-ops",
+        "confluence-compliance",
+        "gdrive-finance",
+        "uploads",
+    }
     pages = run(repo.list_pages(limit=1000))
-    assert len(pages) >= 10
+    assert len(pages) == 24
     assert all(p.ingest_status == "indexed" for p in pages)
     assert all(p.permission_version for p in pages)
     snapshots = run(seeded.permission_store.get_many([p.id for p in pages]))
@@ -72,6 +77,6 @@ def test_seed_is_idempotent(seeded: Any) -> None:
         k: len(v) for k, v in grants_before.items()
     }
     assert sum(len(run(repo.list_timeline(pid))) for pid in ids) == timeline_before
-    assert len(run(repo.list_principals())) == 6
+    assert len(run(repo.list_principals())) == 10
     assert all(r["replayed"] for r in summary.runs)
     assert len(run(repo.list_audit_events(action="seed.loaded"))) == 2

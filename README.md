@@ -53,15 +53,18 @@ Requires Docker (with compose), and for local development `uv` and Node 22.
 cp .env.example .env && make up && make seed
 ```
 
-Open <http://localhost:3000> and switch personas in the header (`alex.tan`, `john.tan`,
-`sam.lee`, `root.admin`, `jordan.lim`, `mei.chen`). The API is on <http://localhost:8000>
-(OpenAPI at `/docs`), MCP on <http://localhost:8000/mcp>. Everything runs in mock mode with no keys;
-set `PROVIDER_MODE=real` and the Tencent ADP values in `.env` for real models.
+Open <http://localhost:3000> and switch personas in the header (`alex.tan`, `ravi.kumar`,
+`john.tan`, `jordan.lim`, `daniel.wong`, `nora.ibrahim`, `sam.lee`, `root.admin`, `mei.chen`).
+The API is on <http://localhost:8000> (OpenAPI at `/docs`), MCP on <http://localhost:8000/mcp>.
+Everything runs in mock mode with no keys; set `PROVIDER_MODE=real` and the Tencent ADP values in
+`.env` for real models.
 
 Try the demo scenarios: ask "What is the payment rail failover procedure?" as `john.tan` (the
 stale critical runbook is omitted and shown in the receipt), ask "What were the Q3 board deck
 revenue figures?" before and after `root.admin` revokes the `leadership` grant, open the board deck
-as `mei.chen` (same "not found" as a random id), and read the audit trail as `sam.lee`.
+as `mei.chen` (same "not found" as a random id), and read the audit trail as `sam.lee`. More
+questions, one per access and freshness story, are in
+[`backend/seed/corpus/README.md`](backend/seed/corpus/README.md#questions-to-ask).
 `make smoke` runs all of this end to end.
 
 ## Make targets
