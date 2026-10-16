@@ -58,12 +58,40 @@ def _text_of(payload: dict[str, Any]) -> str | None:
         value = payload.get(key)
         if isinstance(value, str):
             return value
-    for key in ("payload", "Payload", "data", "Data", "message", "Message", "Response"):
+    for key in (
+        "payload",
+        "Payload",
+        "data",
+        "Data",
+        "message",
+        "Message",
+        "Response",
+        "contents",
+        "Contents",
+        "messages",
+        "Messages",
+    ):
         inner = payload.get(key)
         if isinstance(inner, dict):
+            if key in ("message", "Message") and inner.get("Type", inner.get("type")) not in (
+                None,
+                "reply",
+            ):
+                continue
             found = _text_of(inner)
             if found is not None:
                 return found
+        if isinstance(inner, list):
+            for item in inner:
+                if isinstance(item, dict):
+                    if (
+                        key in ("messages", "Messages")
+                        and item.get("Type", item.get("type")) != "reply"
+                    ):
+                        continue
+                    found = _text_of(item)
+                    if found is not None:
+                        return found
     return None
 
 
@@ -95,6 +123,8 @@ def parse_sse(body: str) -> tuple[str, list[dict[str, Any]], Exception | None]:
         if kind == "text.delta":
             deltas.append(_text_of(payload) or "")
         elif kind == "message.done":
+            final = _text_of(payload) or final
+        elif kind == "response.completed":
             final = _text_of(payload) or final
         elif kind == "reference.added":
             references.append(payload)

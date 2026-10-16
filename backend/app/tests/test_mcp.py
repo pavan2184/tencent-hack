@@ -125,8 +125,8 @@ def test_tools_list_has_every_tool(mcp_session: McpSession) -> None:
 def test_whoami_resolves_the_header_actor(mcp_session: McpSession) -> None:
     me = _payload(mcp_session.call("whoami"))
     assert me["id"] == "alex.tan"
-    other = _payload(mcp_session.call("whoami", actor="priya.nair"))
-    assert other["id"] == "priya.nair"
+    other = _payload(mcp_session.call("whoami", actor="john.tan"))
+    assert other["id"] == "john.tan"
 
 
 def test_actor_query_param_is_accepted(seeded: Any, client: Any) -> None:
@@ -216,9 +216,7 @@ def test_every_tool_runs_through_the_governed_services(seeded: Any, client: Any)
     )
 
     # Uploads: owner forced to the caller; frontmatter owner/permissions ignored.
-    spoof = (
-        "---\nowner: priya.nair\npermissions: {kind: upload, owner_principal_id: priya.nair}\n---\n"
-    )
+    spoof = "---\nowner: john.tan\npermissions: {kind: upload, owner_principal_id: john.tan}\n---\n"
     put = ok("put_page", {"slug": "notes/mcp-test", "content": spoof + "# MCP note\n\nHello."})
     assert put["document"]["owner_principal_id"] == "alex.tan"
     assert put["document"]["slug"] == "notes/mcp-test"
@@ -263,7 +261,7 @@ def test_every_tool_runs_through_the_governed_services(seeded: Any, client: Any)
 
     verify_args = {"source_id": "confluence-ops", "external_object_id": RUNBOOK_OBJ}
     assert err("verify_freshness", verify_args) == "forbidden"  # employee
-    verified = ok("verify_freshness", verify_args, actor="priya.nair")  # manager
+    verified = ok("verify_freshness", verify_args, actor="john.tan")  # manager
     assert verified["verification_result"] == "stale"
 
     hidden = ok("request_access", {"slug": "files/board-deck-q3", "reason": "Q3"}, actor="mei.chen")

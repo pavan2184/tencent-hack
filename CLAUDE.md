@@ -56,10 +56,12 @@ Quickstart: `cp .env.example .env && make up && make seed`, then http://localhos
 
 | Library (`backend/libs/…`) | Owner   | Adapter (`backend/app/adapters/…`) | Migration range |
 | -------------------------- | ------- | ---------------------------------- | --------------- |
-| `groundedness`             | Raphael | `llm_port.py`                      | 0300–0399       |
+| `groundedness`             | Raphael | —                                  | 0300–0399       |
 | `freshness`                | Pavan   | `freshness_store.py`               | 0100–0199       |
 | `access_control`           | Chai    | `access_stores.py`                 | 0200–0299       |
 | core (app, foundation)     | Raphael | —                                  | 0001–0099       |
+
+The groundedness lib is model-free; generation lives in `app/services/compose.py`, owned with core.
 
 - Only touch your lib, your adapter and your migration range unless asked otherwise.
 - **Libs never import `app`.** They depend on Pydantic only; the app implements their Protocols.

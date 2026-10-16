@@ -112,7 +112,7 @@ async def test_revocation_through_store_flips_policy_decision(
             classification=Classification.confidential,
             grants=grants,
         )
-        return policy.decide(people["priya"], doc, now=now)
+        return policy.decide(people["john"], doc, now=now)
 
     assert (await decide()).decision == Effect.allow
     await store.revoke("lead", by="root.admin", at=now)
@@ -144,11 +144,11 @@ async def test_principal_directory(people):
     assert (await directory.get("mei.chen")).is_active is False  # inactive still resolvable
     assert await directory.get("ghost") is None
     assert {p.id for p in await directory.list()} == {p.id for p in people.values()}
-    assert await directory.groups_of("priya.nair") == ["finance-ops", "leadership"]
+    assert await directory.groups_of("john.tan") == ["finance-ops", "leadership"]
     assert await directory.groups_of("ghost") == []
-    groups = await directory.groups_of("priya.nair")
+    groups = await directory.groups_of("john.tan")
     groups.append("root")
-    assert await directory.groups_of("priya.nair") == ["finance-ops", "leadership"]
+    assert await directory.groups_of("john.tan") == ["finance-ops", "leadership"]
 
 
 # -- access requests ----------------------------------------------------------------------
@@ -171,7 +171,7 @@ async def test_access_request_lifecycle(now):
         "root.admin",
         now,
     )
-    denied = await store.decide(r2.id, approved=False, by="priya.nair", at=now)
+    denied = await store.decide(r2.id, approved=False, by="john.tan", at=now)
     assert denied.status == AccessRequestStatus.denied
     assert await store.list_pending() == []
 

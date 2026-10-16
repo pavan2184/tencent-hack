@@ -265,6 +265,14 @@ export interface AccessRequest {
   decided_by: string | null;
 }
 
+/** Result of approving or denying a request. `effective` is false when the source platform
+ * still withholds the document; `note` then tells the approver what to do. */
+export interface AccessDecisionResult {
+  request: AccessRequest;
+  effective: boolean | null;
+  note: string | null;
+}
+
 // --- Audit ---------------------------------------------------------------
 
 export interface AuditEvent {
@@ -279,6 +287,8 @@ export interface AuditEvent {
   payload: Record<string, unknown>;
   prev_hash: string | null;
   hash: string;
+  /** True when answer content is hidden because the viewer cannot read its evidence. */
+  content_withheld?: boolean;
 }
 
 export interface AuditQuery {

@@ -3,13 +3,14 @@
 Every document read goes through `visible_page` / `filter_pages`, which evaluate the
 `access_control` policy fresh on every call (never cached), so a revocation applies to the very
 next request. A denied document raises exactly the same `NotFound("Document not found.")` as a
-missing one.
+missing one. Stored answers are re-authorised the same way each time they are served
+(`readable_query_records`), so query history cannot replay evidence after a revocation.
 """
 
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -20,18 +21,20 @@ from access_control import (
     AccessRequest,
     AccessRequestNotFound,
     AccessRequestStatus,
+    DenyReason,
     DocumentAccessContext,
     Effect,
     FilterResult,
     Grant,
     GrantNotFound,
     Principal,
+    SourceKind,
     SubjectType,
 )
 
 from app.core.auth import has_role
 from app.core.errors import Conflict, Forbidden, NotFound
-from app.schemas.domain import Page
+from app.schemas.domain import AuditEvent, Page, QueryRecord
 from app.services import audit
 
 if TYPE_CHECKING:
@@ -109,6 +112,149 @@ async def visible_page(
 
 def can_manage(principal: Principal, page: Page) -> bool:
     return page.owner_principal_id == principal.id or has_role(principal, *MANAGE_ROLES)
+
+
+# ---------------------------------------------------------------------------- stored answers
+QUERY_WITHHELD_STATUS = "withheld"
+QUERY_WITHHELD_TEXT = (
+    "This answer used sources you can no longer access. Ask again to get an answer from the "
+    "sources you can read now."
+)
+
+
+def _evidence_document_ids(payload: dict[str, Any], cited: Iterable[str]) -> set[str] | None:
+    """Documents whose content may appear in a stored answer, from its `ask` audit payload.
+
+    `evidence_document_ids` lists exactly the documents behind the spans the composer saw. Older
+    events lack it: spans are drawn only from receipt items marked `safe_to_use`, so those page
+    ids are a safe superset, and without a receipt every document allowed at ask time is. Cited
+    ids are always included. `None` means the evidence cannot be determined."""
+    receipt = payload.get("freshness_receipt")
+    if isinstance(payload.get("evidence_document_ids"), list):
+        ids = {i for i in payload["evidence_document_ids"] if isinstance(i, str) and i}
+    elif isinstance(receipt, dict) and isinstance(receipt.get("evidence_items"), list):
+        ids = {
+            item["page_id"]
+            for item in receipt["evidence_items"]
+            if isinstance(item, dict) and item.get("safe_to_use") and item.get("page_id")
+        }
+    elif isinstance(payload.get("access_decisions"), list):
+        ids = {
+            d["document_id"]
+            for d in payload["access_decisions"]
+            if isinstance(d, dict) and d.get("decision") == Effect.allow and d.get("document_id")
+        }
+    else:
+        return None
+    return ids | {c for c in cited if isinstance(c, str) and c}
+
+
+async def _readable_document_ids(
+    services: Services, principal: Principal, ids: set[str]
+) -> set[str]:
+    """The subset of `ids` the principal may read right now (missing or deleted: not readable)."""
+    if not ids:
+        return set()
+    pages = await services.repo.get_pages(sorted(ids))
+    live = [p for p in pages.values() if p.deleted_at is None]
+    _, allowed = await filter_pages(services, principal, live)
+    return {p.id for p in allowed}
+
+
+def _withheld(record: QueryRecord) -> QueryRecord:
+    return record.model_copy(
+        update={
+            "status": QUERY_WITHHELD_STATUS,
+            "answer_text": QUERY_WITHHELD_TEXT,
+            "citations": [],
+            "grounding_report": None,
+            "freshness_receipt_id": None,
+        }
+    )
+
+
+async def readable_query_records(
+    services: Services, principal: Principal, records: Sequence[QueryRecord]
+) -> list[QueryRecord]:
+    """Re-authorise stored answers for the viewer, now.
+
+    A stored answer is only as visible as its least visible evidence document: if the viewer
+    cannot read every one of them at this moment (revoked, deleted, or undeterminable), the
+    answer text, citations, grounding report and receipt id are withheld. Only the viewer's own
+    question and the fact of withholding remain; which document changed is never disclosed.
+    Auditors still reach the original through the audit trail."""
+    evidence: dict[str, set[str] | None] = {}
+    for record in records:
+        if record.answer_text is None and not record.citations and not record.grounding_report:
+            evidence[record.id] = set()  # failed ask: nothing derived from any document
+            continue
+        event = (
+            await services.repo.get_audit_event(record.audit_event_id)
+            if record.audit_event_id
+            else None
+        )
+        evidence[record.id] = (
+            _evidence_document_ids(event.payload, (c.get("document_id") for c in record.citations))
+            if event is not None and event.subject_id == record.id
+            else None
+        )
+    wanted = set().union(*(ids for ids in evidence.values() if ids))
+    readable = await _readable_document_ids(services, principal, wanted)
+    return [
+        record
+        if (ids := evidence[record.id]) is not None and ids <= readable
+        else _withheld(record)
+        for record in records
+    ]
+
+
+# ---------------------------------------------------------------------------- audit content
+# Audit actions whose payload carries document-derived answer content.
+AUDIT_CONTENT_ACTIONS = ("ask",)
+AUDIT_REVEAL_ACTION = "audit.reveal"
+
+
+def _audit_evidence(event: AuditEvent) -> set[str] | None:
+    payload = event.payload if isinstance(event.payload, dict) else {}
+    cited = payload.get("cited_document_ids")
+    return _evidence_document_ids(payload, cited if isinstance(cited, list) else [])
+
+
+async def audit_content_readable(
+    services: Services, principal: Principal, events: Sequence[AuditEvent]
+) -> set[str]:
+    """Ids of `events` whose answer content the viewer may see without a recorded reveal.
+
+    Auditors see every event's metadata (asker, question, retrieved ids, each allow/deny, the
+    receipt and the grounding verdict). Answer text and quotes are document content, so they
+    follow the same rule as saved answers: visible only if the viewer can read every evidence
+    document now. Events without answer content are always readable."""
+    evidence = {e.id: _audit_evidence(e) for e in events if e.action in AUDIT_CONTENT_ACTIONS}
+    wanted = set().union(*(ids for ids in evidence.values() if ids))
+    readable_docs = await _readable_document_ids(services, principal, wanted)
+    return {e.id for e in events if e.id not in evidence} | {
+        event_id for event_id, ids in evidence.items() if ids is not None and ids <= readable_docs
+    }
+
+
+def redact_audit_body(body: dict[str, Any]) -> dict[str, Any]:
+    """Strip document-derived content from a serialised audit event and its reconstruction.
+
+    The stored event and its hash are untouched; only this response copy changes."""
+    payload = dict(body.get("payload") or {})
+    if payload.get("answer_text") is not None:
+        payload["answer_text"] = None
+    redacted = {**body, "payload": payload, "content_withheld": True}
+    reconstruction = body.get("reconstruction")
+    if isinstance(reconstruction, dict) and isinstance(reconstruction.get("query"), dict):
+        query = {
+            **reconstruction["query"],
+            "answer_text": None,
+            "citations": [],
+            "grounding_report": None,
+        }
+        redacted["reconstruction"] = {**reconstruction, "query": query}
+    return redacted
 
 
 # ---------------------------------------------------------------------------- grants
@@ -246,6 +392,45 @@ async def revoke_grant(
 
 
 # ---------------------------------------------------------------------------- requests
+_PLATFORM_NAMES = {
+    SourceKind.confluence: "Confluence",
+    SourceKind.jira: "Jira",
+    SourceKind.slack: "Slack",
+    SourceKind.gdrive: "Google Drive",
+    SourceKind.email: "the mailbox",
+}
+
+
+async def approval_effect(services: Services, req: AccessRequest) -> tuple[bool, str | None]:
+    """Whether an approved request actually lets the requester read the document now.
+
+    A local grant cannot widen what the source platform allows (ac-v2), so an approval can leave
+    the requester blocked. The approver (owner or admin) is told why, in terms they can act on;
+    the requester learns nothing new."""
+    page = await services.repo.get_page(req.document_id)
+    requester = await services.repo.get_principal(req.principal_id)
+    if page is None or requester is None:
+        return False, "Approved, but the requester's access could not be checked."
+    (context,) = await build_contexts(services, [page])
+    decision = services.access_policy.decide(requester, context, now=services.clock.now())
+    if decision.allowed:
+        return True, None
+    platform = _PLATFORM_NAMES.get(page.source_kind, "the source system")
+    if decision.reason == DenyReason.no_source_membership:
+        return False, (
+            f"Approved, but {requester.display_name} still can't open this document: "
+            f"{platform} doesn't share it with them. Ask the owner to share it in {platform}."
+        )
+    if decision.reason == DenyReason.unknown_permissions:
+        return False, (
+            "Approved, but this document's permissions can't be confirmed right now, so it "
+            "stays closed until the next successful sync."
+        )
+    if decision.reason == DenyReason.explicit_deny:
+        return False, "Approved, but an explicit deny rule still blocks this person."
+    return False, "Approved, but another access rule still blocks this person."
+
+
 async def request_access(
     services: Services, principal: Principal, document_id: str, reason: str | None
 ) -> None:

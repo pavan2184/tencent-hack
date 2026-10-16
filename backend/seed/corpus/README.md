@@ -89,7 +89,7 @@ Seeded grants are written with `granted_by: system:seed`, `scope: read`.
 - **upload:** `{kind, owner_principal_id, shared_with_principals: [], shared_with_groups: []}`
 
 Membership is matched against the principal's `external_identities[kind]` (Slack member ids such as
-`U_PRIYA`; Jira and Confluence account ids equal principal ids; Drive and email use the mailbox
+`U_JOHN`; Jira and Confluence account ids equal principal ids; Drive and email use the mailbox
 address, and a Drive `domain` entry matches the address's domain) and against group ids (a Drive
 `group` entry's `email_or_domain` is the group id, e.g. `leadership`).
 
@@ -107,10 +107,10 @@ Honoured only by the `gbrain_import` connector:
 
 | Scenario                        | Personas                   | Pages that make it work                                                                                                      |
 | ------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 1. Unified cited query          | `priya.nair`               | Rail-B cutover facts spread across the email, PAY-150, `#general`, `#treasury-ops` and the vendor list                       |
-| 2. Bounded freshness            | `priya.nair`, `alex.tan`   | `runbooks/payment-rail-failover` (critical, v7 indexed, live v8 → stale → omitted); `runbooks/kyc-refresh` (critical, fresh) |
+| 1. Unified cited query          | `john.tan`               | Rail-B cutover facts spread across the email, PAY-150, `#general`, `#treasury-ops` and the vendor list                       |
+| 2. Bounded freshness            | `john.tan`, `alex.tan`   | `runbooks/payment-rail-failover` (critical, v7 indexed, live v8 → stale → omitted); `runbooks/kyc-refresh` (critical, fresh) |
 | 3. Negative permission, no leak | `mei.chen`, `alex.tan`     | `mei.chen` matches nothing; `alex.tan` is outside PAY-142's `finance-only` security level, `#treasury-ops` and the KYC page  |
-| 4. Live revocation              | `priya.nair`, `root.admin` | `files/board-deck-q3` is confidential and visible to `priya.nair` only through the `leadership` grant, which is revoked live |
+| 4. Live revocation              | `john.tan`, `root.admin` | `files/board-deck-q3` is confidential and visible to `john.tan` only through the `leadership` grant, which is revoked live |
 | 5. Audit reconstruction         | `sam.lee` (auditor)        | any `ask` above; `GET /api/audit/events/{id}` and `/api/audit/verify`                                                        |
 | Injection screening (bonus)     | anyone in `#general`       | `channels/general/2026-10-11` contains a prompt-injection string that the sanitizer must quarantine                          |
 
@@ -118,6 +118,6 @@ Distinctive facts to ask about: "What is the payment rail failover procedure?" (
 trigger, `RAIL_B_ONLY`, SGD 2.5 million prefunding, 16:00 SGT batch hold) and "What were the Q3 board
 deck revenue figures?" (SGD 48.6 million, up 18% year on year; EBITDA SGD 9.8 million).
 
-The board deck's Drive owner is `admin@example-harbor.com`, not Priya, and its frontmatter `owner`
-is `root.admin`: if Priya owned it, rule R3 (owner → allow) would keep her access after the grant
+The board deck's Drive owner is `admin@example-harbor.com`, not John, and its frontmatter `owner`
+is `root.admin`: if John owned it, rule R3 (owner → allow) would keep that access after the grant
 is revoked and scenario 4 could not be shown.

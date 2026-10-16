@@ -33,6 +33,7 @@ from pydantic import (
     ConfigDict,
     Field,
     TypeAdapter,
+    field_validator,
     model_validator,
 )
 
@@ -102,9 +103,8 @@ class ConfluencePermissions(_RawModel):
     (``space_view_users``/``space_view_groups``); if the page has view restrictions
     (``page_view_users``/``page_view_groups`` non-empty) the reader must *also* satisfy them —
     page restrictions narrow (override) the space audience, they never widen it. Empty page lists
-    mean "no page restriction, inherit the space audience". ``ancestors`` entries are either a bare
-    page id (no restriction captured) or a :class:`ConfluenceAncestor` whose restriction must also
-    be satisfied.
+    mean "no page restriction, inherit the space audience". Every ancestor must carry its captured
+    restrictions. A legacy bare page id remains parseable but the policy denies incomplete data.
     """
 
     kind: Literal["confluence"] = "confluence"
@@ -144,9 +144,9 @@ class JiraPermissions(_RawModel):
 class SlackPermissions(_RawModel):
     """Slack channel membership.
 
-    ``public`` channels are readable by any workspace member (``workspace_member_ids`` ``None``
-    means the workspace roster was not captured → every principal counts as a member);
-    ``private``/``dm``/``mpdm`` require membership in ``member_ids``.
+    All channel types allow explicit ``member_ids``. Public channels additionally allow the
+    captured full workspace roster, excluding guests/bots/deactivated users. A missing roster
+    never grants access to outsiders. Private channels and direct messages require membership.
     """
 
     kind: Literal["slack"] = "slack"
@@ -167,10 +167,20 @@ class GDriveAce(_RawModel):
     role: GDriveRole
     email_or_domain: str | None = None
     inherited: bool = False
+    expiration_time: datetime | None = None
+    deleted: bool = Field(default=False, strict=True)
+    allow_file_discovery: bool = Field(default=True, strict=True)
+
+    @field_validator("expiration_time")
+    @classmethod
+    def _expiry_has_timezone(cls, value: datetime | None) -> datetime | None:
+        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+            raise ValueError("Drive expiration_time must include a timezone")
+        return value
 
     @model_validator(mode="after")
     def _target_required(self) -> Self:
-        if self.type != GDriveAceType.anyone and not self.email_or_domain:
+        if not self.deleted and self.type != GDriveAceType.anyone and not self.email_or_domain:
             raise ValueError(f"GDrive ACE of type {self.type.value!r} needs email_or_domain")
         return self
 

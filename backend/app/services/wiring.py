@@ -35,17 +35,15 @@ from groundedness import (
     EvidenceSanitizer,
     ExtractiveComposer,
     LexicalOverlapVerifier,
-    LLMComposer,
-    LLMPort,
     RegexInjectionSanitizer,
     SupportVerifier,
 )
 
-from app.adapters.llm_port import ChatProviderLLMPort
 from app.config import Settings, get_settings
 from app.db.repo import Repo
 from app.providers.base import ChatProvider, EmbeddingProvider
 from app.providers.factory import get_chat_provider, get_embedding_provider
+from app.services.compose import ModelComposer
 
 
 @dataclass
@@ -66,7 +64,6 @@ class Services:
     composer: AnswerComposer
     verifier: SupportVerifier
     abstention: AbstentionPolicy
-    llm_port: LLMPort | None
 
 
 class RepoPrincipalDirectory:
@@ -139,14 +136,14 @@ def build_services(
 
     chat = chat or get_chat_provider(settings)
     embedder = embedder or get_embedding_provider(settings)
-    llm_port: LLMPort | None = ChatProviderLLMPort(chat)
     composer: AnswerComposer
     if settings.is_mock:
-        # Deterministic offline answers; the LLM port is wired but the extractive composer
-        # never calls it.
+        # Deterministic offline answers with no model call.
         composer = ExtractiveComposer()
     else:
-        composer = LLMComposer(llm_port, fallback="extractive", on_provider_error="raise")
+        # One model call per ask under a total deadline, grounded deterministically by
+        # `groundedness.ground`; timeouts and provider failures fall back to extractive.
+        composer = ModelComposer(chat, deadline_s=settings.ASK_GENERATION_DEADLINE_S)
 
     return Services(
         settings=settings,
@@ -165,7 +162,6 @@ def build_services(
         composer=composer,
         verifier=LexicalOverlapVerifier(),
         abstention=DefaultAbstentionPolicy(),
-        llm_port=llm_port,
     )
 
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Overview
 
@@ -66,13 +66,14 @@ tencent-hack/
 │   │   ├── api/routers/  health  principals  documents  sources  access  ask  audit  webhooks
 │   │   ├── mcp/server.py
 │   │   ├── services/   wiring.py  documents.py  ingestion.py  retrieval.py (governed pipeline)  audit.py  sources.py
+│   │   │               compose.py (ModelComposer: generate with deadline, then ground)
 │   │   ├── providers/  base.py  mock.py  factory.py  real/openai_compatible.py  real/tencent_adp_app.py
 │   │   ├── connectors/ base.py  upload.py  gbrain_import.py  stubs.py  registry.py
-│   │   ├── adapters/   freshness_store.py (Pavan)  access_stores.py (Chai)  llm_port.py (Raphael)
+│   │   ├── adapters/   freshness_store.py (Pavan)  access_stores.py (Chai)
 │   │   ├── tasks/      common.py (run_async)  ingest.py  sync.py  verify.py  watchdog.py
 │   │   └── tests/      conftest.py + test_* (five scenarios in test_ask_pipeline.py)
 │   └── libs/
-│       ├── groundedness/    src/groundedness/{models,protocols,sanitize,compose,verify,abstain,memory}.py  tests/
+│       ├── groundedness/    src/groundedness/{models,protocols,sanitize,compose,ground,numeric,verify,abstain}.py  tests/
 │       ├── freshness/       src/freshness/{enums,models,protocols,service,policy,versioning,receipt,memory}.py  tests/
 │       └── access_control/  src/access_control/{models,permissions,protocols,policy,memory}.py  tests/
 └── frontend/
@@ -87,12 +88,14 @@ tencent-hack/
 - **Libraries (`backend/libs/*`) are pure.** No I/O, no `app` imports (each lib has a test that
   fails if `src/` mentions `import app`/`from app`), dependency `pydantic>=2.9` only. Each
   exposes models, `@runtime_checkable` Protocols with documented invariants, stub
-  implementations, and `memory.py` in-memory stores used by the lib's own tests **and** by the
-  app's test fixtures. `SCHEMA_VERSION = 1` is re-exported from each `__init__.py`.
+  implementations, and (`freshness`, `access_control`) `memory.py` in-memory stores used by the
+  lib's own tests **and** by the app's test fixtures. `SCHEMA_VERSION = 1` is re-exported from
+  each `__init__.py`.
 - **App adapters implement the lib Protocols.** `app/adapters/freshness_store.py`
-  (`FreshnessStore`), `app/adapters/access_stores.py` (`GrantStore`, `PermissionSnapshotStore`,
-  `PrincipalDirectory`, `AccessRequestStore`) and `app/adapters/llm_port.py` (`LLMPort` over the
-  `ChatProvider`) are each owned by the matching library owner.
+  (`FreshnessStore`) and `app/adapters/access_stores.py` (`GrantStore`, `PermissionSnapshotStore`,
+  `PrincipalDirectory`, `AccessRequestStore`) are each owned by the matching library owner. The
+  `groundedness` lib is model-free (D-013), so it has no port for the app to implement; generation
+  lives in `app/services/compose.py`, owned with core.
 - **Thin API, heavy workers.** Routers and MCP tools validate input, resolve the principal and call
   one service. Ingestion, sync, live verification and watchdog sweeps run in Celery.
   `tasks/common.run_async` is the only bridge from Celery into async services.
@@ -168,12 +171,17 @@ tencent-hack/
    provider through the connector's `head()`. Unsafe evidence (critical and not fresh, or anything
    not fresh when `require_fresh=true`) is dropped. `freshness_receipt` records every evaluated
    item, safe or not, in input order.
-5. **Groundedness.** `sanitize` (never drops; quarantines high-severity injection) → `compose`
-   (every claim cites non-quarantined evidence; no usable evidence → abstained) → `verify`
-   (per-claim support labels, coverage, verdict, report hash) → `should_abstain`
-   (`GROUNDING_MIN_COVERAGE`, contradictions).
+5. **Groundedness.** `sanitize` (never drops; quarantines high-severity injection) → generate
+   (app `ModelComposer`: one model call inside `ASK_GENERATION_DEADLINE_S`, extractive fallback on
+   timeout or provider error; `ExtractiveComposer` alone in mock mode) → `ground` (deterministic
+   claim/citation attachment; auto-cites unmarked sentences; every claim cites non-quarantined
+   evidence; no usable evidence → abstained) → `verify` (`lexical-v2`: token overlap, negation
+   cues, numeric/date gate; per-claim support labels, coverage, verdict, report hash; no model
+   call, D-013) → `should_abstain` (`GROUNDING_MIN_COVERAGE`, contradictions). A model failure
+   never fails the ask.
 6. **Audit.** `audit.record("ask", …)` appends one hash-chained event with the question, every
-   candidate's decision, the receipt id and hash, the cited evidence, the answer and timings.
+   candidate's decision, the receipt id and hash, the cited evidence, the answer, the composer id
+   and timings.
 7. **Envelope.** `AnswerEnvelope` with `access_summary.allowed_count` only; there is no denied
    count anywhere in an asker-visible payload.
 
@@ -271,8 +279,9 @@ permissions: SourcePermissions, evidence_class, classification, owner_principal_
 
 `providers/base.py`: `ChatProvider.complete(messages, *, json_mode=False) -> ChatResult(text,
 usage)`, `EmbeddingProvider.embed(texts) -> list[list[float]]`, errors `ProviderError`,
-`RetryableError`, `FatalError`. `providers/factory.py` chooses by `PROVIDER_MODE` (`mock` default)
-and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
+`RetryableError`, `FatalError`. `providers/factory.py` chooses by `PROVIDER_MODE` (`mock` default),
+`LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`), and `EMBEDDING_PROVIDER`
+(`openai_compatible` | `local_hash`).
 
 - **Mock (default).** `MockChatProvider` returns a deterministic extractive stub;
   `MockEmbeddingProvider` returns seeded hash vectors of `EMBEDDING_DIM`. Mock vectors are
@@ -281,7 +290,12 @@ and `LLM_PROVIDER` (`openai_compatible` | `tencent_adp_app`).
   `LLM_MODEL`) and `/embeddings` (`EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`).
 - **`tencent_adp_app`.** The ADP application Chat API over SSE (`TENCENT_ADP_APP_KEY`,
   `TENCENT_ADP_CHAT_URL`): concatenates `text.delta` events and surfaces `reference.added`.
-- `app/adapters/llm_port.py` adapts the `ChatProvider` to the groundedness `LLMPort`.
+- **`local_hash` embeddings.** Reuses the deterministic 1024-dimensional token-hash vectors with
+  `PROVIDER_MODE=real`, so ADP can generate answers without a separately billable embedding API.
+  Retrieval is primarily lexical; this is not a learned semantic embedding model.
+- `app/services/compose.py` (`ModelComposer`) calls the `ChatProvider` directly, once per ask,
+  inside `ASK_GENERATION_DEADLINE_S` (`LLM_TIMEOUT_S` stays the per-phase HTTP timeout). The
+  groundedness lib never sees a model.
 
 ### Tencent Cloud ADP facts
 
@@ -303,13 +317,22 @@ repository; nothing below has been exercised against our account yet.
 time. If the real model's dimension differs, change `EMBEDDING_DIM` and `make reset` before the
 first real ingest.
 
+On 2026-10-13, Raphael's ADP console showed a $0 Free Edition Package valid through 2026-11-12,
+10,000 credits available and no add-on packages. Tencent's subscription billing documentation
+says plans and add-ons are prepaid, with no postpaid billing, and free-plan users cannot buy
+credit top-ups. The ADP agent's own knowledge base remains empty; the backend supplies filtered
+evidence. TokenHub activation requests payment-based billing, so it is excluded from the no-payment
+demo.
+
 ## Deployment Assumptions
 
-Owner: **Pavan**. Phased infrastructure: single box first.
+Owner: **Pavan**. Phased infrastructure: single box first. No payments or paid service activation
+are allowed for this demo.
 
-- One Tencent Cloud VM (CVM or Lighthouse; Linux with Docker Engine and the compose plugin) runs
-  the whole `docker-compose.yml`: `postgres`, `redis`, one-shot `migrate`, `api`, `worker`,
-  `beat`, `frontend`, and `caddy` via `docker compose --profile edge up -d`.
+- The no-payment preview runs the whole `docker-compose.yml` on Pavan's Mac: `postgres`, `redis`,
+  one-shot `migrate`, `api`, `worker`, `beat`, `frontend`, and `caddy`. A free Cloudflare Quick Tunnel
+  can expose Caddy temporarily after the public-access check. Its URL changes when restarted and
+  stops working when the Mac or tunnel stops. A paid Tencent VM is not part of this plan.
 - Caddy serves one origin on `:80`: `/api/*`, `/mcp*` and `/healthz` go to `api:8000`; everything
   else goes to `frontend:3000`. Build the frontend for that origin
   (`NEXT_PUBLIC_API_BASE_URL=http://<host>/api`, `NEXT_PUBLIC_MCP_URL=http://<host>/mcp`). Add a
@@ -342,8 +365,13 @@ Owner: **Pavan**. Phased infrastructure: single box first.
 - **Hash chain in the same database.** Detects modification and deletion of audit rows but not a
   wholesale rewrite by someone with full database control; external anchoring of the head hash is
   out of MVP scope.
-- **Extractive mock composer.** Deterministic and offline, so tests are stable; answers read
-  mechanically until the LLM composer lands.
+- **Extractive composer.** Deterministic and offline, so tests are stable. It is the mock-mode
+  answer source and the real-mode fallback when the model times out or fails; its answers read
+  mechanically. The LLM composer is the app's `ModelComposer` (`PROVIDER_MODE=real`).
+- **Lexical verification vs an LLM judge (D-013).** No extra model calls, so an ask stays at one
+  call and every grounding report is reproducible; wrong numbers, dates and times cannot be
+  `supported`. In exchange, paraphrase recall is bounded by lexical overlap, so the generation
+  prompt must keep the model's wording close to the evidence.
 
 ## Open Architecture Questions
 
@@ -357,3 +385,24 @@ Owner: **Pavan**. Phased infrastructure: single box first.
 - Should index age for critical evidence be measured from the last successful reconcile or
   verification rather than from `indexed_at`, so unchanged critical pages do not go stale an hour
   after seeding? (Freshness lib decision, Pavan.)
+
+## Access-control update (12 October 2026)
+
+Latest integrated baseline: `fc0bdf6c`. The app now supplies REST/MCP, SQL adapters,
+Celery and a governed retrieval pipeline. Its `filter_pages`/`visible_page` calls
+use the pure library policy and reload grants/snapshots per read. `ac-v2` enforces
+native source permissions before local owner/admin/grant allows. Upload sharing
+remains local. Denied duplicate ids, wrong-kind/stale snapshots and uncaptured
+Confluence ancestor restrictions fail closed.
+
+The library also supplies `AccessControlService`, which reloads and validates
+principal/groups/grants/snapshots, and an optional `SourcePermissionVerifier`.
+This is an available orchestration seam, not a claim that a live provider check
+is already wired into the app. Slack/Drive normalisers preserve guest, expiry
+and discovery restrictions; deterministic fingerprints track ACL-only changes.
+
+The five-slide editable PPT is
+`output/presentations/tencent-internal-brain-architecture-delivery.pptx`.
+It shows implemented code and marks the remaining live platform/authentication
+boundaries. See [handoff](ACCESS_CONTROL_HANDOFF.md) and
+[research](ACCESS_CONTROL_RESEARCH.md).

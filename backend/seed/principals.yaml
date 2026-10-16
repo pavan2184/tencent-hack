@@ -34,17 +34,17 @@ principals:
 
   # Finance Ops manager on the leadership team. Sees almost everything; loses the Q3 board deck
   # when the `leadership` grant is revoked live (demo scenario 4).
-  - id: priya.nair
-    display_name: Priya Nair
-    email: priya.nair@example-harbor.com
+  - id: john.tan
+    display_name: John Tan
+    email: john.tan@example-harbor.com
     roles: [employee, manager]
     groups: [finance-ops, leadership]
     external_identities:
-      slack: U_PRIYA
-      jira: priya.nair
-      confluence: priya.nair
-      gdrive: priya.nair@example-harbor.com
-      email: priya.nair@example-harbor.com
+      slack: U_JOHN
+      jira: john.tan
+      confluence: john.tan
+      gdrive: john.tan@example-harbor.com
+      email: john.tan@example-harbor.com
 
   # Compliance auditor. Reads the audit trail (demo scenario 5); little document access by design.
   - id: sam.lee
@@ -59,7 +59,8 @@ principals:
       gdrive: sam.lee@example-harbor.com
       email: sam.lee@example-harbor.com
 
-  # Administrator. Allowed everywhere by role (rule R4); performs the live revocation.
+  # Administrator. Manages local grants and performs revocation. Native source access still
+  # applies; the Drive board deck explicitly includes this account as owner.
   - id: root.admin
     display_name: Root Admin
     email: admin@example-harbor.com

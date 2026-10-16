@@ -1,8 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,12 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
-import { getAuditEvent } from "@/lib/api";
+import { getAuditEvent, revealAuditEvent } from "@/lib/api";
 import { parseAskPayload, type AskReconstruction } from "@/lib/auditPayload";
 import { formatDateTime, humanize, truncateHash } from "@/lib/format";
 import type { AuditEvent } from "@/lib/types";
-import { useApiQuery } from "@/lib/useApi";
+import { useApiAction, useApiQuery } from "@/lib/useApi";
 import { ErrorState, LoadingState } from "./StateViews";
 import { DecisionBadge, FreshnessBadge, VerdictBadge } from "./StatusBadge";
 
@@ -30,6 +31,9 @@ export function AuditEventDetail({
   const event = useApiQuery(`audit-event:${eventId}`, () =>
     getAuditEvent(eventId),
   );
+  // A break-glass reveal returns the full event; keep it only for the event it was made for.
+  const [revealed, setRevealed] = useState<AuditEvent | null>(null);
+  const shown = revealed?.id === eventId ? revealed : event.data;
 
   return (
     <Card className="h-fit">
@@ -46,20 +50,31 @@ export function AuditEventDetail({
             </CardDescription>
           )}
         </div>
-        <Button size="icon" variant="outline" onClick={onClose} aria-label="Close">
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={onClose}
+          aria-label="Close"
+        >
           <X className="size-4" aria-hidden />
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
         {event.error && <ErrorState error={event.error} />}
         {event.loading && !event.data && <LoadingState />}
-        {event.data && <EventBody event={event.data} />}
+        {shown && <EventBody event={shown} onRevealed={setRevealed} />}
       </CardContent>
     </Card>
   );
 }
 
-function EventBody({ event }: { event: AuditEvent }) {
+function EventBody({
+  event,
+  onRevealed,
+}: {
+  event: AuditEvent;
+  onRevealed: (event: AuditEvent) => void;
+}) {
   const ask = event.action === "ask" ? parseAskPayload(event.payload) : null;
   return (
     <>
@@ -79,10 +94,18 @@ function EventBody({ event }: { event: AuditEvent }) {
         </Field>
       </dl>
       {ask && (
-        <AskReconstructionView ask={ask} occurredAt={event.occurred_at} />
+        <AskReconstructionView
+          ask={ask}
+          occurredAt={event.occurred_at}
+          withheld={event.content_withheld === true}
+          eventId={event.id}
+          onRevealed={onRevealed}
+        />
       )}
       <details className="text-xs">
-        <summary className="cursor-pointer text-neutral-500">Raw payload</summary>
+        <summary className="cursor-pointer text-neutral-500">
+          Raw payload
+        </summary>
         <pre className="mt-2 max-h-96 overflow-auto rounded-sm bg-neutral-100 p-4 font-mono text-neutral-700">
           {JSON.stringify(event.payload, null, 2)}
         </pre>
@@ -117,9 +140,15 @@ function Field({
 function AskReconstructionView({
   ask,
   occurredAt,
+  withheld,
+  eventId,
+  onRevealed,
 }: {
   ask: AskReconstruction;
   occurredAt: string;
+  withheld: boolean;
+  eventId: string;
+  onRevealed: (event: AuditEvent) => void;
 }) {
   const decisionsById = new Map(ask.decisions.map((d) => [d.document_id, d]));
   const documentIds = [
@@ -140,7 +169,9 @@ function AskReconstructionView({
         title={`Retrieved documents and access decisions (${documentIds.length})`}
       >
         {documentIds.length === 0 ? (
-          <p className="text-xs text-neutral-500">No documents were retrieved.</p>
+          <p className="text-xs text-neutral-500">
+            No documents were retrieved.
+          </p>
         ) : (
           <Table>
             <THead>
@@ -212,9 +243,13 @@ function AskReconstructionView({
             Abstained{ask.abstainReason && `: ${ask.abstainReason}`}
           </p>
         )}
-        <p className="text-sm whitespace-pre-wrap text-neutral-800">
-          {ask.answerText ?? "—"}
-        </p>
+        {withheld ? (
+          <RevealForm eventId={eventId} onRevealed={onRevealed} />
+        ) : (
+          <p className="text-sm whitespace-pre-wrap text-neutral-800">
+            {ask.answerText ?? "—"}
+          </p>
+        )}
         {ask.grounding && (
           <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
             <VerdictBadge value={ask.grounding.verdict} />
@@ -236,12 +271,56 @@ function AskReconstructionView({
   );
 }
 
+function RevealForm({
+  eventId,
+  onRevealed,
+}: {
+  eventId: string;
+  onRevealed: (event: AuditEvent) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const reveal = useApiAction(revealAuditEvent);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const result = await reveal.run(eventId, reason.trim());
+    if (result.ok) onRevealed(result.data);
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-3">
+      <p className="rounded-sm bg-neutral-100 px-4 py-3 text-xs leading-relaxed text-neutral-600">
+        Answer withheld: you can&apos;t currently open every document it used.
+        Revealing it is recorded in this audit trail with your reason.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason, e.g. compliance case reference"
+          aria-label="Reason for revealing the answer"
+          minLength={10}
+          maxLength={500}
+          required
+        />
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={reveal.pending || reason.trim().length < 10}
+        >
+          <Eye className="size-4" aria-hidden />
+          Reveal
+        </Button>
+      </div>
+      {reveal.error && <ErrorState error={reveal.error} />}
+    </form>
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <h3 className="mb-2 text-sm font-medium text-neutral-900">
-        {title}
-      </h3>
+      <h3 className="mb-2 text-sm font-medium text-neutral-900">{title}</h3>
       {children}
     </section>
   );

@@ -27,8 +27,8 @@ def confluence(seed_blocks: dict[str, dict[str, Any]]) -> dict[str, Any]:
 
 def test_policy_satisfies_protocol(policy: DefaultAccessPolicy) -> None:
     assert isinstance(policy, AccessPolicy)
-    assert policy.policy_version == "ac-v1"
-    assert DefaultAccessPolicy("ac-v2").policy_version == "ac-v2"
+    assert policy.policy_version == "ac-v2"
+    assert DefaultAccessPolicy("custom-policy").policy_version == "custom-policy"
 
 
 def test_decision_stamps(policy, people, make_doc, confluence, now: datetime) -> None:
@@ -38,7 +38,7 @@ def test_decision_stamps(policy, people, make_doc, confluence, now: datetime) ->
     assert d.decision == Effect.allow and d.reason is None
     assert d.matched_rule == "R8:confluence"
     assert d.permission_version == "pv-42"
-    assert d.policy_version == "ac-v1"
+    assert d.policy_version == "ac-v2"
     assert d.evaluated_at == now
 
 
@@ -68,7 +68,7 @@ def test_r1_inactive_principal_denied_even_if_owner_or_admin(policy, people, mak
 @pytest.mark.parametrize(
     ("subject_type", "subject_id"),
     [
-        (SubjectType.principal, "priya.nair"),
+        (SubjectType.principal, "john.tan"),
         (SubjectType.group, "leadership"),
         (SubjectType.role, "manager"),
     ],
@@ -77,11 +77,11 @@ def test_r2_explicit_deny_beats_allow_grant_and_membership(
     policy, people, make_doc, make_grant, confluence, now, subject_type, subject_id
 ):
     grants = [
-        make_grant(SubjectType.principal, "priya.nair", Effect.allow),
+        make_grant(SubjectType.principal, "john.tan", Effect.allow),
         make_grant(subject_type, subject_id, Effect.deny),
     ]
     doc = make_doc(confluence, grants=grants)
-    d = policy.decide(people["priya"], doc, now=now)
+    d = policy.decide(people["john"], doc, now=now)
     assert (d.decision, d.reason, d.matched_rule) == (
         Effect.deny,
         DenyReason.explicit_deny,
@@ -141,7 +141,7 @@ def test_r4_admin_allowed_restricted(policy, people, make_doc, now):
 def test_r5_explicit_grant_allows_confidential_and_restricted(
     policy, people, make_doc, make_grant, now, subject_type, subject_id, classification
 ):
-    who = "priya" if subject_id == "leadership" else "mei"
+    who = "john" if subject_id == "leadership" else "mei"
     doc = make_doc(
         None, classification=classification, grants=[make_grant(subject_type, subject_id)]
     )
@@ -166,7 +166,7 @@ def test_grant_for_other_principal_does_not_apply(policy, people, make_doc, make
     doc = make_doc(
         None,
         classification=Classification.confidential,
-        grants=[make_grant(SubjectType.principal, "priya.nair")],
+        grants=[make_grant(SubjectType.principal, "john.tan")],
     )
     assert policy.decide(people["mei"], doc, now=now).decision == Effect.deny
 
@@ -177,14 +177,14 @@ def test_grant_for_other_principal_does_not_apply(policy, people, make_doc, make
 def test_revoked_allow_falls_through_to_classification_reason_grant_revoked(
     policy, people, make_doc, make_grant, seed_blocks, now
 ):
-    # board deck: confidential, leadership grant revoked → priya loses it
+    # board deck: confidential, leadership grant revoked → john loses it
     deck = seed_blocks["gdrive"]
     live = make_grant(SubjectType.group, "leadership")
     revoked = make_grant(SubjectType.group, "leadership", revoked=True)
     doc_live = make_doc(deck, classification=Classification.confidential, grants=[live])
     doc_revoked = make_doc(deck, classification=Classification.confidential, grants=[revoked])
-    assert policy.decide(people["priya"], doc_live, now=now).decision == Effect.allow
-    d = policy.decide(people["priya"], doc_revoked, now=now)
+    assert policy.decide(people["john"], doc_live, now=now).decision == Effect.allow
+    d = policy.decide(people["john"], doc_revoked, now=now)
     assert (d.decision, d.reason, d.matched_rule) == (
         Effect.deny,
         DenyReason.grant_revoked,

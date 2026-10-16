@@ -664,7 +664,7 @@ _RAW_BY_KIND: dict[str, dict[str, object]] = {
         "space_key": "OPS",
         "page_id": 1042,
         "space_view_groups": ["finance-ops"],
-        "page_view_users": ["priya.nair"],
+        "page_view_users": ["john.tan"],
         "ancestors": ["1000", {"page_id": "1001", "view_groups": ["leadership"]}],
     },
     "jira": {
@@ -681,17 +681,23 @@ _RAW_BY_KIND: dict[str, dict[str, object]] = {
         "workspace_id": "T1",
         "channel_id": "C_TREASURY",
         "channel_type": "private",
-        "member_ids": ["U_JORDAN", "U_PRIYA"],
+        "member_ids": ["U_JORDAN", "U_JOHN"],
     },
     "gdrive": {
         "kind": "gdrive",
         "file_id": "f1",
         "acl": [
-            {"type": "domain", "role": "reader", "email_or_domain": "example.test"},
-            {"type": "anyone", "role": "reader", "inherited": True},
+            {
+                "type": "domain",
+                "role": "reader",
+                "email_or_domain": "example.test",
+                "expiration_time": "2099-01-01T00:00:00Z",
+                "allow_file_discovery": False,
+            },
+            {"type": "anyone", "role": "reader", "inherited": True, "deleted": True},
         ],
     },
-    "email": {"kind": "email", "message_id": "m1", "from": "vendor@x.test", "to": ["priya"]},
+    "email": {"kind": "email", "message_id": "m1", "from": "vendor@x.test", "to": ["john"]},
     "upload": {"kind": "upload", "owner_principal_id": "alex.tan", "shared_with_groups": ["eng"]},
     "mcp_external": {"kind": "mcp_external", "app_name": "crm", "allowed_principals": ["a"]},
 }

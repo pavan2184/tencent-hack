@@ -18,7 +18,7 @@ Last updated: 2026-10-12
 ## Auth
 
 - **Scheme:** none (demo personas). The actor is read from the `X-Actor-Id` header, or from the
-  `actor` query parameter when a client cannot set headers (`?actor=priya.nair`). The header wins
+  `actor` query parameter when a client cannot set headers (`?actor=john.tan`). The header wins
   when both are present. MCP uses the same header or query parameter.
 - **Resolution:** `app/core/auth.get_principal` looks the id up in `principals`. Missing →
   `401 unauthenticated`; unknown or inactive → `401 unknown_actor`. This dependency is the single
@@ -30,7 +30,7 @@ Last updated: 2026-10-12
   `require_roles(...)` and fail with `403 forbidden`. Document-level visibility is decided by
   `access_control` per request and never cached.
 - **Personas** (`backend/seed/principals.yaml`): `alex.tan` (employee; engineering),
-  `priya.nair` (employee, manager; finance-ops, leadership), `sam.lee` (employee, auditor;
+  `john.tan` (employee, manager; finance-ops, leadership), `sam.lee` (employee, auditor;
   compliance), `root.admin` (admin), `jordan.lim` (employee; finance-ops), `mei.chen`
   (contractor; no groups).
 
@@ -53,19 +53,19 @@ Every non-2xx response uses one envelope (FastAPI's 422 is rewritten into it):
 }
 ```
 
-| Code                   | HTTP | When                                                                                                   |
-| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------ |
-| `unauthenticated`      | 401  | no actor supplied; webhook secret missing or wrong                                                     |
-| `unknown_actor`        | 401  | actor id not found or inactive                                                                         |
-| `forbidden`            | 403  | role check failed on a resource the actor can see, or a route-level role requirement                   |
-| `not_found`            | 404  | resource does not exist **or the actor may not see it** (identical bodies, see below)                  |
-| `validation_error`     | 422  | body/query validation failed, disallowed upload extension; `details.errors[]` lists fields             |
-| `payload_too_large`    | 413  | upload larger than `UPLOAD_MAX_FILE_BYTES`; `details {limit_bytes}`                                    |
-| `cap_exceeded`         | 429  | a usage cap is exhausted; `details {cap, limit, window}`                                               |
-| `conflict`             | 409  | duplicate source id/name, duplicate active grant, request already decided, receipt conflict            |
-| `provider_unavailable` | 503  | the real model provider failed after retries (never used for freshness probes, which return `unknown`) |
-| `not_implemented`      | 501  | stub connector (webhook or sync on a stub source)                                                      |
-| `internal_error`       | 500  | anything unexpected; details are never leaked                                                          |
+| Code                   | HTTP | When                                                                                                                                                                                 |
+| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `unauthenticated`      | 401  | no actor supplied; webhook secret missing or wrong                                                                                                                                   |
+| `unknown_actor`        | 401  | actor id not found or inactive                                                                                                                                                       |
+| `forbidden`            | 403  | role check failed on a resource the actor can see, or a route-level role requirement                                                                                                 |
+| `not_found`            | 404  | resource does not exist **or the actor may not see it** (identical bodies, see below)                                                                                                |
+| `validation_error`     | 422  | body/query validation failed, disallowed upload extension; `details.errors[]` lists fields                                                                                           |
+| `payload_too_large`    | 413  | upload larger than `UPLOAD_MAX_FILE_BYTES`; `details {limit_bytes}`                                                                                                                  |
+| `cap_exceeded`         | 429  | a usage cap is exhausted; `details {cap, limit, window}`                                                                                                                             |
+| `conflict`             | 409  | duplicate source id/name, duplicate active grant, request already decided, receipt conflict                                                                                          |
+| `provider_unavailable` | 503  | the real model provider failed after retries (never returned by `POST /api/ask`, which falls back to the extractive answer; never used for freshness probes, which return `unknown`) |
+| `not_implemented`      | 501  | stub connector (webhook or sync on a stub source)                                                                                                                                    |
+| `internal_error`       | 500  | anything unexpected; details are never leaked                                                                                                                                        |
 
 Cap names: `uploads_total` (window `total`), `uploads_per_actor_per_day` (window `day`),
 `embedding_daily_call_budget` (window `day`). `UPLOAD_MAX_FILE_BYTES` uses `413`, not `429`.
@@ -125,9 +125,9 @@ Purpose: persona list for the switcher. Auth: none.
 {
   "items": [
     {
-      "id": "priya.nair",
-      "display_name": "Priya Nair",
-      "email": "priya.nair@example-harbor.com",
+      "id": "john.tan",
+      "display_name": "John Tan",
+      "email": "john.tan@example-harbor.com",
       "roles": ["employee", "manager"],
       "groups": ["finance-ops", "leadership"],
       "is_active": true
@@ -405,7 +405,11 @@ documents. Items: `{"id", "document_id", "document_title", "principal_id", "reas
 "created_at", "decided_at", "decided_by"}`.
 
 `approve` creates an `allow` grant for the requester (`subject_type: principal`) and returns
-`200 {"request": {…}, "grant": {…}}`; `deny` returns `200 {"request": {…}}`. Both audited.
+`200 {"request": {…}, "grant": {…}, "effective": bool, "note": str | null}`; `deny` returns
+`200 {"request": {…}}`. Both audited. A local grant cannot widen what the source platform allows,
+so `effective` is `false` when the requester still cannot read the document, and `note` tells
+the approver why (for example "Google Drive doesn't share it with them") so they can fix it at
+the source.
 Errors: `404`, `403`, `409` (already decided).
 
 ### POST /api/ask
@@ -437,19 +441,19 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   },
   "claims": [
     {
-      "id": "c1",
+      "id": "C1",
       "text": "The production cutover is on Saturday 17 October, 02:00 to 04:00 SGT.",
       "position": 0,
       "kind": "fact"
     },
     {
-      "id": "c2",
+      "id": "C2",
       "text": "A rehearsal runs in staging on Thursday 15 October.",
       "position": 1,
       "kind": "fact"
     },
     {
-      "id": "c3",
+      "id": "C3",
       "text": "The Rail-B settlement parser must be merged and on staging before the rehearsal.",
       "position": 2,
       "kind": "fact"
@@ -457,7 +461,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   ],
   "citations": [
     {
-      "claim_id": "c1",
+      "claim_id": "C1",
       "evidence_id": "E1",
       "document_id": "1d2c3b4a-5968-4776-8a5b-4c3d2e1f0a9b",
       "slug": "messages/2026-10-10-vendor-cutover",
@@ -471,7 +475,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
       "url": null
     },
     {
-      "claim_id": "c2",
+      "claim_id": "C2",
       "evidence_id": "E2",
       "document_id": "2e3d4c5b-6a79-4887-9b6c-5d4e3f2a1b0c",
       "slug": "channels/general/2026-10-10",
@@ -485,7 +489,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
       "url": null
     },
     {
-      "claim_id": "c3",
+      "claim_id": "C3",
       "evidence_id": "E3",
       "document_id": "3f4e5d6c-7b8a-4998-8c7d-6e5f4a3b2c1d",
       "slug": "issues/pay-150",
@@ -571,27 +575,27 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
   },
   "grounding": {
     "schema_version": 1,
-    "verifier": "lexical-overlap-v1",
+    "verifier": "lexical-v2",
     "created_at": "2026-10-12T09:15:02Z",
     "claims_total": 3,
     "supported": 2,
     "partially_supported": 1,
     "unsupported": 0,
     "contradicted": 0,
-    "coverage_ratio": 0.83,
+    "coverage_ratio": 1.0,
     "verdict": "grounded",
     "injection_flags": 2,
     "quarantined_evidence_ids": ["E5"],
     "per_claim": [
       {
-        "claim_id": "c1",
+        "claim_id": "C1",
         "evidence_id": "E1",
         "quote": "Production cutover: Saturday 17 October, 02:00 to 04:00 SGT.",
         "support": "supported",
         "score": 0.83
       },
       {
-        "claim_id": "c2",
+        "claim_id": "C2",
         "evidence_id": "E2",
         "quote": "Rehearsal is on Thursday 15 October in staging.",
         "support": "supported",
@@ -608,7 +612,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
     "report_hash": "e1f2…7a8b"
   },
   "access_summary": {
-    "principal_id": "priya.nair",
+    "principal_id": "john.tan",
     "policy_version": "ac-v1",
     "allowed_count": 7,
     "evaluated_at": "2026-10-12T09:15:01Z"
@@ -628,8 +632,10 @@ Receipt items cover only evidence that passed the access filter, in evaluation o
 unsafe items (the failover runbook above is `stale` and was omitted from composition). Abstention
 looks like `"answer": {"text": "", "abstained": true, "abstain_reason": "no_usable_evidence"}`
 with empty `claims` and `citations`; abstain reasons include `no_usable_evidence`,
-`low_coverage` and `contradicted_claim`. Errors: `401`, `422`, `503 provider_unavailable` (real
-provider only; the audit event is still written with `status: failed`).
+`low_coverage` and `contradicted_claim`. Errors: `401`, `422`. A model timeout or provider error
+does not fail the ask (D-013): with `PROVIDER_MODE=real` the app's `ModelComposer` gets one call
+within `ASK_GENERATION_DEADLINE_S` and otherwise falls back to the extractive answer, recorded as
+`composer: "model-v1->extractive-v1"` in the audit payload.
 
 ### GET /api/queries · GET /api/queries/{id}
 
@@ -638,6 +644,13 @@ provider only; the audit event is still written with `status: failed`).
 "audit_event_id"}`. `GET /api/queries/{id}` returns the stored row with `citations`,
 `grounding_report`, `freshness_receipt_id` and `access_summary`; other actors' queries are `404`
 unless the caller is an auditor or admin.
+
+Both endpoints re-authorise every stored answer for the **viewer, at read time**. If the viewer
+cannot read every document behind the answer right now (revoked, deleted, or evidence that cannot
+be traced), the row is served with `"status": "withheld"`, a fixed `answer_text` ("This answer
+used sources you can no longer access. …"), `"citations": []`, `"grounding_report": null` and
+`"freshness_receipt_id": null`. The question is kept; which document changed is never disclosed.
+Restoring access restores the row. Auditors reach the original through `/api/audit/events/{id}`.
 
 ### GET /api/audit/events · GET /api/audit/events/{id} · GET /api/audit/verify
 
@@ -655,14 +668,14 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
   "id": "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
   "seq": 1204,
   "occurred_at": "2026-10-12T09:15:02Z",
-  "actor_id": "priya.nair",
+  "actor_id": "john.tan",
   "action": "ask",
   "request_id": "req_01J9ZK3V7Q8M2T4N6P0R5S1W3X",
   "subject_type": "query",
   "subject_id": "6a1f0e2d-3c4b-4a59-8e7d-6f5a4b3c2d1e",
   "payload": {
     "schema_version": 1,
-    "actor_id": "priya.nair",
+    "actor_id": "john.tan",
     "action": "ask",
     "occurred_at": "2026-10-12T09:15:02Z",
     "request_id": "req_01J9ZK3V7Q8M2T4N6P0R5S1W3X",
@@ -709,7 +722,8 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
     "abstained": false,
     "abstain_reason": null,
     "cited_document_ids": ["1d2c…", "2e3d…", "3f4e…"],
-    "grounding": { "verdict": "grounded", "coverage_ratio": 0.83 },
+    "composer": "model-v1+ground-v1",
+    "grounding": { "verdict": "grounded", "coverage_ratio": 1.0 },
     "started_at": "2026-10-12T09:15:01.950Z",
     "completed_at": "2026-10-12T09:15:02.000Z"
   },
@@ -731,16 +745,34 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
 
 The `ask` payload keys are fixed (the audit UI reads them in `frontend/lib/auditPayload.ts`):
 `question`, `query_id`, `retrieved_document_ids[]`, `access_decisions[]` (`{document_id,
-decision, reason, matched_rule, permission_version}`, one per retrieved document including
-denied ones), `freshness_receipt` (`{receipt_id, overall_status, receipt_hash,
-evidence_items[]}`), `answer_text`, `abstained`, `abstain_reason`, `cited_document_ids[]`,
-`grounding` (`{verdict, coverage_ratio}`), `started_at`, `completed_at`. The copies of the event
+decision, reason, matched_rule, permission_version, permission_captured_at}`, one per retrieved
+document including denied ones; `permission_captured_at` is when the permission snapshot used was
+read from the source, or `null` without one), `freshness_receipt` (`{receipt_id, overall_status,
+receipt_hash, evidence_items[]}`), `evidence_document_ids[]` (the documents behind the evidence
+spans the composer saw; used to re-authorise stored answers), `answer_text`, `abstained`,
+`abstain_reason`, `cited_document_ids[]`, `composer`, `grounding` (`{verdict, coverage_ratio}`),
+`started_at`, `completed_at`. `composer` is `extractive-v1` in mock mode, `model-v1+ground-v1`
+when the model answered (the example above), and `model-v1->extractive-v1` after a timeout or
+provider error. The copies of the event
 columns (`schema_version`, `actor_id`, `action`, `occurred_at`, `request_id`, `subject_type`,
 `subject_id`) are recommended so the chain hash covers them. Denied decisions appear in audit
 events and nowhere else.
 
 `reconstruction` is present for `ask` and `mcp.query` events and `null` otherwise; it embeds the
 stored `queries` row and the full persisted receipt. Errors: `403`, `404`.
+
+**Need-to-know.** Every event in a list or detail response carries `content_withheld`. Auditors
+always see metadata (asker, question, retrieved and cited ids, every access decision, the receipt
+and the grounding verdict). Answer content (`payload.answer_text`, and in `reconstruction.query`
+the `answer_text`, `citations` and `grounding_report`) is `null`/empty with
+`content_withheld: true` unless the viewer can currently read every evidence document. The stored
+event and its hash are unchanged.
+
+`POST /api/audit/events/{id}/reveal` with `{"reason": "…"}` (10-500 characters) returns the full
+event and reconstruction. When content was withheld it first records an `audit.reveal` event
+(`subject_type: audit_event`, `subject_id`: the revealed event, `payload: {revealed_event_id,
+revealed_seq, reason}`), so every break-glass read is itself in the chain. Errors: `403`, `404`,
+`422`.
 
 `GET /api/audit/verify` →
 `{"ok": true, "length": 1204, "head_hash": "a9b8…1f2e", "first_broken_seq": null}`. A modified
@@ -837,3 +869,23 @@ missing one.
 - Do we expose `url` deep links for synthetic sources, or leave them `null` until real connectors
   exist?
 - Final caps and their `details.limit` values depend on the upload numbers that are still TBD.
+
+## Access library ac-v2 (12 October 2026)
+
+The existing `DefaultAccessPolicy.decide/filter` and store interfaces remain
+compatible. Native source permissions now cap local owner/admin/allow grants.
+Creating or approving a local grant does not grant native Confluence/Jira/Slack/Drive
+access. The API's existing visible-page checks still apply to grant creation.
+App-managed upload grants can extend sharing and revocation removes that access.
+
+`AccessControlService(directory=..., grants=..., snapshots=..., policy=None,
+verifier=None)` supplies `await filter(principal_id, contexts, now=...)` for
+query-time authority refresh. Its optional live verifier returns exactly True,
+False or None. True cannot widen policy access; False denies; unknown/error denies.
+Provider transport, timeouts and verified source identity are app obligations.
+The current app uses the compatible pure policy path, not a credentialed live
+verifier. Full API examples above remain the network contract.
+
+Only `allowed_ids` select evidence. `decisions` remain private audit data. Recheck
+long-running/cached answers and final citations before publishing. Detailed
+connector contracts are in [research](ACCESS_CONTROL_RESEARCH.md).

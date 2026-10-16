@@ -21,14 +21,10 @@ from groundedness import (
     EvidenceSanitizer,
     EvidenceSpan,
     ExtractiveComposer,
-    FakeLLM,
     GroundedAnswer,
     GroundingReport,
     InjectionSeverity,
     LexicalOverlapVerifier,
-    LLMComposer,
-    LLMEntailmentVerifier,
-    LLMPort,
     RegexInjectionSanitizer,
     SanitizedEvidence,
     SupportLabel,
@@ -294,11 +290,8 @@ def test_public_api_is_exported() -> None:
 def test_stubs_satisfy_protocols() -> None:
     assert isinstance(RegexInjectionSanitizer(), EvidenceSanitizer)
     assert isinstance(ExtractiveComposer(), AnswerComposer)
-    assert isinstance(LLMComposer(), AnswerComposer)
     assert isinstance(LexicalOverlapVerifier(), SupportVerifier)
-    assert isinstance(LLMEntailmentVerifier(), SupportVerifier)
     assert isinstance(DefaultAbstentionPolicy(), AbstentionPolicy)
-    assert isinstance(FakeLLM(), LLMPort)
 
 
 _APP_IMPORT_LINE = re.compile(r"^\s*(?:import\s+app\b|from\s+app(?:\.|\s))", re.MULTILINE)
