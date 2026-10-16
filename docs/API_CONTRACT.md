@@ -18,7 +18,7 @@ Last updated: 2026-10-12
 ## Auth
 
 - **Scheme:** none (demo personas). The actor is read from the `X-Actor-Id` header, or from the
-  `actor` query parameter when a client cannot set headers (`?actor=priya.nair`). The header wins
+  `actor` query parameter when a client cannot set headers (`?actor=john.tan`). The header wins
   when both are present. MCP uses the same header or query parameter.
 - **Resolution:** `app/core/auth.get_principal` looks the id up in `principals`. Missing →
   `401 unauthenticated`; unknown or inactive → `401 unknown_actor`. This dependency is the single
@@ -30,7 +30,7 @@ Last updated: 2026-10-12
   `require_roles(...)` and fail with `403 forbidden`. Document-level visibility is decided by
   `access_control` per request and never cached.
 - **Personas** (`backend/seed/principals.yaml`): `alex.tan` (employee; engineering),
-  `priya.nair` (employee, manager; finance-ops, leadership), `sam.lee` (employee, auditor;
+  `john.tan` (employee, manager; finance-ops, leadership), `sam.lee` (employee, auditor;
   compliance), `root.admin` (admin), `jordan.lim` (employee; finance-ops), `mei.chen`
   (contractor; no groups).
 
@@ -125,9 +125,9 @@ Purpose: persona list for the switcher. Auth: none.
 {
   "items": [
     {
-      "id": "priya.nair",
-      "display_name": "Priya Nair",
-      "email": "priya.nair@example-harbor.com",
+      "id": "john.tan",
+      "display_name": "John Tan",
+      "email": "john.tan@example-harbor.com",
       "roles": ["employee", "manager"],
       "groups": ["finance-ops", "leadership"],
       "is_active": true
@@ -608,7 +608,7 @@ allowing it with a warning). Response `200`: `AnswerEnvelope`.
     "report_hash": "e1f2…7a8b"
   },
   "access_summary": {
-    "principal_id": "priya.nair",
+    "principal_id": "john.tan",
     "policy_version": "ac-v1",
     "allowed_count": 7,
     "evaluated_at": "2026-10-12T09:15:01Z"
@@ -657,14 +657,14 @@ whose payload mentions the document (`retrieved_document_ids`, `cited_document_i
   "id": "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4",
   "seq": 1204,
   "occurred_at": "2026-10-12T09:15:02Z",
-  "actor_id": "priya.nair",
+  "actor_id": "john.tan",
   "action": "ask",
   "request_id": "req_01J9ZK3V7Q8M2T4N6P0R5S1W3X",
   "subject_type": "query",
   "subject_id": "6a1f0e2d-3c4b-4a59-8e7d-6f5a4b3c2d1e",
   "payload": {
     "schema_version": 1,
-    "actor_id": "priya.nair",
+    "actor_id": "john.tan",
     "action": "ask",
     "occurred_at": "2026-10-12T09:15:02Z",
     "request_id": "req_01J9ZK3V7Q8M2T4N6P0R5S1W3X",

@@ -66,7 +66,7 @@ def test_confluence_ancestor_restriction_is_inherited(allowed, people, seed_bloc
 def test_jira_security_level_excludes_browse_role_holder(allowed, people, seed_blocks):
     issue = seed_blocks["jira"]  # PAY-142, security level finance-only
     assert not allowed(people["alex"], issue)  # Developers can browse PAY, but not this level
-    assert allowed(people["priya"], issue)
+    assert allowed(people["john"], issue)
     assert allowed(people["jordan"], issue)
 
 
@@ -95,16 +95,16 @@ def test_jira_group_role_actor_and_group_security_member(allowed, people, seed_b
         "security_level_members": ["compliance"],
     }
     assert allowed(people["sam"], issue)
-    assert not allowed(people["priya"], issue)
+    assert not allowed(people["john"], issue)
 
 
 # -- Slack --------------------------------------------------------------------------------
 
 
 def test_slack_private_channel_membership(allowed, people, seed_blocks):
-    treasury = seed_blocks["slack"]  # #treasury-ops: U_JORDAN, U_PRIYA
+    treasury = seed_blocks["slack"]  # #treasury-ops: U_JORDAN, U_JOHN
     assert allowed(people["jordan"], treasury)
-    assert allowed(people["priya"], treasury)
+    assert allowed(people["john"], treasury)
     assert not allowed(people["alex"], treasury)
     assert not allowed(people["mei"], treasury)  # no slack identity → "mei.chen" not a member
 
@@ -118,7 +118,7 @@ def test_slack_public_channel(allowed, people, seed_blocks):
     }
     assert allowed(people["alex"], general)  # workspace roster not captured → any principal
     assert allowed(people["mei"], general)
-    rostered = {**general, "workspace_member_ids": ["U_ALEX", "U_PRIYA", "U_JORDAN"]}
+    rostered = {**general, "workspace_member_ids": ["U_ALEX", "U_JOHN", "U_JORDAN"]}
     assert allowed(people["alex"], rostered)
     assert not allowed(people["mei"], rostered)
 
@@ -139,7 +139,7 @@ def _drive(seed_blocks: dict[str, dict[str, Any]], *acl: dict[str, Any]) -> dict
 
 def test_gdrive_group_ace(allowed, people, seed_blocks):
     deck = seed_blocks["gdrive"]  # group:leadership reader
-    assert allowed(people["priya"], deck)
+    assert allowed(people["john"], deck)
     assert not allowed(people["jordan"], deck)
 
 
@@ -162,7 +162,7 @@ def test_gdrive_user_ace_case_insensitive(allowed, people, seed_blocks):
         {"type": "user", "role": "writer", "email_or_domain": "Alex.Tan@Harbor.example"},
     )
     assert allowed(people["alex"], shared)
-    assert not allowed(people["priya"], shared)
+    assert not allowed(people["john"], shared)
 
 
 def test_gdrive_user_ace_via_external_identity(allowed, people, seed_blocks):
@@ -182,15 +182,15 @@ def test_gdrive_inherited_folder_ace_counts(allowed, people, seed_blocks):
 
 
 def test_gdrive_empty_acl_denies(allowed, people, seed_blocks):
-    assert not allowed(people["priya"], _drive(seed_blocks))
+    assert not allowed(people["john"], _drive(seed_blocks))
 
 
 # -- Email --------------------------------------------------------------------------------
 
 
 def test_email_cc_recipient(allowed, people, seed_blocks):
-    cutover = seed_blocks["email"]  # to priya, cc jordan
-    assert allowed(people["priya"], cutover)
+    cutover = seed_blocks["email"]  # to john, cc jordan
+    assert allowed(people["john"], cutover)
     assert allowed(people["jordan"], cutover)  # cc
     assert not allowed(people["alex"], cutover)
 
@@ -205,7 +205,7 @@ def test_email_sender_bcc_display_names_and_case(allowed, people, seed_blocks):
     }
     assert allowed(people["sam"], msg)
     assert allowed(people["mei"], msg)
-    assert not allowed(people["priya"], msg)
+    assert not allowed(people["john"], msg)
 
 
 def test_email_principal_without_address_denied(allowed, people, seed_blocks):
@@ -222,7 +222,7 @@ def test_upload_owner_and_shared(allowed, people, seed_blocks):
     assert not allowed(people["jordan"], upload)
     shared_group = {**upload, "shared_with_groups": ["finance-ops"]}
     assert allowed(people["jordan"], shared_group)
-    assert allowed(people["priya"], shared_group)
+    assert allowed(people["john"], shared_group)
     assert not allowed(people["mei"], shared_group)
     shared_user = {**upload, "shared_with_principals": ["mei.chen"]}
     assert allowed(people["mei"], shared_user)

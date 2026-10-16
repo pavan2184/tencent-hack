@@ -50,8 +50,8 @@ def people() -> dict[str, Principal]:
 
     return {
         "alex": p("alex.tan", "Alex Tan", ["employee"], ["engineering"], slack="U_ALEX"),
-        "priya": p(
-            "priya.nair", "Priya Nair", ["manager"], ["finance-ops", "leadership"], slack="U_PRIYA"
+        "john": p(
+            "john.tan", "John Tan", ["manager"], ["finance-ops", "leadership"], slack="U_JOHN"
         ),
         "sam": p("sam.lee", "Sam Lee", ["auditor"], ["compliance"], slack="U_SAM"),
         "root": p("root.admin", "Root Admin", ["admin"], []),
@@ -79,17 +79,17 @@ def seed_blocks() -> dict[str, dict[str, Any]]:
             "kind": "jira",
             "project_key": "PAY",
             "issue_key": "PAY-142",
-            "project_roles": {"Developers": ["alex.tan"], "Finance": ["priya.nair", "jordan.lim"]},
+            "project_roles": {"Developers": ["alex.tan"], "Finance": ["john.tan", "jordan.lim"]},
             "browse_roles": ["Developers", "Finance"],
             "issue_security_level": "finance-only",
-            "security_level_members": ["priya.nair", "jordan.lim"],
+            "security_level_members": ["john.tan", "jordan.lim"],
         },
         "slack": {
             "kind": "slack",
             "workspace_id": "T_HARBOR",
             "channel_id": "C_TREASURY_OPS",
             "channel_type": "private",
-            "member_ids": ["U_JORDAN", "U_PRIYA"],
+            "member_ids": ["U_JORDAN", "U_JOHN"],
             "workspace_member_ids": None,
         },
         "gdrive": {
@@ -109,7 +109,7 @@ def seed_blocks() -> dict[str, dict[str, Any]]:
             "kind": "email",
             "message_id": "<vendor-cutover-001@harbor.example>",
             "from_": "ops-bot@harbor.example",
-            "to": ["priya.nair@harbor.example"],
+            "to": ["john.tan@harbor.example"],
             "cc": ["jordan.lim@harbor.example"],
             "bcc": [],
         },

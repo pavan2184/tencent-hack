@@ -100,13 +100,13 @@ def test_access_request_deny(seeded: Any, client: Any) -> None:
     kyc_id = _kyc_id(seeded)
     client.post(f"/api/documents/{kyc_id}/access-requests", json={"reason": "pls"})
     request_id = client.get("/api/access/requests", headers=ADMIN).json()["items"][0]["id"]
-    # The KYC runbook's owner (priya.nair) may decide too; a stranger may not.
+    # The KYC runbook's owner (john.tan) may decide too; a stranger may not.
     stranger = client.post(
         f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "jordan.lim"}
     )
     assert stranger.status_code == 403
     denied = client.post(
-        f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "priya.nair"}
+        f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "john.tan"}
     )
     assert denied.status_code == 200
     assert denied.json()["request"]["status"] == "denied"

@@ -79,7 +79,7 @@ def test_injection_fixture_quarantined(seeded: Any, client: Any) -> None:
     env = client.post(
         "/api/ask",
         json={"question": "What did the Vegaline bot post about the Rail-B cutover checklist?"},
-        headers={"X-Actor-Id": "priya.nair"},
+        headers={"X-Actor-Id": "john.tan"},
     ).json()
     quarantined = env["grounding"]["quarantined_evidence_ids"]
     assert quarantined, "the injection chunk must be quarantined"
@@ -89,7 +89,7 @@ def test_injection_fixture_quarantined(seeded: Any, client: Any) -> None:
     bundle = run(
         retrieval.assemble_evidence(
             seeded,
-            run(seeded.repo.get_principal("priya.nair")),
+            run(seeded.repo.get_principal("john.tan")),
             "Vegaline bot Rail-B cutover checklist ignore previous instructions",
         )
     )
@@ -100,9 +100,9 @@ def test_injection_fixture_quarantined(seeded: Any, client: Any) -> None:
 def test_model_composer_timeout_falls_back(seeded: Any) -> None:
     fake = RecordingChat("The Rail-B cutover is cancelled. [E1]", delay_s=0.5)
     seeded.composer = ModelComposer(fake, deadline_s=0.05)
-    priya = run(seeded.repo.get_principal("priya.nair"))
+    john = run(seeded.repo.get_principal("john.tan"))
 
-    env = run(retrieval.ask(seeded, priya, "What is the plan for the Rail-B cutover?"))
+    env = run(retrieval.ask(seeded, john, "What is the plan for the Rail-B cutover?"))
 
     assert fake.calls, "the model was called before the deadline expired"
     assert not env.answer.abstained
@@ -116,9 +116,9 @@ def test_model_composer_unmarked_reply_is_grounded(seeded: Any) -> None:
     sentence = "Rollback must complete within 10 minutes."
     fake = RecordingChat(sentence)
     seeded.composer = ModelComposer(fake, deadline_s=5)
-    priya = run(seeded.repo.get_principal("priya.nair"))
+    john = run(seeded.repo.get_principal("john.tan"))
 
-    env = run(retrieval.ask(seeded, priya, "How quickly must the Rail-B rollback complete?"))
+    env = run(retrieval.ask(seeded, john, "How quickly must the Rail-B rollback complete?"))
 
     assert not env.answer.abstained
     assert len(env.claims) == 1

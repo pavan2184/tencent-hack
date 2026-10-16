@@ -70,7 +70,7 @@ page's `source_kind` straight to the freshness lib. The superseded TypeScript sp
 
 | Table               | Column                     | Type        | Null | Notes                                                              |
 | ------------------- | -------------------------- | ----------- | ---- | ------------------------------------------------------------------ |
-| `principals`        | `id`                       | text        | no   | PK, e.g. `priya.nair`                                              |
+| `principals`        | `id`                       | text        | no   | PK, e.g. `john.tan`                                              |
 |                     | `display_name`             | text        | no   |                                                                    |
 |                     | `email`                    | text        | yes  |                                                                    |
 |                     | `roles`                    | text[]      | no   | default `{}`; `employee, manager, auditor, admin, contractor`      |
@@ -351,7 +351,7 @@ provider_version: "7"
 version_order: 7 # optional int for comparable versions
 provider_modified_at: "2026-10-01T09:30:00Z"
 classification: internal # public|internal|confidential|restricted
-owner: priya.nair # principal id or null
+owner: john.tan # principal id or null
 evidence_class: critical # critical|standard
 permission_version: "pv-2026-10-01-1"
 permissions: # raw per-platform semantics; shape depends on source_kind
@@ -388,7 +388,7 @@ them as strings.
 | `upload`     | `{kind, owner_principal_id, shared_with_principals: [], shared_with_groups: []}`                                                                                              |
 
 Membership is matched against the principal's `external_identities[kind]` (Slack member ids like
-`U_PRIYA`; Jira and Confluence account ids equal principal ids; Drive and email use the mailbox
+`U_JOHN`; Jira and Confluence account ids equal principal ids; Drive and email use the mailbox
 address, a Drive `domain` entry matching its domain) and against group ids (a Drive `group`
 entry's `email_or_domain` is the group id). `mcp_external` permissions
 (`{kind, app_name, allowed_principals, allowed_groups}`) exist in the library but no seeded page

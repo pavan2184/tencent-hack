@@ -34,7 +34,7 @@ def corpus(make_doc, make_grant, seed_blocks: dict[str, dict[str, Any]]):
     ]
 
 
-@pytest.mark.parametrize("who", ["alex", "priya", "sam", "root", "jordan", "mei"])
+@pytest.mark.parametrize("who", ["alex", "john", "sam", "root", "jordan", "mei"])
 def test_one_decision_per_input_in_order_and_allowed_subset(policy, people, corpus, now, who):
     result = policy.filter(people[who], corpus, now=now)
     input_ids = [d.document_id for d in corpus]
@@ -55,14 +55,14 @@ def test_expected_visibility_per_persona(policy, people, corpus, now):
 
     assert visible("alex") == ["expense-policy", "alex-upload"]
     finance = ["expense-policy", "treasury-ops-log", "PAY-142", "vendor-cutover"]
-    assert visible("priya") == [*finance[:2], "board-deck-q3", *finance[2:]]
+    assert visible("john") == [*finance[:2], "board-deck-q3", *finance[2:]]
     assert visible("jordan") == ["expense-policy", "treasury-ops-log", "PAY-142", "vendor-cutover"]
     assert visible("mei") == []
     assert visible("root") == [d.document_id for d in corpus]
 
 
 def test_live_revocation_drops_document(policy, people, corpus, make_grant, now):
-    before = policy.filter(people["priya"], corpus, now=now)
+    before = policy.filter(people["john"], corpus, now=now)
     deck = corpus[2]
     revoked = deck.model_copy(
         update={
@@ -73,7 +73,7 @@ def test_live_revocation_drops_document(policy, people, corpus, make_grant, now)
             ]
         }
     )
-    after = policy.filter(people["priya"], [*corpus[:2], revoked, *corpus[3:]], now=now)
+    after = policy.filter(people["john"], [*corpus[:2], revoked, *corpus[3:]], now=now)
     assert "board-deck-q3" in before.allowed_ids
     assert "board-deck-q3" not in after.allowed_ids
     assert len(after.allowed_ids) == len(before.allowed_ids) - 1
