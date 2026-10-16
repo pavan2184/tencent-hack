@@ -162,9 +162,7 @@ as Slack's API terms require; the demo uses a synthetic corpus.
    no title and no hint the board deck exists.
 4. **Live revocation**: the Drive owner removes Leadership from the board deck's share. After the
    next sync, John's answer no longer uses the deck, the earlier saved answer is withheld, and
-   John's line to the deck disappears from the access map.
-   The access map shows who can read each document and the policy rule behind every line; it runs
-   the same check as retrieval, so John's line to the deck disappears at the same moment.
+   John's line to the deck disappears from the access map, which runs the same check as retrieval.
 5. **Audit inquiry**: Sam (compliance) reconstructs the question, retrieved documents and every
    allow or deny decision, reveals the answer with a recorded reason, and verifies the hash chain.
 
