@@ -14,7 +14,7 @@ const interTight = Inter_Tight({
 });
 
 export const metadata: Metadata = {
-  title: "Internal Brain",
+  title: "Brain Sauce",
   description:
     "Permission-aware, freshness-proven, grounded answers over the company brain.",
 };
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 href="/ask"
                 className="text-xl font-semibold tracking-[-0.02em] text-neutral-900 uppercase"
               >
-                Internal Brain.
+                Brain Sauce.
               </Link>
               <NavLinks />
               <div className="lg:justify-self-end">
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <span className="text-neutral-400">Grounded.</span>
               </p>
               <p className="text-xs text-neutral-500">
-                Internal Brain · every answer access-filtered, freshness-checked
+                Brain Sauce · every answer access-filtered, freshness-checked
                 and audited
               </p>
             </div>
