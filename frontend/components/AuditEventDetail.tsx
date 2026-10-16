@@ -46,11 +46,11 @@ export function AuditEventDetail({
             </CardDescription>
           )}
         </div>
-        <Button size="sm" variant="ghost" onClick={onClose} aria-label="Close">
+        <Button size="icon" variant="outline" onClick={onClose} aria-label="Close">
           <X className="size-4" aria-hidden />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {event.error && <ErrorState error={event.error} />}
         {event.loading && !event.data && <LoadingState />}
         {event.data && <EventBody event={event.data} />}
@@ -63,7 +63,7 @@ function EventBody({ event }: { event: AuditEvent }) {
   const ask = event.action === "ask" ? parseAskPayload(event.payload) : null;
   return (
     <>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
         <Field label="Actor">{event.actor_id}</Field>
         <Field label="Request">{event.request_id ?? "—"}</Field>
         <Field label="Subject">
@@ -82,8 +82,8 @@ function EventBody({ event }: { event: AuditEvent }) {
         <AskReconstructionView ask={ask} occurredAt={event.occurred_at} />
       )}
       <details className="text-xs">
-        <summary className="cursor-pointer text-slate-500">Raw payload</summary>
-        <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-slate-50 p-3 font-mono text-slate-700">
+        <summary className="cursor-pointer text-neutral-500">Raw payload</summary>
+        <pre className="mt-2 max-h-96 overflow-auto rounded-sm bg-neutral-100 p-4 font-mono text-neutral-700">
           {JSON.stringify(event.payload, null, 2)}
         </pre>
       </details>
@@ -102,10 +102,10 @@ function Field({
 }) {
   return (
     <>
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-neutral-500">{label}</dt>
       <dd
         className={
-          mono ? "font-mono break-all text-slate-700" : "text-slate-800"
+          mono ? "font-mono break-all text-neutral-700" : "text-neutral-800"
         }
       >
         {children}
@@ -131,16 +131,16 @@ function AskReconstructionView({
   const cited = new Set(ask.citedDocumentIds);
 
   return (
-    <div className="space-y-4 border-t border-slate-100 pt-4">
+    <div className="space-y-6 border-t border-neutral-200 pt-6">
       <Section title="Question">
-        <p className="text-sm text-slate-900">{ask.question}</p>
+        <p className="text-sm text-neutral-900">{ask.question}</p>
       </Section>
 
       <Section
         title={`Retrieved documents and access decisions (${documentIds.length})`}
       >
         {documentIds.length === 0 ? (
-          <p className="text-xs text-slate-500">No documents were retrieved.</p>
+          <p className="text-xs text-neutral-500">No documents were retrieved.</p>
         ) : (
           <Table>
             <THead>
@@ -159,7 +159,7 @@ function AskReconstructionView({
                     <TD>
                       <Link
                         href={`/documents/${encodeURIComponent(documentId)}`}
-                        className="font-mono text-xs whitespace-nowrap text-sky-700 hover:underline"
+                        className="font-mono text-xs whitespace-nowrap link"
                       >
                         {truncateHash(documentId, 13)}
                       </Link>
@@ -170,7 +170,7 @@ function AskReconstructionView({
                     <TD className="text-xs">
                       {decision?.matched_rule ?? "—"}
                       {decision?.reason && (
-                        <span className="block text-slate-400">
+                        <span className="block text-neutral-400">
                           {humanize(decision.reason)}
                         </span>
                       )}
@@ -188,7 +188,7 @@ function AskReconstructionView({
 
       <Section title="Freshness receipt">
         {ask.receipt ? (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600">
             <FreshnessBadge value={ask.receipt.overallStatus} />
             <span>
               {ask.receipt.itemCount} items · {ask.receipt.unsafeCount} omitted
@@ -202,7 +202,7 @@ function AskReconstructionView({
             </span>
           </div>
         ) : (
-          <p className="text-xs text-slate-500">No receipt recorded.</p>
+          <p className="text-xs text-neutral-500">No receipt recorded.</p>
         )}
       </Section>
 
@@ -212,11 +212,11 @@ function AskReconstructionView({
             Abstained{ask.abstainReason && `: ${ask.abstainReason}`}
           </p>
         )}
-        <p className="text-sm whitespace-pre-wrap text-slate-800">
+        <p className="text-sm whitespace-pre-wrap text-neutral-800">
           {ask.answerText ?? "—"}
         </p>
         {ask.grounding && (
-          <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+          <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
             <VerdictBadge value={ask.grounding.verdict} />
             {ask.grounding.coverageRatio !== null &&
               `coverage ${Math.round(ask.grounding.coverageRatio * 100)}%`}
@@ -225,7 +225,7 @@ function AskReconstructionView({
       </Section>
 
       <Section title="Timestamps">
-        <p className="text-xs text-slate-600">
+        <p className="text-xs text-neutral-600">
           started {formatDateTime(ask.startedAt)} · completed{" "}
           {formatDateTime(ask.completedAt)} · recorded{" "}
           {formatDateTime(occurredAt)}
@@ -239,7 +239,7 @@ function AskReconstructionView({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+      <h3 className="mb-2 text-sm font-medium text-neutral-900">
         {title}
       </h3>
       {children}

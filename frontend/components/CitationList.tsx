@@ -24,33 +24,35 @@ export function CitationList({
       <CardHeader>
         <CardTitle>Claims and citations</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {ordered.length === 0 && orphans.length === 0 && (
           <EmptyState>
             No claims were made, so there is nothing to cite.
           </EmptyState>
         )}
         {ordered.map((claim, index) => (
-          <div key={claim.id}>
-            <p className="text-sm text-slate-900">
-              <span className="mr-1.5 font-mono text-xs text-slate-400">
-                C{index + 1}
-              </span>
-              {claim.text}
-              {claim.kind === "inference" && (
-                <span className="ml-1.5 text-xs text-slate-400">
-                  (inference)
-                </span>
-              )}
-            </p>
-            <EvidenceList
-              citations={citations.filter((c) => c.claim_id === claim.id)}
-            />
+          <div key={claim.id} className="flex gap-4">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-neutral-100 text-xs text-neutral-900 tabular-nums">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <div className="min-w-0 flex-1 pt-1.5">
+              <p className="text-[15px] text-neutral-900">
+                {claim.text}
+                {claim.kind === "inference" && (
+                  <span className="ml-1.5 text-xs text-neutral-400">
+                    (inference)
+                  </span>
+                )}
+              </p>
+              <EvidenceList
+                citations={citations.filter((c) => c.claim_id === claim.id)}
+              />
+            </div>
           </div>
         ))}
         {orphans.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-slate-500">Other evidence</p>
+          <div className="pl-13">
+            <p className="text-xs text-neutral-500">Other evidence</p>
             <EvidenceList citations={orphans} />
           </div>
         )}
@@ -62,27 +64,25 @@ export function CitationList({
 function EvidenceList({ citations }: { citations: AnswerCitation[] }) {
   if (citations.length === 0) {
     return (
-      <p className="mt-1 ml-6 text-xs text-red-600">
-        No citation for this claim.
-      </p>
+      <p className="mt-1 text-xs text-red-700">No citation for this claim.</p>
     );
   }
   return (
-    <ul className="mt-2 ml-6 space-y-2">
+    <ul className="mt-3 space-y-2">
       {citations.map((citation) => (
         <li
           key={`${citation.claim_id}:${citation.evidence_id}`}
-          className="rounded-md border border-slate-200 px-3 py-2"
+          className="rounded-sm border border-neutral-200 px-4 py-3"
         >
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <SupportBadge value={citation.support} />
             <Link
               href={`/documents/${encodeURIComponent(citation.document_id)}`}
-              className="font-medium text-sky-700 hover:underline"
+              className="font-medium link"
             >
               {citation.title}
             </Link>
-            <span className="text-slate-500">
+            <span className="text-neutral-500">
               {citation.source_kind} · {citation.source_id}
               {citation.provider_version &&
                 ` · version ${citation.provider_version}`}{" "}
@@ -93,14 +93,14 @@ function EvidenceList({ citations }: { citations: AnswerCitation[] }) {
                 href={citation.url ?? undefined}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-0.5 text-slate-500 hover:text-slate-800"
+                className="inline-flex items-center gap-0.5 text-neutral-500 hover:text-neutral-800"
               >
                 source <ExternalLink className="size-3" aria-hidden />
               </a>
             )}
           </div>
           {citation.quote && (
-            <blockquote className="mt-1.5 border-l-2 border-slate-200 pl-2 text-xs text-slate-600">
+            <blockquote className="mt-2 border-l-2 border-neutral-300 pl-3 text-xs leading-relaxed text-neutral-600">
               {citation.quote}
             </blockquote>
           )}

@@ -7,7 +7,8 @@ export default function AuditPage() {
   return (
     <div>
       <PageHeader
-        title="Audit trail"
+        title="Audit trail,"
+        accent="hash-chained."
         description="Hash-chained record of every question, retrieval, access decision, and change. Select an ask to reconstruct it."
       />
       {/* useSearchParams (?event=) needs a Suspense boundary for static rendering. */}

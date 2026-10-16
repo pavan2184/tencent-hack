@@ -2,25 +2,35 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const tones = {
-  neutral: "bg-slate-100 text-slate-700 ring-slate-200",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  warning: "bg-amber-50 text-amber-800 ring-amber-200",
-  danger: "bg-red-50 text-red-700 ring-red-200",
-  info: "bg-sky-50 text-sky-700 ring-sky-200",
+  neutral: "bg-neutral-100 text-neutral-700 before:bg-neutral-400",
+  success: "bg-accent-soft text-accent-strong before:bg-accent",
+  warning: "bg-amber-50 text-amber-800 before:bg-amber-500",
+  danger: "bg-red-50 text-red-700 before:bg-red-500",
+  info: "bg-white text-neutral-900 ring-1 ring-neutral-300 ring-inset before:bg-neutral-900",
 } as const;
 
 export type BadgeTone = keyof typeof tones;
 
 export interface BadgeProps extends ComponentProps<"span"> {
   tone?: BadgeTone;
+  /** Leading status dot, for badges that report a state rather than label a thing. */
+  dot?: boolean;
 }
 
-export function Badge({ tone = "neutral", className, ...props }: BadgeProps) {
+export function Badge({
+  tone = "neutral",
+  dot = false,
+  className,
+  ...props
+}: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap",
         tones[tone],
+        dot
+          ? "before:size-1.5 before:shrink-0 before:rounded-full before:content-['']"
+          : "before:hidden",
         className,
       )}
       {...props}

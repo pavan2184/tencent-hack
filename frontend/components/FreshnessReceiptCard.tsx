@@ -77,10 +77,10 @@ function ReceiptRow({ item }: { item: ReceiptItem }) {
   return (
     <TR>
       <TD>
-        <p className="font-medium text-slate-900">
+        <p className="font-medium text-neutral-900">
           {item.page_slug ?? item.external_object_id}
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           {item.source_id}
           {item.provider_version && ` · version ${item.provider_version}`}
         </p>
@@ -102,7 +102,7 @@ function ReceiptRow({ item }: { item: ReceiptItem }) {
       </TD>
       <TD className="text-xs">
         {item.safe_to_use ? (
-          <span className="text-emerald-700">yes</span>
+          <span className="text-accent-strong">yes</span>
         ) : (
           <span className="text-amber-700">omitted</span>
         )}

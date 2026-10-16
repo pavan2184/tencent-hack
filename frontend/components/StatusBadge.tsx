@@ -10,9 +10,9 @@ function StatusBadge({
   tones: Record<string, BadgeTone>;
   title?: string;
 }) {
-  if (!value) return <span className="text-slate-400">—</span>;
+  if (!value) return <span className="text-neutral-400">—</span>;
   return (
-    <Badge tone={tones[value] ?? "neutral"} title={title}>
+    <Badge tone={tones[value] ?? "neutral"} title={title} dot>
       {humanize(value)}
     </Badge>
   );

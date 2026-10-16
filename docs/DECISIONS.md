@@ -238,3 +238,18 @@ statement migration files run through psycopg's simple query protocol in one tra
 **Consequences.** One dependency (`psycopg[binary,pool]`), consistent type handling for `jsonb`,
 `uuid` and `vector`. Celery tasks bridge into async services only through
 `tasks/common.run_async`.
+
+### D-014 - Housend-derived visual language for the web UI
+
+Status: Accepted
+Date: 2026-10-16
+
+The web UI adopts a design language distilled from the Housend Webflow template
+(housend.webflow.io). It uses one grotesque (Inter Tight via `next/font`), two-tone
+display headlines and a near-monochrome neutral ramp. A single muted green accent is
+used sparingly. Surfaces are flat, with 4px cards, pill buttons and fields, and
+circular arrow chips. Tokens live in `frontend/app/globals.css`: the Tailwind
+`neutral` ramp is retuned to the Housend greys, and `accent` / `accent-strong` /
+`accent-soft` are added. `accent-strong` is the AA-safe shade for small text. New
+UI should use these tokens rather than `slate-*` or `sky-*`. Status colours (amber,
+red) stay functional and are not themed away.

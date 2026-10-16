@@ -39,9 +39,10 @@ export default function SourcesPage() {
   const manager = canManage(me);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
         title="Sources"
+        accent="feeding the brain."
         description="Connected systems feeding the brain, and where each one's sync checkpoint stands."
       />
 
@@ -85,10 +86,10 @@ export default function SourcesPage() {
                 {sources.data.map((source) => (
                   <TR key={source.id}>
                     <TD>
-                      <p className="font-medium text-slate-900">
+                      <p className="font-medium text-neutral-900">
                         {source.name}
                       </p>
-                      <p className="font-mono text-xs text-slate-400">
+                      <p className="font-mono text-xs text-neutral-400">
                         {source.id}
                       </p>
                     </TD>
@@ -97,7 +98,7 @@ export default function SourcesPage() {
                     <TD className="text-xs whitespace-nowrap">
                       {formatDateTime(source.last_sync_at)}
                       {queued[source.id] && (
-                        <span className="block text-sky-700">
+                        <span className="block text-accent-strong">
                           queued run {queued[source.id]}
                         </span>
                       )}
@@ -105,6 +106,7 @@ export default function SourcesPage() {
                     <TD>
                       {source.checkpoint_status ? (
                         <Badge
+                          dot
                           tone={
                             checkpointTones[source.checkpoint_status] ??
                             "neutral"
@@ -113,7 +115,7 @@ export default function SourcesPage() {
                           {source.checkpoint_status}
                         </Badge>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-neutral-400">—</span>
                       )}
                     </TD>
                     <TD className="text-right whitespace-nowrap">
@@ -171,7 +173,7 @@ function SourceStatusCard({ sourceId }: { sourceId: string }) {
         {status.error && <ErrorState error={status.error} />}
         {status.loading && !status.data && <LoadingState />}
         {status.data && (
-          <pre className="overflow-x-auto rounded-md bg-slate-50 p-3 font-mono text-xs text-slate-700">
+          <pre className="overflow-x-auto rounded-sm bg-neutral-100 p-4 font-mono text-xs text-neutral-700">
             {JSON.stringify(status.data, null, 2)}
           </pre>
         )}

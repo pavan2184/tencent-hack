@@ -30,8 +30,8 @@ export function AuditEventTable({
             key={event.id}
             onClick={() => onSelect(event.id)}
             className={cn(
-              "cursor-pointer hover:bg-slate-50",
-              event.id === selectedId && "bg-sky-50 hover:bg-sky-50",
+              "cursor-pointer hover:bg-neutral-50",
+              event.id === selectedId && "bg-neutral-100 hover:bg-neutral-100",
             )}
           >
             <TD className="font-mono text-xs">{event.seq}</TD>
@@ -43,7 +43,7 @@ export function AuditEventTable({
               {/* Keyboard-focusable; its click bubbles to the row's onClick. */}
               <button
                 type="button"
-                className="font-medium text-sky-700 hover:underline"
+                className="font-medium link"
               >
                 {event.action}
               </button>
@@ -53,7 +53,7 @@ export function AuditEventTable({
                 ? `${event.subject_type}:${event.subject_id ?? ""}`
                 : "—"}
             </TD>
-            <TD className="font-mono text-xs text-slate-400" title={event.hash}>
+            <TD className="font-mono text-xs text-neutral-400" title={event.hash}>
               {truncateHash(event.hash, 10)}
             </TD>
           </TR>

@@ -16,7 +16,7 @@ export function THead({ className, ...props }: ComponentProps<"thead">) {
   return (
     <thead
       className={cn(
-        "border-b border-slate-200 text-xs text-slate-500 uppercase",
+        "border-b border-neutral-300 text-xs text-neutral-500",
         className,
       )}
       {...props}
@@ -26,25 +26,25 @@ export function THead({ className, ...props }: ComponentProps<"thead">) {
 
 export function TBody({ className, ...props }: ComponentProps<"tbody">) {
   return (
-    <tbody className={cn("divide-y divide-slate-100", className)} {...props} />
-  );
-}
-
-export function TR({ className, ...props }: ComponentProps<"tr">) {
-  return <tr className={cn("align-top", className)} {...props} />;
-}
-
-export function TH({ className, ...props }: ComponentProps<"th">) {
-  return (
-    <th
-      className={cn("px-3 py-2 font-medium tracking-wide", className)}
+    <tbody
+      className={cn("divide-y divide-neutral-200", className)}
       {...props}
     />
   );
 }
 
+export function TR({ className, ...props }: ComponentProps<"tr">) {
+  return (
+    <tr className={cn("align-top transition-colors", className)} {...props} />
+  );
+}
+
+export function TH({ className, ...props }: ComponentProps<"th">) {
+  return <th className={cn("px-3 py-3 font-normal", className)} {...props} />;
+}
+
 export function TD({ className, ...props }: ComponentProps<"td">) {
   return (
-    <td className={cn("px-3 py-2 text-slate-700", className)} {...props} />
+    <td className={cn("px-3 py-3.5 text-neutral-700", className)} {...props} />
   );
 }

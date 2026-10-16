@@ -40,10 +40,11 @@ export default function DocumentsPage() {
     <div>
       <PageHeader
         title="Documents"
+        accent="you may read."
         description="Only documents your persona may read are listed."
       />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
         <Card>
           <CardHeader>
             <form onSubmit={onSearch} className="flex w-full flex-wrap gap-2">
@@ -127,7 +128,7 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <div>

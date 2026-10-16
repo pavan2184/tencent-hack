@@ -13,7 +13,7 @@ export function PersonaSwitcher() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="hidden flex-wrap items-center gap-1 md:flex">
+      <div className="hidden flex-wrap items-center gap-1 2xl:flex">
         {me?.roles.map((role) => (
           <Badge key={`role:${role}`} tone="info">
             {role}
@@ -41,14 +41,14 @@ export function PersonaSwitcher() {
       >
         <Select.Trigger
           aria-label="Persona"
-          className="inline-flex h-9 min-w-44 items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:outline-none disabled:opacity-60"
+          className="inline-flex h-10 min-w-48 items-center justify-between gap-2 rounded-full border border-neutral-300 bg-white pr-3 pl-4 text-sm text-neutral-900 transition-colors hover:border-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60 data-[state=open]:border-neutral-900"
         >
           <span className="flex items-center gap-2">
-            <UserRound className="size-4 text-slate-500" aria-hidden />
+            <UserRound className="size-4 text-neutral-500" aria-hidden />
             <Select.Value placeholder={actorId} />
           </span>
           <Select.Icon>
-            <ChevronDown className="size-4 text-slate-500" aria-hidden />
+            <ChevronDown className="size-4 text-neutral-500" aria-hidden />
           </Select.Icon>
         </Select.Trigger>
 
@@ -57,17 +57,17 @@ export function PersonaSwitcher() {
             position="popper"
             sideOffset={6}
             align="end"
-            className="z-50 max-h-96 min-w-72 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg"
+            className="z-50 max-h-96 min-w-72 overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-[0_24px_48px_-24px_rgba(29,29,29,0.25)]"
           >
             <Select.Viewport className="p-1">
               {principals.data?.map((principal) => (
                 <Select.Item
                   key={principal.id}
                   value={principal.id}
-                  className="relative flex cursor-default flex-col rounded px-3 py-2 pr-8 text-sm outline-none select-none data-[highlighted]:bg-slate-100"
+                  className="relative flex cursor-default flex-col rounded-sm px-3 py-2.5 pr-8 text-sm outline-none select-none data-[highlighted]:bg-neutral-100 data-[state=checked]:bg-accent-soft"
                 >
                   <Select.ItemText>{principal.display_name}</Select.ItemText>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-neutral-500">
                     {principal.id} · {principal.roles.join(", ") || "no roles"}
                     {principal.groups.length > 0 &&
                       ` · ${principal.groups.join(", ")}`}

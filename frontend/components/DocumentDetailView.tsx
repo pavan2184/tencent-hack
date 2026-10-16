@@ -41,13 +41,13 @@ export function DocumentDetailView({ id }: { id: string }) {
   const owner = me !== null && doc.owner_principal_id === me.id;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <BackLink />
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">
+        <h1 className="mt-8 text-4xl leading-[1.02] font-medium tracking-[-0.03em] text-balance text-neutral-900 md:text-6xl">
           {doc.title}
         </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
           <ClassificationBadge value={doc.classification} />
           <FreshnessBadge
             value={doc.freshness?.freshness_status ?? doc.freshness_status}
@@ -63,8 +63,8 @@ export function DocumentDetailView({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-5">
+      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Compiled truth</CardTitle>
@@ -101,7 +101,7 @@ export function DocumentDetailView({ id }: { id: string }) {
           )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <FreshnessPanel
             doc={doc}
             canVerify={manager}
@@ -126,9 +126,11 @@ function BackLink() {
   return (
     <Link
       href="/documents"
-      className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
+      className="group inline-flex items-center gap-3 text-[15px] text-neutral-900"
     >
-      <ArrowLeft className="size-4" aria-hidden />
+      <span className="grid size-9 place-items-center rounded-sm bg-neutral-900 text-white transition-colors duration-300 group-hover:bg-accent-strong">
+        <ArrowLeft className="size-4" aria-hidden />
+      </span>
       Documents
     </Link>
   );
@@ -140,8 +142,8 @@ function NotFound() {
       <BackLink />
       <Card>
         <CardContent>
-          <h1 className="text-lg font-semibold text-slate-900">Not found</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-medium tracking-tight text-neutral-900">Not found</h1>
+          <p className="mt-1 text-sm text-neutral-500">
             There is no document at this address.
           </p>
         </CardContent>
@@ -163,16 +165,19 @@ function Timeline({ timeline }: { timeline: DocumentDetail["timeline"] }) {
   if (timeline.length === 0)
     return <EmptyState>No timeline entries.</EmptyState>;
   return (
-    <ol className="space-y-2 border-l border-slate-200 pl-4 text-sm">
+    <ol className="space-y-6 border-l border-neutral-300 pl-5 text-sm">
       {timeline.map((entry, index) => (
-        <li key={`${entry.date ?? ""}:${index}`}>
-          <p className="text-xs text-slate-400">
+        <li
+          key={`${entry.date ?? ""}:${index}`}
+          className="relative before:absolute before:top-1 before:-left-[24.5px] before:size-2 before:rounded-full before:bg-accent before:content-['']"
+        >
+          <p className="text-xs text-neutral-400">
             {entry.date ?? "undated"}
             {entry.source && ` · ${entry.source}`}
           </p>
-          {entry.summary && <p className="text-slate-800">{entry.summary}</p>}
+          {entry.summary && <p className="text-neutral-800">{entry.summary}</p>}
           {entry.detail && (
-            <p className="text-xs text-slate-500">{entry.detail}</p>
+            <p className="text-xs text-neutral-500">{entry.detail}</p>
           )}
         </li>
       ))}
@@ -220,11 +225,11 @@ function FreshnessPanel({
         />
       </CardHeader>
       <CardContent className="space-y-3">
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
           {rows.map(([label, value]) => (
             <div key={label} className="contents">
-              <dt className="text-slate-500">{label}</dt>
-              <dd className="text-slate-800">{value}</dd>
+              <dt className="text-neutral-500">{label}</dt>
+              <dd className="text-neutral-900">{value}</dd>
             </div>
           ))}
         </dl>
@@ -244,7 +249,7 @@ function FreshnessPanel({
           </Button>
         )}
         {verify.data && !verify.pending && (
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-neutral-600">
             Live check: {humanize(verify.data.verification_result)} →{" "}
             {humanize(verify.data.freshness_status)}
           </p>

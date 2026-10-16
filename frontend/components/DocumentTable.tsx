@@ -22,15 +22,15 @@ export function DocumentTable({ documents }: { documents: Document[] }) {
             <TD>
               <Link
                 href={`/documents/${encodeURIComponent(document.id)}`}
-                className="font-medium text-sky-700 hover:underline"
+                className="font-medium link"
               >
                 {document.title}
               </Link>
-              <p className="text-xs text-slate-400">{document.slug}</p>
+              <p className="text-xs text-neutral-400">{document.slug}</p>
             </TD>
             <TD>
               <p>{document.source_kind}</p>
-              <p className="text-xs text-slate-400">{document.source_id}</p>
+              <p className="text-xs text-neutral-400">{document.source_id}</p>
             </TD>
             <TD>
               <ClassificationBadge value={document.classification} />

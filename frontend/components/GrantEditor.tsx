@@ -77,10 +77,10 @@ export function GrantEditor({
               return (
                 <TR
                   key={grant.id}
-                  className={cn(revoked && "text-slate-400 line-through")}
+                  className={cn(revoked && "text-neutral-400 line-through")}
                 >
                   <TD>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-neutral-400">
                       {grant.subject_type}
                     </span>{" "}
                     <span className="font-medium">{grant.subject_id}</span>
@@ -90,7 +90,7 @@ export function GrantEditor({
                   </TD>
                   <TD className="text-xs">
                     {formatDateTime(grant.granted_at)}
-                    <span className="block text-slate-400">
+                    <span className="block text-neutral-400">
                       by {grant.granted_by}
                     </span>
                   </TD>

@@ -98,3 +98,12 @@ Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; im
 Open integration items: confirm the Tencent ADP non-streaming response shape against the console
 (`backend/app/providers/real/tencent_adp_app.py`); unhandled 500s carry no `request_id` because
 the generic handler runs outside the request-id middleware; upload cap numbers are still TBD.
+
+## Web UI restyle (16 October 2026)
+
+Applied the D-014 visual language across every page and shared component in
+`frontend/`, with no API or data-flow changes. Ask now has a pill composer, numbered
+pipeline steps as its empty state, coverage stat tiles and numbered claims.
+`npm run typecheck` and `npm run lint` pass. All pages were checked visually against
+the in-memory API at 1440px and 375px. `next build` (which fetches Inter Tight from
+Google Fonts) was not run in this session.
