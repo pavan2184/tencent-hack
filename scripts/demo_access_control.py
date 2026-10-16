@@ -168,7 +168,7 @@ def run_demo(api: Api, seed_dir: Path, sync_timeout_s: float) -> None:
         check("new answer does not contain the Q3 figure", not leaks_figure(after))
         saved = api.get(JOHN, f"/api/queries/{before['query_id']}").json()
         check(
-            "her saved answer from scene 1 is withheld",
+            "the saved answer from scene 1 is withheld",
             saved.get("status") == "withheld" and FIGURE not in str(saved),
             "needs the saved-answer re-check (PR #6)" if saved.get("status") != "withheld" else "",
         )
