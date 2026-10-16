@@ -87,10 +87,10 @@ async def run_demo() -> dict:
         principal.id: (await service.filter(principal.id, docs, now=now)).allowed_ids
         for principal in principals
     }
-    before = await service.filter("priya.nair", docs, now=now)
+    before = await service.filter("john.tan", docs, now=now)
     outsider = await service.filter("mei.chen", docs, now=now)
     await grants.revoke(board.grants[0].id, by="root.admin", at=now)
-    after = await service.filter("priya.nair", docs, now=now)
+    after = await service.filter("john.tan", docs, now=now)
     assert board.document_id in before.allowed_ids
     assert board.document_id not in after.allowed_ids
     assert outsider.allowed_ids == []

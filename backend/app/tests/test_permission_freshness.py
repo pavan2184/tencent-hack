@@ -14,7 +14,7 @@ from app.tests.conftest import run
 
 DECK = ("gdrive-finance", "files/board-deck-q3")
 DECK_FILE_ID = "1BoardDeckQ3ExampleHarbor"
-PRIYA = {"X-Actor-Id": "priya.nair"}
+JOHN = {"X-Actor-Id": "john.tan"}
 
 
 def _deck_id(services: Any) -> str:
@@ -27,15 +27,15 @@ def _sync(services: Any, key: str) -> None:
 
 def test_stale_permissions_deny_until_a_sync_refreshes_them(seeded: Any, client: Any) -> None:
     deck_id = _deck_id(seeded)
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 200
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 200
 
     seeded.clock.advance(6 * 60)  # past the 5-minute limit for confidential documents
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 404
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 404
 
     _sync(seeded, "refresh-1")
     snapshot = run(seeded.permission_store.get_many([deck_id]))[deck_id]
     assert snapshot.captured_at == seeded.clock.now()
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 200
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 200
 
 
 def test_source_side_revocation_is_enforced_by_the_next_sync(
@@ -43,7 +43,7 @@ def test_source_side_revocation_is_enforced_by_the_next_sync(
 ) -> None:
     deck_id = _deck_id(seeded)
     question = {"question": "What were the Q3 board deck revenue figures?"}
-    before = client.post("/api/ask", json=question, headers=PRIYA).json()
+    before = client.post("/api/ask", json=question, headers=JOHN).json()
     assert deck_id in {c["document_id"] for c in before["citations"]}
 
     original = GbrainImportConnector.permissions
@@ -60,8 +60,8 @@ def test_source_side_revocation_is_enforced_by_the_next_sync(
     seeded.clock.advance(60)
     _sync(seeded, "revoke-1")
 
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 404
-    after = client.post("/api/ask", json=question, headers=PRIYA).json()
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 404
+    after = client.post("/api/ask", json=question, headers=JOHN).json()
     assert deck_id not in {c["document_id"] for c in after["citations"]}
     assert "48.6" not in str((after["answer"], after["claims"], after["citations"]))
     event = run(seeded.repo.get_audit_event(after["audit_id"]))
@@ -82,8 +82,8 @@ def test_a_failed_permission_read_keeps_the_old_snapshot_which_then_ages_out(
     monkeypatch.setattr(GbrainImportConnector, "permissions", unavailable)
     seeded.clock.advance(4 * 60)
     _sync(seeded, "outage-1")
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 200
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 200
 
     seeded.clock.advance(2 * 60)  # 6 minutes since the last good read
     _sync(seeded, "outage-2")
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 404
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 404

@@ -39,11 +39,11 @@ async def test_local_grant_revocation_ignores_cached_candidate_grants(
     )
     await grants.add(grant)
     await snapshots.put(doc.document_id, doc.source_permissions)
-    assert (await service.filter(people["priya"].id, [doc], now=now)).allowed_ids == [
+    assert (await service.filter(people["john"].id, [doc], now=now)).allowed_ids == [
         doc.document_id
     ]
     await grants.revoke(grant.id, by="root.admin", at=now)
-    after = await service.filter(people["priya"].id, [doc], now=now)
+    after = await service.filter(people["john"].id, [doc], now=now)
     assert after.allowed_ids == []
     assert after.decisions[0].reason == DenyReason.grant_revoked
     assert doc.grants[0].revoked_at is None  # stale candidate did not override the store
@@ -56,7 +56,7 @@ async def test_source_membership_revocation_without_content_change(
     doc = make_doc(seed_blocks["slack"])
     await snapshots.put(doc.document_id, doc.source_permissions)
     assert (await service.filter(people["jordan"].id, [doc], now=now)).allowed_ids
-    revoked = {**seed_blocks["slack"], "member_ids": ["U_PRIYA"]}
+    revoked = {**seed_blocks["slack"], "member_ids": ["U_JOHN"]}
     await snapshots.put(
         doc.document_id,
         SourcePermissions.from_raw(revoked, permission_version="pv-1", captured_at=now),

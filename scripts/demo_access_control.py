@@ -40,7 +40,7 @@ LEADERSHIP_ACE = (
 QUESTION = "What were the Q3 board deck revenue figures?"
 FIGURE = "48.6"
 
-PRIYA, MEI, ADMIN, AUDITOR = "priya.nair", "mei.chen", "root.admin", "sam.lee"
+JOHN, MEI, ADMIN, AUDITOR = "john.tan", "mei.chen", "root.admin", "sam.lee"
 
 failures: list[str] = []
 
@@ -110,26 +110,26 @@ def sync(api: Api) -> None:
 def wait_until_denied(api: Api, deck_id: str, timeout_s: float) -> float:
     started = time.monotonic()
     while time.monotonic() - started < timeout_s:
-        if api.get(PRIYA, f"/api/documents/{deck_id}").status_code == 404:
+        if api.get(JOHN, f"/api/documents/{deck_id}").status_code == 404:
             return time.monotonic() - started
         time.sleep(1)
     return -1.0
 
 
 def find_deck(api: Api) -> str:
-    items = api.get(PRIYA, "/api/documents", q="board deck", limit=50).json()["items"]
+    items = api.get(JOHN, "/api/documents", q="board deck", limit=50).json()["items"]
     for item in items:
         if item["source_id"] == DECK_SOURCE and item["slug"] == DECK_SLUG:
             return item["id"]
-    raise SystemExit("Board deck not visible to Priya: is the corpus seeded and in sync?")
+    raise SystemExit("Board deck not visible to John: is the corpus seeded and in sync?")
 
 
 def run_demo(api: Api, seed_dir: Path, sync_timeout_s: float) -> None:
     deck_id = find_deck(api)
 
-    scene("1. Authorised employee: Priya Nair (Finance Ops, Leadership)")
+    scene("1. Authorised employee: John Tan (Finance Ops, Leadership)")
     say(f'   asks: "{QUESTION}"')
-    before = api.ask(PRIYA)
+    before = api.ask(JOHN)
     say(f"   answer: {before['answer']['text'][:110]}...")
     check("answer cites the board deck", deck_id in cited(before))
     check("answer contains the Q3 figure", FIGURE in before["answer"]["text"])
@@ -158,15 +158,15 @@ def run_demo(api: Api, seed_dir: Path, sync_timeout_s: float) -> None:
         sync(api)
         waited = wait_until_denied(api, deck_id, sync_timeout_s)
         check(
-            "Priya loses the deck after the sync",
+            "John loses the deck after the sync",
             waited >= 0,
             f"{waited:.0f}s after the sync request" if waited >= 0 else "timed out",
         )
-        after = api.ask(PRIYA)
-        say(f"   Priya asks again: {after['answer']['text'][:110]}")
+        after = api.ask(JOHN)
+        say(f"   John asks again: {after['answer']['text'][:110]}")
         check("new answer no longer cites the deck", deck_id not in cited(after))
         check("new answer does not contain the Q3 figure", not leaks_figure(after))
-        saved = api.get(PRIYA, f"/api/queries/{before['query_id']}").json()
+        saved = api.get(JOHN, f"/api/queries/{before['query_id']}").json()
         check(
             "her saved answer from scene 1 is withheld",
             saved.get("status") == "withheld" and FIGURE not in str(saved),

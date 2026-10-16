@@ -92,13 +92,13 @@ def test_per_actor_daily_cap_is_429(seeded: Any, client: Any) -> None:
         "window": "day",
     }
     # Another actor is unaffected.
-    assert _upload(client, "priya.nair", name="d.md").status_code == 201
+    assert _upload(client, "john.tan", name="d.md").status_code == 201
 
 
 def test_total_cap_is_429(seeded: Any, client: Any) -> None:
     _override(seeded, UPLOAD_MAX_FILES_TOTAL=2)
     assert _upload(client, "alex.tan", name="a.md").status_code == 201
-    assert _upload(client, "priya.nair", name="b.md").status_code == 201
+    assert _upload(client, "john.tan", name="b.md").status_code == 201
     third = _upload(client, "jordan.lim", name="c.md")
     assert third.status_code == 429
     assert third.json()["error"]["details"] == {
@@ -139,10 +139,8 @@ def test_classification_change_by_owner_ok_by_stranger_denied(seeded: Any, clien
 def test_document_list_is_acl_filtered(seeded: Any, client: Any) -> None:
     mei = client.get("/api/documents", headers={"X-Actor-Id": "mei.chen"}).json()
     assert mei["items"] == []
-    priya = client.get(
-        "/api/documents", params={"limit": 100}, headers={"X-Actor-Id": "priya.nair"}
-    )
-    slugs = {d["slug"] for d in priya.json()["items"]}
+    john = client.get("/api/documents", params={"limit": 100}, headers={"X-Actor-Id": "john.tan"})
+    slugs = {d["slug"] for d in john.json()["items"]}
     assert "files/board-deck-q3" in slugs
     alex = client.get("/api/documents", params={"limit": 100}).json()
     assert "files/board-deck-q3" not in {d["slug"] for d in alex["items"]}

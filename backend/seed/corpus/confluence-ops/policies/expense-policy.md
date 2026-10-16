@@ -8,7 +8,7 @@ provider_version: "12"
 version_order: 12
 provider_modified_at: "2026-09-15T03:00:00Z"
 classification: internal
-owner: priya.nair
+owner: john.tan
 evidence_class: standard
 permission_version: "pv-2026-09-15-1"
 permissions:

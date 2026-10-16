@@ -9,7 +9,7 @@ from app.tests.conftest import run
 
 KYC = ("confluence-ops", "runbooks/kyc-refresh")
 ADMIN = {"X-Actor-Id": "root.admin"}
-OWNER = {"X-Actor-Id": "priya.nair"}
+OWNER = {"X-Actor-Id": "john.tan"}
 
 
 def _kyc_id(services: Any) -> str:
@@ -29,7 +29,7 @@ def test_grant_create_list_revoke_does_not_expand_source_access(seeded: Any, cli
     created = client.post("/api/access/grants", json=body, headers=OWNER)
     assert created.status_code == 201, created.text
     grant = created.json()
-    assert grant["granted_by"] == "priya.nair"
+    assert grant["granted_by"] == "john.tan"
     assert client.post("/api/access/grants", json=body, headers=OWNER).status_code == 409
     assert client.get(f"/api/documents/{kyc_id}").status_code == 404
     assert client.get(f"/api/documents/{kyc_id}", headers=ADMIN).status_code == 404
@@ -133,13 +133,13 @@ def test_access_request_deny(seeded: Any, client: Any) -> None:
     kyc_id = _kyc_id(seeded)
     client.post(f"/api/documents/{kyc_id}/access-requests", json={"reason": "pls"})
     request_id = client.get("/api/access/requests", headers=ADMIN).json()["items"][0]["id"]
-    # The KYC runbook's owner (priya.nair) may decide too; a stranger may not.
+    # The KYC runbook's owner (john.tan) may decide too; a stranger may not.
     stranger = client.post(
         f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "jordan.lim"}
     )
     assert stranger.status_code == 403
     denied = client.post(
-        f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "priya.nair"}
+        f"/api/access/requests/{request_id}/deny", headers={"X-Actor-Id": "john.tan"}
     )
     assert denied.status_code == 200
     assert denied.json()["request"]["status"] == "denied"

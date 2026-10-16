@@ -30,7 +30,7 @@ def _cited(envelope: dict[str, Any]) -> set[str]:
 
 
 def test_unified_cited_query(seeded: Any, client: Any) -> None:
-    env = _ask(client, "priya.nair", "What is the plan for the Rail-B cutover?")
+    env = _ask(client, "john.tan", "What is the plan for the Rail-B cutover?")
     assert env["schema_version"] == 1
     assert env["audit_id"] and env["query_id"]
     assert not env["answer"]["abstained"]
@@ -51,7 +51,7 @@ def test_bounded_freshness_stale_omitted(seeded: Any, client: Any) -> None:
     kyc_id = _page_id(seeded, KYC)
     env = _ask(
         client,
-        "priya.nair",
+        "john.tan",
         "What is the payment rail failover procedure and the KYC refresh cycle?",
     )
     items = {i["page_id"]: i for i in env["freshness_receipt"]["evidence_items"]}
@@ -96,7 +96,7 @@ def test_negative_permission_no_existence_leak(seeded: Any, client: Any) -> None
 def test_live_revocation_changes_next_answer(seeded: Any, client: Any) -> None:
     deck_id = _page_id(seeded, DECK)
     question = "What were the Q3 board deck revenue figures?"
-    before = _ask(client, "priya.nair", question)
+    before = _ask(client, "john.tan", question)
     assert deck_id in _cited(before)
 
     admin = {"X-Actor-Id": "root.admin"}
@@ -108,7 +108,7 @@ def test_live_revocation_changes_next_answer(seeded: Any, client: Any) -> None:
     assert revoked.status_code == 200
     assert revoked.json()["revoked_at"] and revoked.json()["revoked_by"] == "root.admin"
 
-    after = _ask(client, "priya.nair", question)
+    after = _ask(client, "john.tan", question)
     assert deck_id not in _cited(after)
     assert after["access_summary"]["allowed_count"] < before["access_summary"]["allowed_count"]
 
@@ -123,13 +123,13 @@ def test_live_revocation_changes_next_answer(seeded: Any, client: Any) -> None:
 
 
 def test_audit_reconstruction(seeded: Any, client: Any) -> None:
-    env = _ask(client, "priya.nair", "What is the plan for the Rail-B cutover?")
+    env = _ask(client, "john.tan", "What is the plan for the Rail-B cutover?")
     auditor = {"X-Actor-Id": "sam.lee"}
     response = client.get(f"/api/audit/events/{env['audit_id']}", headers=auditor)
     assert response.status_code == 200
     event = response.json()
     assert event["action"] == "ask"
-    assert event["actor_id"] == "priya.nair"
+    assert event["actor_id"] == "john.tan"
     assert event["subject_id"] == env["query_id"]
     payload = event["payload"]
     assert payload["question"] == "What is the plan for the Rail-B cutover?"

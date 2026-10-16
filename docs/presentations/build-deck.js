@@ -1231,7 +1231,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         I.user,
         S.teal,
         "Authorised employee",
-        "Priya Nair · Finance Ops, Leadership",
+        "John Tan · Finance Ops, Leadership",
         "“What were the Q3 board deck revenue figures?”",
         [
           {
@@ -1270,7 +1270,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         S.amber,
         "Revoked at the source",
         "Drive owner removes Leadership from the share",
-        "Priya asks again, then reopens her earlier answer",
+        "John asks again, then reopens her earlier answer",
         [
           {
             text: "Next sync (each minute): the deck is gone",
@@ -1414,7 +1414,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "1",
           "Unified query",
-          "Priya asks about the Rail-B cutover. The facts are spread across email, Jira, Slack and Drive; she gets one answer citing several of them",
+          "John asks about the Rail-B cutover. The facts are spread across email, Jira, Slack and Drive; she gets one answer citing several of them",
           "test_unified_cited_query",
         ),
         row(
@@ -1432,7 +1432,7 @@ function iconDot(slide, data, x, y, d, fill, pad = 0.22) {
         row(
           "4",
           "Live revocation",
-          "Leadership is removed from the Drive share (or the in-app grant revoked): Priya's next answer drops the board deck and her saved answer is withheld",
+          "Leadership is removed from the Drive share (or the in-app grant revoked): John's next answer drops the board deck and her saved answer is withheld",
           "test_permission_freshness, test_live_revocation_changes_next_answer, test_query_history_access",
         ),
         row(

@@ -39,7 +39,7 @@ def test_actual_corpus_revocation_and_pre_model_filter(demo_report):
             },
         ),
         (
-            "priya.nair",
+            "john.tan",
             {
                 "CONF-OPS-1007",
                 "CONF-OPS-1088",

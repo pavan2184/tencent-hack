@@ -147,7 +147,7 @@ uv run --frozen python libs/access_control/examples/revocation_demo.py
 
 For the filmed demo, run the end-to-end script. It narrates and checks four scenes: an
 authorised employee, a contractor who learns nothing, a revocation at the source (the Drive owner
-removes Leadership from the board deck's share, then a sync) including Priya's saved answer being
+removes Leadership from the board deck's share, then a sync) including John's saved answer being
 withheld, and the audit inquiry:
 
 ```bash
@@ -160,7 +160,7 @@ Offline mode works on a throwaway copy of the seed corpus. Stack mode edits
 `backend/seed/corpus/gdrive-finance/files/board-deck-q3.md` (mounted read-only into the
 containers), triggers a sync and always restores the file; it needs the Celery worker running.
 
-The library-only demonstration below loads the actual 11-document synthetic corpus, confirms Priya
+The library-only demonstration below loads the actual 11-document synthetic corpus, confirms John
 can read the board deck, revokes its leadership grant, queries again using the
 same cached candidates, and asserts the revoked body never reaches model
 context. It also asserts the contractor has no evidence. It needs no credentials

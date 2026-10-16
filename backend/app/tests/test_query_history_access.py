@@ -14,7 +14,7 @@ from app.tests.conftest import run
 DECK = ("gdrive-finance", "files/board-deck-q3")
 DECK_QUESTION = "What were the Q3 board deck revenue figures?"
 DECK_FIGURE = "48.6"
-PRIYA = {"X-Actor-Id": "priya.nair"}
+JOHN = {"X-Actor-Id": "john.tan"}
 ADMIN = {"X-Actor-Id": "root.admin"}
 AUDITOR = {"X-Actor-Id": "sam.lee"}
 
@@ -44,15 +44,15 @@ def _assert_withheld(body: dict[str, Any], deck_id: str) -> None:
 
 def test_history_withholds_answer_after_revocation(seeded: Any, client: Any) -> None:
     deck_id = _deck_id(seeded)
-    before = _ask(client, PRIYA, DECK_QUESTION)
+    before = _ask(client, JOHN, DECK_QUESTION)
     assert deck_id in {c["document_id"] for c in before["citations"]}
-    stored = client.get(f"/api/queries/{before['query_id']}", headers=PRIYA).json()
+    stored = client.get(f"/api/queries/{before['query_id']}", headers=JOHN).json()
     assert DECK_FIGURE in stored["answer_text"]  # readable while access lasts
 
     _revoke_leadership(client, deck_id)
-    assert client.get(f"/api/documents/{deck_id}", headers=PRIYA).status_code == 404
+    assert client.get(f"/api/documents/{deck_id}", headers=JOHN).status_code == 404
 
-    detail = client.get(f"/api/queries/{before['query_id']}", headers=PRIYA)
+    detail = client.get(f"/api/queries/{before['query_id']}", headers=JOHN)
     assert detail.status_code == 200
     body = detail.json()
     _assert_withheld(body, deck_id)
@@ -62,19 +62,19 @@ def test_history_withholds_answer_after_revocation(seeded: Any, client: Any) -> 
 
     (listed,) = [
         i
-        for i in client.get("/api/queries", headers=PRIYA).json()["items"]
+        for i in client.get("/api/queries", headers=JOHN).json()["items"]
         if i["id"] == before["query_id"]
     ]
     _assert_withheld(listed, deck_id)
 
     # A new question reflects the revocation too, so no path replays the old evidence.
-    after = _ask(client, PRIYA, DECK_QUESTION)
+    after = _ask(client, JOHN, DECK_QUESTION)
     assert DECK_FIGURE not in str((after["answer"], after["claims"], after["citations"]))
 
 
 def test_history_reauthorises_the_viewer_not_the_original_asker(seeded: Any, client: Any) -> None:
     deck_id = _deck_id(seeded)
-    asked = _ask(client, PRIYA, DECK_QUESTION)
+    asked = _ask(client, JOHN, DECK_QUESTION)
     # An auditor without access to the deck cannot read its content through query history...
     viewed = client.get(f"/api/queries/{asked['query_id']}", headers=AUDITOR).json()
     _assert_withheld(viewed, deck_id)
@@ -91,9 +91,9 @@ def test_history_reauthorises_the_viewer_not_the_original_asker(seeded: Any, cli
 
 def test_restored_access_restores_history(seeded: Any, client: Any) -> None:
     deck_id = _deck_id(seeded)
-    asked = _ask(client, PRIYA, DECK_QUESTION)
+    asked = _ask(client, JOHN, DECK_QUESTION)
     _revoke_leadership(client, deck_id)
-    assert client.get(f"/api/queries/{asked['query_id']}", headers=PRIYA).json()["status"] == (
+    assert client.get(f"/api/queries/{asked['query_id']}", headers=JOHN).json()["status"] == (
         QUERY_WITHHELD_STATUS
     )
     run(
@@ -101,14 +101,14 @@ def test_restored_access_restores_history(seeded: Any, client: Any) -> None:
             Grant(
                 document_id=deck_id,
                 subject_type=SubjectType.principal,
-                subject_id="priya.nair",
+                subject_id="john.tan",
                 effect=Effect.allow,
                 granted_by="root.admin",
                 granted_at=seeded.clock.now(),
             )
         )
     )
-    restored = client.get(f"/api/queries/{asked['query_id']}", headers=PRIYA).json()
+    restored = client.get(f"/api/queries/{asked['query_id']}", headers=JOHN).json()
     assert restored["status"] == asked_status(asked)
     assert DECK_FIGURE in restored["answer_text"]
 
@@ -128,17 +128,17 @@ def test_revocation_for_another_document_leaves_unrelated_history(seeded: Any, c
 
 def test_only_answers_built_on_the_revoked_document_are_withheld(seeded: Any, client: Any) -> None:
     deck_id = _deck_id(seeded)
-    unrelated = _ask(client, PRIYA, "What is the plan for the Rail-B cutover?")
+    unrelated = _ask(client, JOHN, "What is the plan for the Rail-B cutover?")
     event = run(seeded.repo.get_audit_event(unrelated["audit_id"]))
     assert deck_id not in event.payload["evidence_document_ids"]  # precondition
-    related = _ask(client, PRIYA, DECK_QUESTION)
+    related = _ask(client, JOHN, DECK_QUESTION)
     assert deck_id in event_evidence(seeded, related)
 
     _revoke_leadership(client, deck_id)
-    kept = client.get(f"/api/queries/{unrelated['query_id']}", headers=PRIYA).json()
+    kept = client.get(f"/api/queries/{unrelated['query_id']}", headers=JOHN).json()
     assert kept["status"] == asked_status(unrelated)
     assert kept["answer_text"] == unrelated["answer"]["text"]
-    gone = client.get(f"/api/queries/{related['query_id']}", headers=PRIYA).json()
+    gone = client.get(f"/api/queries/{related['query_id']}", headers=JOHN).json()
     assert gone["status"] == QUERY_WITHHELD_STATUS
 
 
@@ -150,13 +150,13 @@ def test_history_without_audit_evidence_fails_closed(seeded: Any, client: Any) -
     record = run(
         seeded.repo.create_query(
             QueryRecord(
-                actor_id="priya.nair",
+                actor_id="john.tan",
                 question="orphaned row",
                 status="answered",
                 answer_text="Text derived from evidence that can no longer be traced.",
             )
         )
     )
-    body = client.get(f"/api/queries/{record.id}", headers=PRIYA).json()
+    body = client.get(f"/api/queries/{record.id}", headers=JOHN).json()
     assert body["status"] == QUERY_WITHHELD_STATUS
     assert body["answer_text"] == QUERY_WITHHELD_TEXT

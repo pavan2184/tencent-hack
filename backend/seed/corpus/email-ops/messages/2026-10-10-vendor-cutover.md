@@ -15,16 +15,16 @@ permissions:
   kind: email
   message_id: "<20261010.cutover.4417@example-harbor.com>"
   from_: ops@example-harbor.com
-  to: [priya.nair@example-harbor.com]
+  to: [john.tan@example-harbor.com]
   cc: [jordan.lim@example-harbor.com]
   bcc: []
 grants: []
 tags: [email, rail-b, cutover, vendor]
 ---
-**From:** ops@example-harbor.com · **To:** Priya Nair · **Cc:** Jordan Lim ·
+**From:** ops@example-harbor.com · **To:** John Tan · **Cc:** Jordan Lim ·
 **Sent:** Saturday 10 October 2026, 14:20 SGT · **Subject:** Rail-B cutover plan — Saturday 17 October
 
-Hi Priya,
+Hi John,
 
 Confirming the Rail-B cutover plan agreed with Vegaline Settlement on yesterday's vendor call.
 
@@ -48,5 +48,5 @@ Payments Operations
 
 ## Timeline
 
-- **2026-10-10** | Email — Cutover plan sent to Priya Nair, copied to Jordan Lim.
+- **2026-10-10** | Email — Cutover plan sent to John Tan, copied to Jordan Lim.
 - **2026-10-12** | Email — Awaiting Finance approval before the customer-support change notice.

@@ -131,7 +131,7 @@ the gap for source-side changes once it is wired in.
 
 ### Before filming (14 October), small and in scope
 
-1. Demo a source-side revocation (remove Priya from the Drive share, sync, ask again), not only a
+1. Demo a source-side revocation (remove John from the Drive share, sync, ask again), not only a
    local grant revocation. Owner: Chai with Pavan.
 2. Add the model and prompt-template version to the `ask` audit payload (MAS AIRG 5.23).
    Owner: Raphael.

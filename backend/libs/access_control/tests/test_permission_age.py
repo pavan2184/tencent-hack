@@ -49,8 +49,8 @@ def test_confidential_access_needs_a_snapshot_under_five_minutes(
         classification=Classification.confidential,
         grants=[make_grant(SubjectType.group, "leadership")],
     )
-    assert _decide(policy, people["priya"], doc, now + timedelta(minutes=5)).allowed
-    late = _decide(policy, people["priya"], doc, now + timedelta(minutes=5, seconds=1))
+    assert _decide(policy, people["john"], doc, now + timedelta(minutes=5)).allowed
+    late = _decide(policy, people["john"], doc, now + timedelta(minutes=5, seconds=1))
     assert late.decision == Effect.deny
     assert late.matched_rule == STALE_RULE
 
@@ -59,7 +59,7 @@ def test_confidential_access_needs_a_snapshot_under_five_minutes(
 def test_owner_admin_or_grant_cannot_outlive_a_stale_snapshot(
     policy, people, make_doc, make_grant, seed_blocks, now, shortcut
 ):
-    principal = people["priya"]
+    principal = people["john"]
     if shortcut == "admin":
         principal = principal.model_copy(update={"roles": ["admin"]})
     doc = make_doc(

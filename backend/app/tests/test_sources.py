@@ -33,7 +33,7 @@ def test_source_status(seeded: Any, client: Any) -> None:
 
 
 def test_sync_is_202_with_run_id(seeded: Any, client: Any) -> None:
-    manager = {"X-Actor-Id": "priya.nair"}
+    manager = {"X-Actor-Id": "john.tan"}
     response = client.post(
         "/api/sources/confluence-ops/sync", json={"trigger_kind": "reconcile"}, headers=manager
     )

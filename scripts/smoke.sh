@@ -144,7 +144,7 @@ run_rest() {
   step "GET /api/principals"
   call GET /api/principals ""
   expect 200
-  jq -e '[.items[].id] | index("priya.nair") != null' "$TMP/body" >/dev/null 2>&1 ||
+  jq -e '[.items[].id] | index("john.tan") != null' "$TMP/body" >/dev/null 2>&1 ||
     fail "seeded personas missing (run make seed)"
   ok "$(jq -r '[.items[].id] | join(", ")' "$TMP/body")"
 
@@ -158,8 +158,8 @@ MD
   expect 201
   ok "document=$(jq -r '.document.id' "$TMP/body") ingest=$(jq -r '.ingest.status // "?"' "$TMP/body")"
 
-  step "ask: failover procedure (priya.nair)"
-  ask priya.nair "What is the payment rail failover procedure?"
+  step "ask: failover procedure (john.tan)"
+  ask john.tan "What is the payment rail failover procedure?"
   expect 200
   jq -e --arg s "$RUNBOOK_SLUG" '[.citations[] | select(.slug == $s)] | length == 0' "$TMP/body" \
     >/dev/null 2>&1 || fail "stale critical runbook was cited (scenario 2)"
@@ -194,8 +194,8 @@ MD
     ok "active leadership grant=$grant_id"
   fi
 
-  step "ask: Q3 board deck, before revoke (priya)"
-  ask priya.nair "What were the Q3 board deck revenue figures?"
+  step "ask: Q3 board deck, before revoke (john)"
+  ask john.tan "What were the Q3 board deck revenue figures?"
   expect 200
   local before_allowed before_cited
   before_allowed=$(jq -r '.access_summary.allowed_count' "$TMP/body")
@@ -209,8 +209,8 @@ MD
   jq -e '.revoked_at != null' "$TMP/body" >/dev/null 2>&1 || fail "grant not revoked"
   ok "revoked_at=$(jq -r '.revoked_at' "$TMP/body")"
 
-  step "ask: Q3 board deck, after revoke (priya)"
-  ask priya.nair "What were the Q3 board deck revenue figures?"
+  step "ask: Q3 board deck, after revoke (john)"
+  ask john.tan "What were the Q3 board deck revenue figures?"
   expect 200
   local after_allowed after_cited audit_id
   after_allowed=$(jq -r '.access_summary.allowed_count' "$TMP/body")

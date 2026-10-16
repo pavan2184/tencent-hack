@@ -75,12 +75,12 @@ def test_audit_list_filters(seeded: Any, client: Any) -> None:
     client.post(
         "/api/ask",
         json={"question": "What is the plan for the Rail-B cutover?"},
-        headers={"X-Actor-Id": "priya.nair"},
+        headers={"X-Actor-Id": "john.tan"},
     )
     auditor = {"X-Actor-Id": "sam.lee"}
     asks = client.get("/api/audit/events", params={"action": "ask"}, headers=auditor).json()
     assert len(asks["items"]) == 1
-    assert asks["items"][0]["actor_id"] == "priya.nair"
+    assert asks["items"][0]["actor_id"] == "john.tan"
     cited = asks["items"][0]["payload"]["cited_document_ids"][0]
     by_doc = client.get("/api/audit/events", params={"document_id": cited}, headers=auditor)
     assert any(e["action"] == "ask" for e in by_doc.json()["items"])

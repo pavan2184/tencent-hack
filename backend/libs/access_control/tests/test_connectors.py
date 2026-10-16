@@ -37,7 +37,7 @@ def test_public_slack_roster_excludes_guests_bots_deleted_and_other_workspaces(
 ):
     users = [
         user("U_ALEX"),
-        user("U_PRIYA", is_restricted=True),
+        user("U_JOHN", is_restricted=True),
         user("U_JORDAN", is_ultra_restricted=True),
         user("U_SAM", deleted=True),
         user("U_BOT", is_bot=True),
@@ -48,9 +48,9 @@ def test_public_slack_roster_excludes_guests_bots_deleted_and_other_workspaces(
     assert raw.workspace_member_ids == ["U_ALEX"]
     doc = make_doc(raw.model_dump())
     assert policy.decide(people["alex"], doc, now=now).allowed
-    assert not policy.decide(people["priya"], doc, now=now).allowed
-    member_guest = slack_snapshot(members=["U_PRIYA"], users=users)
-    assert policy.decide(people["priya"], make_doc(member_guest.model_dump()), now=now).allowed
+    assert not policy.decide(people["john"], doc, now=now).allowed
+    member_guest = slack_snapshot(members=["U_JOHN"], users=users)
+    assert policy.decide(people["john"], make_doc(member_guest.model_dump()), now=now).allowed
 
 
 @pytest.mark.parametrize("flag", ["deleted", "is_restricted", "is_ultra_restricted", "is_bot"])
@@ -66,11 +66,11 @@ def test_complete_slack_pages_are_combined_without_duplicates():
         workspace_id="T_HARBOR",
         channel={"ok": True, "channel": {"id": "C_TREASURY", "is_private": True}},
         member_pages=[
-            {"ok": True, "members": ["U_PRIYA"], "response_metadata": {"next_cursor": "c2"}},
-            {"ok": True, "members": ["U_JORDAN", "U_PRIYA"]},
+            {"ok": True, "members": ["U_JOHN"], "response_metadata": {"next_cursor": "c2"}},
+            {"ok": True, "members": ["U_JORDAN", "U_JOHN"]},
         ],
     )
-    assert raw.member_ids == ["U_PRIYA", "U_JORDAN"]
+    assert raw.member_ids == ["U_JOHN", "U_JORDAN"]
     assert raw.channel_type == "private"
 
 

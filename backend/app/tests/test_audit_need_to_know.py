@@ -11,7 +11,7 @@ DECK = ("gdrive-finance", "files/board-deck-q3")
 KYC = ("confluence-ops", "runbooks/kyc-refresh")
 QUESTION = "What were the Q3 board deck revenue figures?"
 FIGURE = "48.6"
-PRIYA = {"X-Actor-Id": "priya.nair"}
+JOHN = {"X-Actor-Id": "john.tan"}
 AUDITOR = {"X-Actor-Id": "sam.lee"}
 ADMIN = {"X-Actor-Id": "root.admin"}
 REASON = {"reason": "Investigating board deck access for compliance case 42"}
@@ -22,7 +22,7 @@ def _page_id(services: Any, ref: tuple[str, str]) -> str:
 
 
 def _ask_deck(client: Any) -> dict[str, Any]:
-    env = client.post("/api/ask", json={"question": QUESTION}, headers=PRIYA).json()
+    env = client.post("/api/ask", json={"question": QUESTION}, headers=JOHN).json()
     assert FIGURE in env["answer"]["text"]
     return env
 
@@ -81,7 +81,7 @@ def test_reveal_needs_a_reason_and_is_itself_audited(seeded: Any, client: Any) -
 def test_reveal_is_auditor_or_admin_only(seeded: Any, client: Any) -> None:
     env = _ask_deck(client)
     path = f"/api/audit/events/{env['audit_id']}/reveal"
-    assert client.post(path, json=REASON, headers=PRIYA).status_code == 403
+    assert client.post(path, json=REASON, headers=JOHN).status_code == 403
 
 
 def test_viewer_who_can_read_the_evidence_needs_no_reveal(seeded: Any, client: Any) -> None:

@@ -88,7 +88,7 @@ def test_seed_shape_details(seed_blocks: dict[str, dict[str, Any]]) -> None:
     assert jira.issue_security_level == "finance-only"
     slack = parse_raw_permissions(seed_blocks["slack"])
     assert isinstance(slack, SlackPermissions)
-    assert slack.member_ids == ["U_JORDAN", "U_PRIYA"]
+    assert slack.member_ids == ["U_JORDAN", "U_JOHN"]
     assert slack.workspace_member_ids is None
     gdrive = parse_raw_permissions(seed_blocks["gdrive"])
     assert isinstance(gdrive, GDrivePermissions)

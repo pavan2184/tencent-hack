@@ -64,7 +64,7 @@ the marker is selected. The first one migrates an empty database and asserts tha
 | repo       | `repo_memory.MemoryRepo` installed through `repo.set_repo(...)`                                                                  |
 | lib stores | `access_control.memory` stores, `freshness.memory.InMemoryFreshnessStore` + `FixedClock(2026-10-12T09:00:00Z)` + `ScriptedProbe` |
 | providers  | `MockChatProvider`, `MockEmbeddingProvider` (dimension `EMBEDDING_DIM`)                                                          |
-| `client`   | FastAPI `TestClient` with lifespan; default header `X-Actor-Id: alex.tan`; `client.as_actor("priya.nair")` switches persona      |
+| `client`   | FastAPI `TestClient` with lifespan; default header `X-Actor-Id: alex.tan`; `client.as_actor("john.tan")` switches persona      |
 | `seeded`   | Runs the real seed loader (`app/seed.py`) against `backend/seed/` into the in-memory stores; returns `{slug: document_id}`       |
 
 Library tests build their own fixtures from their `memory.py` (`InMemoryFreshnessStore`,
@@ -78,10 +78,10 @@ All five live in `backend/app/tests/test_ask_pipeline.py` and run on the seeded 
 
 | #   | Scenario (handbook)                        | Test                                         | Asserts                                                                                                                                                                 |
 | --- | ------------------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Unified natural-language query             | `test_unified_cited_query`                   | `priya.nair` asks about the Rail-B cutover; answer not abstained; every claim has ≥ 1 citation; citations span ≥ 2 sources; envelope has receipt, grounding, `audit_id` |
+| 1   | Unified natural-language query             | `test_unified_cited_query`                   | `john.tan` asks about the Rail-B cutover; answer not abstained; every claim has ≥ 1 citation; citations span ≥ 2 sources; envelope has receipt, grounding, `audit_id` |
 | 2   | Bounded freshness                          | `test_bounded_freshness_stale_omitted`       | failover runbook (critical, indexed v7, live v8) is in the receipt as `stale`, `safe_to_use: false`, and is never cited; the fresh KYC runbook passes verification      |
 | 3   | Negative permission without existence leak | `test_negative_permission_no_existence_leak` | `mei.chen` gets no citations and `GET` on the board deck returns a body identical to a random id's `404`; `alex.tan` never sees PAY-142; no denied count anywhere       |
-| 4   | Live permission-change handling            | `test_live_revocation_changes_next_answer`   | board deck cited for `priya.nair`; `root.admin` revokes the `leadership` grant; the next ask does not cite it and `allowed_count` drops                                 |
+| 4   | Live permission-change handling            | `test_live_revocation_changes_next_answer`   | board deck cited for `john.tan`; `root.admin` revokes the `leadership` grant; the next ask does not cite it and `allowed_count` drops                                 |
 | 5   | Audit inquiry                              | `test_audit_reconstruction`                  | `sam.lee` reads the ask's audit event: question, every candidate's decision (incl. denied), receipt id/hash, answer, timestamps; `/api/audit/verify` is `ok`            |
 
 `test_pipeline_invariants.py` asserts the pipeline order (`test_pipeline_order_access_before_llm`):
@@ -140,7 +140,7 @@ changes what `/documents` and `/ask` show; a denied document page shows the gene
 
 `scripts/smoke.sh` runs against a live stack (`make up && make seed`) with `curl` and `jq`:
 healthz → principals → upload a temporary `.md` as `alex.tan` → ask the failover question as
-`priya.nair` (runbook not cited, receipt marks it unsafe) → find the board deck and list its grants
+`john.tan` (runbook not cited, receipt marks it unsafe) → find the board deck and list its grants
 as `root.admin` (restoring the `leadership` grant if a previous run revoked it) → ask the Q3
 question (deck cited) → revoke → re-ask (deck not cited, `allowed_count` lower) → `mei.chen`
 existence probe (denied and nonexistent `404`s byte-identical) → audit lookup as `sam.lee` → audit

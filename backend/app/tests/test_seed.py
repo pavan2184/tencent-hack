@@ -26,8 +26,8 @@ def test_seed_counts(seeded: Any) -> None:
     for page in pages:
         assert snapshots[page.id].permission_version == page.permission_version
         assert run(repo.list_chunks(page.id))
-    priya = run(repo.get_principal("priya.nair"))
-    assert priya.groups == ["finance-ops", "leadership"]
+    john = run(repo.get_principal("john.tan"))
+    assert john.groups == ["finance-ops", "leadership"]
 
 
 def test_seed_policies_for_every_kind(seeded: Any) -> None:
