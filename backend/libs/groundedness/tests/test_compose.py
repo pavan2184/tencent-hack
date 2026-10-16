@@ -185,6 +185,47 @@ async def test_extractive_skips_duplicate_sentences(clean) -> None:
     assert len(answer.claims) == 1
 
 
+async def test_extractive_skips_table_rows(clean) -> None:
+    text = (
+        "Vegaline Settlement runs the Rail-B secondary payment rail.\n\n"
+        "| Vendor              | Service                        | Support SLA              |\n"
+        "| ------------------- | ------------------------------ | ------------------------ |\n"
+        "| Orionix Clearing    | Rail-A, primary payment rail   | SEV-1 response in 15 min. |\n"
+        "| Vegaline Settlement | Rail-B, secondary payment rail | SEV-1 response in 20 min. |\n"
+    )
+    answer = await ExtractiveComposer().compose(
+        "Which vendor runs the secondary payment rail?", [clean(text)]
+    )
+    assert [claim.text for claim in answer.claims] == [
+        "Vegaline Settlement runs the Rail-B secondary payment rail."
+    ]
+
+
+async def test_extractive_skips_headings_and_message_headers(clean) -> None:
+    text = (
+        "**From:** ops@example.com · **To:** John Tan · **Cc:** Jordan Lim ·\n"
+        "**Sent:** Saturday 10 October 2026 · **Subject:** Rail-B cutover plan for Saturday\n\n"
+        "## Rail-B cutover plan and rollback steps\n\n"
+        "The Rail-B cutover plan moves 40% of outbound volume on Saturday.\n\n"
+        "1. **Rollback:** if the Rail-B cutover fails, the plan is to switch back to Rail-A.\n\n"
+        "**10:15 Jordan Lim:** The Rail-B cutover plan was rehearsed in staging.\n"
+    )
+    answer = await ExtractiveComposer().compose("What is the Rail-B cutover plan?", [clean(text)])
+    # Bold labels on list items and chat lines are prose, so those sentences stay.
+    assert {claim.text for claim in answer.claims} == {
+        "The Rail-B cutover plan moves 40% of outbound volume on Saturday.",
+        "**Rollback:** if the Rail-B cutover fails, the plan is to switch back to Rail-A.",
+        "**10:15 Jordan Lim:** The Rail-B cutover plan was rehearsed in staging.",
+    }
+
+
+async def test_extractive_abstains_when_only_layout_matches(clean) -> None:
+    evidence = [clean("| Vendor | Rail |\n| --- | --- |\n| Vegaline Settlement | Rail-B |\n")]
+    answer = await ExtractiveComposer().compose("Which vendor runs Rail-B?", evidence)
+    assert answer.abstained
+    assert answer.abstain_reason == REASON_NO_OVERLAP
+
+
 async def test_extractive_respects_max_claims(treasury_evidence) -> None:
     answer = await ExtractiveComposer().compose(
         "payments treasury", treasury_evidence, max_claims=1
