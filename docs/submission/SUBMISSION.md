@@ -100,7 +100,10 @@ one Docker Compose stack. Every question runs the same governed pipeline:
 
 Saved answers are re-checked every time they are opened. Auditors see every decision, but answer
 text drawn from documents they cannot open needs a "reveal with reason" that is itself recorded in
-the audit chain.
+the audit chain. Managers and admins also get an **access map**: a live diagram of who can read
+each document and why (the platform rule or the grant behind every line), limited to documents
+they can read themselves. Revoking a grant there removes the line immediately, and each view of
+the map is audited.
 
 **How prompts drive the AI generation.**
 
@@ -142,7 +145,8 @@ as Slack's API terms require; the demo uses a synthetic corpus.
   reportable data incident.
 - **Compliance**: auditors can replay any answer (who asked, what was retrieved, what was allowed
   or denied, what was answered) with tamper evidence, which matches the logging and least-privilege
-  expectations in MAS's technology and AI risk guidelines.
+  expectations in MAS's technology and AI risk guidelines. Managers can see at a glance why each
+  person has access, which supports the periodic access reviews MAS expects.
 - **Productivity**: one question replaces searching four tools, and the answer arrives with its
   citations and freshness status, so staff can trust it without re-checking every source.
 
@@ -157,7 +161,8 @@ as Slack's API terms require; the demo uses a synthetic corpus.
 3. **Negative permission**: Mei, an external contractor, asks for Q3 revenue and gets no figures,
    no title and no hint the board deck exists.
 4. **Live revocation**: the Drive owner removes Leadership from the board deck's share. After the
-   next sync, John's answer no longer uses the deck, and the earlier saved answer is withheld.
+   next sync, John's answer no longer uses the deck, the earlier saved answer is withheld, and
+   John's line to the deck disappears from the access map.
    The access map shows who can read each document and the policy rule behind every line; it runs
    the same check as retrieval, so John's line to the deck disappears at the same moment.
 5. **Audit inquiry**: Sam (compliance) reconstructs the question, retrieved documents and every
