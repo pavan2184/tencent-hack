@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current phase
 
@@ -16,11 +16,18 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 ## Completed
 
+- **No-payment public demo (2026-10-13):** `EMBEDDING_PROVIDER=local_hash` permits real ADP answer
+  generation with local deterministic retrieval vectors. The synthetic full stack runs on Pavan's
+  Mac from an allowlisted staging copy outside the repository; Caddy, API, frontend, Postgres and
+  Redis stay bound to loopback. The ADP agent is published on the $0 free plan, and a free
+  Cloudflare Quick Tunnel exposes the demo at
+  `https://grammar-adds-eau-classics.trycloudflare.com/ask` while this computer and tunnel remain
+  running. No paid service was activated.
 - Research and setup (September): track selected, handbook requirements captured in
   `docs/HACKATHON_REQUIREMENTS.md`, freshness design approved (now the reference for the
   `freshness` library).
-- Decisions recorded in `docs/DECISIONS.md`: D-001 to D-012 (pivot) and D-013 (deterministic
-  grounding and verification, no LLM judge).
+- Decisions recorded in `docs/DECISIONS.md`: D-001 to D-012 (pivot), D-013 (deterministic
+  grounding and verification, no LLM judge), and D-014 (free ADP chat with local vectors).
 - Foundation docs: brief with team plan, architecture with trust-boundary diagram, data model,
   API contract, testing plan, security review, decisions, GBrain mapping, this status page.
 - Infrastructure: `docker-compose.yml` (postgres, redis, migrate, api, worker, beat, frontend,
@@ -43,6 +50,34 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 | Frontend (persona switcher, ask, documents, sources, access, audit)    | Raphael                                  | Done: all pages wired to the API contract; typecheck, lint, build and Docker image pass                                                                                                             |
 | Integration (`make up`, `make seed`, smoke, CI green)                  | Raphael                                  | Done locally (see Verification); CI runs on the PR                                                                                                                                                  |
 
+## Fixed 2026-10-13: query history bypassed revocation (Chai)
+
+`GET /api/queries` and `GET /api/queries/{id}` returned stored answers without an access check,
+so a revoked user could still read the board deck figures from history and the Ask page. Stored
+answers are now re-authorised for the viewer on every read and withheld when any evidence
+document is no longer readable (D-017). Regression tests: `app/tests/test_query_history_access.py`.
+
+## Permission snapshot expiry (Chai, 2026-10-13, branch `feat/permission-max-age`)
+
+Built on the access-control v2 work. Snapshots of source permissions now expire by
+classification (confidential 5 min) and every delta sync refreshes them, so a revocation at the
+source is enforced within 5 minutes for confidential documents (D-018). **The demo stack must run
+the Celery worker and beat**, or confidential documents go dark after 5 minutes.
+
+## Audit need-to-know and approval feedback (Chai, 2026-10-13, branch `feat/audit-need-to-know`)
+
+Auditors see every decision but only the answer content they could read themselves; a recorded
+"reveal with reason" shows the rest (D-019). Approving a request now tells the approver when the
+source platform still withholds the document. **Demo scenario 5 now includes one reveal.**
+
+## Architecture deck (Chai, 2026-10-13)
+
+`docs/presentations/internal-brain-architecture.pptx`: case study, problem, four guarantees, the
+end-to-end architecture with trust boundaries and the model-context boundary, native permission
+handling per platform, the access-control demo, the five scenarios mapped to tests, answer
+receipts, trade-offs and stack. Slides 6 and 10 assume the access-control v2 rules (native
+permissions cap local grants), which still need team agreement.
+
 ## Next
 
 - **Raphael (groundedness + foundation):** integrate waves 1–2; make `make test`, `make up`,
@@ -52,8 +87,8 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
   injection-pattern corpus; groundedness evals; decide the upload cap numbers.
 - **Pavan (freshness + ingestion + deploy):** delta and reconcile algorithms, backoff and parking,
   Confluence and Slack probes or simulations, port the TS eval fixtures to Python tests; own the
-  Celery/connector pipeline; deploy the single box on Tencent Cloud; confirm the ADP embedding
-  endpoint, model and dimension.
+  Celery/connector pipeline; rehearse the public ADP-backed demo and monitor its free credit
+  balance. TokenHub activation and paid cloud hosting are excluded.
 - **Chai (access control):** real platform-permission ingestion, group resolution, a
   permission-drift hook shared with freshness, final deny wording; review the corpus visibility
   matrix in `backend/seed/corpus/README.md`.
@@ -67,8 +102,9 @@ being built by parallel agents in waves and integrated by Raphael. Deadline: **1
 
 - Four days to the deadline; the library stubs are the demo floor, so the five scenario tests must
   pass on stubs alone.
-- Tencent ADP embedding endpoint and model are unconfirmed; `EMBEDDING_DIM` must match before the
-  first real ingest (otherwise `make reset`).
+- Local hash vectors are deterministic and mostly lexical, so semantic retrieval quality is
+  lower than a learned embedding model. The public URL is temporary and stops working when the
+  tunnel or Pavan's Mac stops; it can change when restarted. The free ADP credit pool is finite.
 - Critical evidence goes `stale` once its index age exceeds 3,600 s. The seed loader live-verifies
   every object at seed time so the age basis is the seed time, but an hour later the KYC runbook
   ages out until reconciliation or verification runs (beat triggers delta/reconcile; Pavan owns
@@ -101,6 +137,62 @@ Run on 2026-10-12 (local, Docker 28, uv 0.11, Python 3.12.13, Node 25/npm 11; im
 | MCP initialize, tools/list, whoami | `make mcp-smoke`                                            | pass (18 tools)                                                                                                                                                               |
 | Integration tests against Postgres | `cd backend && DATABASE_URL=… uv run pytest -m integration` | 11 passed against a throwaway `pgvector/pgvector:pg16`                                                                                                                        |
 
-Open integration items: confirm the Tencent ADP non-streaming response shape against the console
-(`backend/app/providers/real/tencent_adp_app.py`); unhandled 500s carry no `request_id` because
-the generic handler runs outside the request-id middleware; upload cap numbers are still TBD.
+Open integration items: unhandled 500s carry no `request_id` because the generic handler runs
+outside the request-id middleware; upload cap numbers are still TBD.
+
+No-payment preview verification (2026-10-13, isolated staging copy): Docker build succeeded;
+`/healthz` reported database and Redis healthy; the seeded synthetic corpus loaded; REST smoke
+passed 12/12 steps; Chrome showed a cited answer and freshness receipt at
+`http://127.0.0.1:8080/ask`. Provider-selection test: 2 passed; backend suite: 570 passed,
+11 skipped; Ruff lint and format: pass; all seven checks on draft PR #8 passed. Current local
+URLs: `http://127.0.0.1:8080` (Caddy), `http://127.0.0.1:8000` (API), and
+`http://127.0.0.1:3000` (frontend). `npm audit --omit=dev` reported a high PostCSS advisory and a
+moderate Next.js dependency advisory; these remain unresolved in the existing lockfile.
+
+Real-model and public-link verification (2026-10-13): ADP reported the agent published
+successfully. An existing enabled AppKey was placed only in the temporary runtime `.env`; it was
+not added to the repository. The API health endpoint reports database and Redis healthy with
+`provider_mode: real`. A local ask answered that the Singapore hotel cap is SGD 280, with one
+supported citation to the synthetic Travel and Expense Policy; the audit event recorded
+`model-v1+ground-v1`, confirming that generation used the model rather than the extractive
+fallback. A more complex approval question abstained because lexical support was 50%, below the
+60% threshold. The public `/ask` and `/api/healthz` returned HTTP 200, and Chrome showed the
+same cited answer and freshness receipt through the tunnel with no console warnings or errors.
+The first real-mode container start failed with an `AttributeError` for
+`ASK_GENERATION_DEADLINE_S`: the temporary staging copy had an older config file than the source
+branch. Refreshing that staged file and rebuilding the containers resolved the startup error;
+the repository source was already correct. The tunnel and Docker services are running at handoff.
+
+## Chai's access-control delivery (12 October 2026)
+
+Branch: `PinZheng/access-control`, integrated with latest `origin/main` at
+`fc0bdf6c`. The new foundation merge was incorporated before final verification.
+
+Delivered: ac-v2 source ceiling, query-time validated authority service, live-read
+verifier seam, Slack/Drive capture helpers, permission fingerprints, corpus
+visibility/revocation demo, primary-source research and security review. Updated
+API expectations retain native restrictions after local grant approval and prove
+local upload grants still work. Existing foundation docs, migrations and CI were
+preserved. Merged via PR #9.
+
+Verification: 174 library tests; 549 offline backend tests passed, 11 database
+tests skipped without a database; all 135 Python files pass Ruff lint/format.
+The editable architecture deck contains five reviewed slides with native
+connectors, an editable permissions table and source notes. File:
+superseded by `docs/presentations/internal-brain-architecture.pptx` (PR #7).
+
+See [handoff](ACCESS_CONTROL_HANDOFF.md). Native live-provider checks and verified
+authentication still require integration. The existing pure-policy read paths
+automatically use ac-v2 and passed the core REST scenario tests. Deployment and
+credentialed enterprise/Tencent calls have not been verified by this work.
+
+### SQL verification follow-up
+
+The 11 SQL integration tests passed against a disposable local Postgres 17
+instance, including the access snapshot round-trip with Drive expiry, deleted
+subjects and discovery fields. Combined with the 549 passing offline tests,
+all 560 distinct backend tests passed. Postgres 17 was used because pulling the
+configured Postgres 16 image was blocked by registry authentication. No shared
+database or existing containers were modified. The temporary instance was
+removed after the run. The configured Postgres 16 deployment and credentialed
+source/Tencent calls were not tested by this work.

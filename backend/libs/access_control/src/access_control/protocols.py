@@ -1,8 +1,5 @@
-"""Contracts the app implements (stores over SQLAlchemy async) or consumes (the policy).
-
-The library ships in-memory implementations of every store in ``access_control.memory``; the app
-implements the same Protocols in ``app/adapters/access_stores.py`` over ``0200_access_init.sql``.
-Stores are ``async``; the policy is synchronous and pure.
+"""Async store/provider seams and a pure policy. In-memory implementations ship with the library;
+production database and provider adapters are the integrating app's responsibility.
 """
 
 from __future__ import annotations
@@ -61,6 +58,20 @@ class AccessPolicy(Protocol):
     def filter(
         self, principal: Principal, docs: Iterable[DocumentAccessContext], *, now: datetime
     ) -> FilterResult: ...
+
+
+@runtime_checkable
+class SourcePermissionVerifier(Protocol):
+    """Optional live read check, executed only after local policy allows.
+
+    Check the resolved asker's provider identity, never the connector's broad service account.
+    True confirms, False denies, None/errors fail closed. Implementations must bound I/O timeouts.
+    This check cannot widen the snapshot/local policy's audience.
+    """
+
+    async def verify(
+        self, principal: Principal, doc: DocumentAccessContext, *, now: datetime
+    ) -> bool | None: ...
 
 
 @runtime_checkable

@@ -25,7 +25,7 @@ def get_chat_provider(settings: Settings | None = None) -> ChatProvider:
 
 def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvider:
     settings = settings or get_settings()
-    if settings.PROVIDER_MODE == "mock":
+    if settings.PROVIDER_MODE == "mock" or settings.EMBEDDING_PROVIDER == "local_hash":
         return MockEmbeddingProvider(settings.EMBEDDING_DIM)
     from app.providers.real.openai_compatible import OpenAICompatibleEmbeddingProvider
 

@@ -74,9 +74,12 @@ async def approve_request(
     request_id: str, services: ServicesDep, principal: CurrentPrincipal
 ) -> dict[str, Any]:
     req, grant = await access_service.decide_request(services, principal, request_id, approve=True)
+    effective, note = await access_service.approval_effect(services, req)
     return {
         "request": req.model_dump(mode="json"),
         "grant": grant.model_dump(mode="json") if grant else None,
+        "effective": effective,
+        "note": note,
     }
 
 

@@ -27,8 +27,8 @@ def confluence(seed_blocks: dict[str, dict[str, Any]]) -> dict[str, Any]:
 
 def test_policy_satisfies_protocol(policy: DefaultAccessPolicy) -> None:
     assert isinstance(policy, AccessPolicy)
-    assert policy.policy_version == "ac-v1"
-    assert DefaultAccessPolicy("ac-v2").policy_version == "ac-v2"
+    assert policy.policy_version == "ac-v2"
+    assert DefaultAccessPolicy("custom-policy").policy_version == "custom-policy"
 
 
 def test_decision_stamps(policy, people, make_doc, confluence, now: datetime) -> None:
@@ -38,7 +38,7 @@ def test_decision_stamps(policy, people, make_doc, confluence, now: datetime) ->
     assert d.decision == Effect.allow and d.reason is None
     assert d.matched_rule == "R8:confluence"
     assert d.permission_version == "pv-42"
-    assert d.policy_version == "ac-v1"
+    assert d.policy_version == "ac-v2"
     assert d.evaluated_at == now
 
 

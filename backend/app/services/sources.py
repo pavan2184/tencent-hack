@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from access_control import SourceKind
 from freshness import ConnectorSyncRequest, ConnectorSyncResult, SyncPath
 
-from app.connectors.base import freshness_kind
+from app.connectors.base import Connector, freshness_kind
 from app.connectors.registry import connector_name, get_connector, is_stub
 from app.core.errors import Conflict, NotFound, NotImplementedFeature, ValidationFailed
-from app.schemas.domain import IngestLogEntry, Source
+from app.schemas.domain import IngestLogEntry, Page, Source
 from app.services import jobs
 from app.services.ingestion import make_apply
 
 if TYPE_CHECKING:
     from app.services.wiring import Services
+
+logger = logging.getLogger(__name__)
 
 UPLOADS_SOURCE_ID = "uploads"
 
@@ -180,6 +183,7 @@ async def run_sync(
         apply=make_apply(services, source, connector, granted_by=granted_by),
     )
     pages = await services.repo.list_pages(source_ids=[source.id], limit=10_000)
+    await refresh_permission_snapshots(services, source, connector, pages)
     newest = max(
         (p.provider_modified_at for p in pages if p.provider_modified_at is not None),
         default=None,
@@ -200,6 +204,33 @@ async def run_sync(
             )
         )
     return result
+
+
+async def refresh_permission_snapshots(
+    services: Services, source: Source, connector: Connector, pages: list[Page]
+) -> int:
+    """Re-read every live page's source permissions so snapshots stay within the policy's maximum
+    age (`access_control.DEFAULT_MAX_PERMISSION_AGE`), even when content did not change.
+
+    Uploads are skipped: their permissions are managed locally. A page whose permissions cannot
+    be read keeps its old snapshot, which then ages out and is denied (fail closed)."""
+    if source.kind == SourceKind.upload:
+        return 0
+    refreshed = 0
+    for page in pages:
+        if page.deleted_at is not None or not page.external_object_id:
+            continue
+        try:
+            perms = await connector.permissions(page.external_object_id)
+        except Exception:
+            logger.warning(
+                "permission refresh failed",
+                extra={"source_id": source.id, "page_id": page.id},
+            )
+            continue
+        await services.permission_store.put(page.id, perms)
+        refreshed += 1
+    return refreshed
 
 
 async def queue_sync(services: Services, source_id: str, trigger_kind: str) -> str:

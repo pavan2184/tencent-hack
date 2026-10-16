@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 Architectural and product decisions, newest last. Each entry is immutable once accepted; a change
 of mind is a new entry that supersedes the old one.
@@ -279,3 +279,103 @@ wording close to the evidence. Counting `without` as a negation cue may cause a 
 contradiction; reverting it is a one-token change. `SCHEMA_VERSION` stays 1 and no report field
 changes. Follow-ups: parse word numbers and expand ranges in the numeric gate, and build a labelled
 eval set for the verifier.
+
+### D-014 — No-payment demo uses local retrieval vectors with ADP generation
+
+Status: Accepted
+Date: 2026-10-13
+
+**Context.** The demo needs an actual Tencent ADP model and a public link, but Pavan forbids all
+payments. TokenHub's embedding service requires payment-based activation, and the account has no
+Tencent VM. The existing deterministic embedding provider already supports the app's 1024-dimension
+pgvector index and synthetic corpus.
+
+**Decision.** Keep `PROVIDER_MODE=real` for ADP chat while allowing
+`EMBEDDING_PROVIDER=local_hash` to select the existing local vector implementation. The default
+`openai_compatible` embedding path continues to require its endpoint and model. Run the stack
+locally and use only a free temporary tunnel for a public preview, after checking public exposure.
+Do not activate TokenHub, add a paid cloud host, or enable any postpaid service.
+
+**Consequences.** ADP performs real answer generation while retrieval remains deterministic and
+mostly lexical; the demo must describe that distinction accurately. The local host and temporary
+tunnel have no uptime guarantee. The free ADP plan has a finite prepaid credit pool and no paid
+overage path is enabled; calls may fail when that pool is exhausted.
+
+### D-016 - Native source permissions cap local application grants
+
+Status: Accepted
+Date: 2026-10-12
+
+The challenge requires preserving source permissions. Policy `ac-v2` therefore
+checks native read access before local owner/admin/grant allows for imported
+content. App-managed uploads retain local sharing. Existing signatures and deny
+reasons stay compatible. Calls that relied on bypassing a native ACL intentionally
+stop allowing access. Local approval does not change a source platform's ACL.
+
+A query-time service supplies current validated store reads and an optional live
+verifier that can only tighten access. No cached allow exists. Native API transport
+and complete source-scoped group resolution belong in app adapters. The diagram
+marks live-provider/authentication boundaries separately from implemented code.
+
+### D-017 — Stored answers are re-authorised when served
+
+Status: Accepted
+Date: 2026-10-13
+
+**Context.** The challenge requires revoked access to apply on subsequent queries, including
+cached answers. `GET /api/queries` and `GET /api/queries/{id}` served the stored answer text,
+citations and quotes with no access check, so after a revocation the board deck figures stayed
+readable in query history (and on the Ask page) while the document itself returned `404`.
+
+**Decision.** An answer is only as visible as its least visible evidence document, evaluated for
+the viewer at read time (`access.readable_query_records`). The `ask` audit payload records
+`evidence_document_ids`; older events fall back to the receipt's `safe_to_use` pages, then to
+every document allowed at ask time. Undeterminable evidence withholds. A withheld row keeps the
+question and replaces answer, citations, grounding report and receipt id with a fixed notice.
+Answers are never cached by question; any future cache must apply the same check on serve.
+
+**Consequences.** One audit-event read per history row plus one batched policy evaluation per
+request. Access restored means history restored. Auditors read originals only through the
+audit trail.
+
+### D-018 — Permission snapshots expire by classification
+
+Status: Proposed (needs Pavan for the sync change)
+Date: 2026-10-13
+
+**Context.** Access decisions for imported content use a stored snapshot of each source's
+permissions. Syncs only rewrote a snapshot when content changed, so a revocation at the source
+(for example a Drive share removed) could go unnoticed indefinitely. Enterprise products document
+delays from minutes up to 24 hours (Microsoft's Confluence connector picks up permission changes
+only on its daily full crawl).
+
+**Decision.** The policy refuses a snapshot older than a per-classification maximum age
+(confidential/restricted 5 min, internal 1 h, public 24 h), denying with
+`R9:permission_snapshot_stale`. Every delta sync re-reads all pages' permissions, independent of
+content changes. A failed read keeps the old snapshot so it ages out. Uploads are exempt. Each
+audit decision records `permission_captured_at`.
+
+**Consequences.** A source-side revocation is enforced within the maximum age, by construction,
+not by best effort. If the sync stops (worker or beat down), confidential documents become
+unavailable after 5 minutes: availability is traded for safety. Each sync makes one permission
+read per page; real connectors will need batching or change feeds at scale.
+
+### D-019 — Auditors get need-to-know answer content; approvals report source blocks
+
+Status: Proposed (Raphael: audit router, Access and Audit pages)
+Date: 2026-10-13
+
+**Context.** Under `ac-v2` (D-016) admins no longer read everything, but auditors still saw full
+answer text and quotes in the audit trail for documents they could not open, which undercuts
+least privilege (MAS TRM 9.1.1) and PDPC guidance to restrict prompt logs. Separately, approving
+an access request created a grant that could not take effect when the source withheld access,
+while the approver saw "approved".
+
+**Decision.** Audit responses always show metadata but withhold answer content unless the viewer
+can read every evidence document now (the same rule as saved answers, D-017). A break-glass
+`POST /api/audit/events/{id}/reveal` with a reason shows it and records `audit.reveal` in the
+chain. Approval responses add `effective` and an actionable `note` naming the source platform.
+
+**Consequences.** The audit inquiry demo needs one recorded reveal to show the answer, which is
+also evidence that access to the log is itself logged. The response copy differs from the stored
+payload, so clients cannot re-hash a withheld event themselves; `/api/audit/verify` still does.

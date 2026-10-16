@@ -89,10 +89,15 @@ function GrantsExplorer({ canEdit }: { canEdit: boolean }) {
 function RequestInbox({ canDecide }: { canDecide: boolean }) {
   const requests = useApiQuery("access-requests", listAccessRequests);
   const decide = useApiAction(decideAccessRequest);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function onDecide(requestId: string, decision: "approve" | "deny") {
+    setNotice(null);
     const result = await decide.run(requestId, decision);
-    if (result.ok) requests.reload();
+    if (!result.ok) return;
+    // A local approval cannot widen what the source platform allows; say so plainly.
+    if (result.data.effective === false) setNotice(result.data.note);
+    requests.reload();
   }
 
   return (
@@ -101,7 +106,8 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
         <div>
           <CardTitle>Access requests</CardTitle>
           <CardDescription>
-            Raised from the Documents page by personas who cannot see a document.
+            Raised from the Documents page by personas who cannot see a
+            document.
           </CardDescription>
         </div>
       </CardHeader>
@@ -111,6 +117,14 @@ function RequestInbox({ canDecide }: { canDecide: boolean }) {
         )}
         {decide.error && (
           <ErrorState error={decide.error} className="mx-3 my-2" />
+        )}
+        {notice && (
+          <p
+            role="status"
+            className="mx-3 my-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          >
+            {notice}
+          </p>
         )}
         {requests.loading && !requests.data && (
           <div className="px-3">

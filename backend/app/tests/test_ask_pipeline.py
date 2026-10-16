@@ -83,7 +83,8 @@ def test_negative_permission_no_existence_leak(seeded: Any, client: Any) -> None
         "allowed_count",
         "evaluated_at",
     }
-    assert "48.6" not in str(env)
+    # Timestamps can legitimately contain the digits 48.6, independently of document text.
+    assert "48.6" not in str((env["answer"], env["claims"], env["citations"]))
 
     headers = {"X-Actor-Id": "mei.chen", "X-Request-Id": "req-leak-check"}
     denied = client.get(f"/api/documents/{deck_id}", headers=headers)
@@ -142,12 +143,15 @@ def test_audit_reconstruction(seeded: Any, client: Any) -> None:
             "reason",
             "matched_rule",
             "permission_version",
+            "permission_captured_at",
         }
     receipt = payload["freshness_receipt"]
     assert receipt["receipt_id"] == env["freshness_receipt"]["receipt_id"]
     assert receipt["receipt_hash"] == env["freshness_receipt"]["receipt_hash"]
     assert receipt["evidence_items"]
-    assert payload["answer_text"] == env["answer"]["text"]
+    # Sam cannot read the evidence documents, so answer content is withheld (need-to-know) ...
+    assert event["content_withheld"] is True
+    assert payload["answer_text"] is None
     assert set(payload["cited_document_ids"]) == _cited(env)
     assert payload["grounding"]["verdict"] == env["grounding"]["verdict"]
     assert payload["started_at"] <= payload["completed_at"]
@@ -155,6 +159,18 @@ def test_audit_reconstruction(seeded: Any, client: Any) -> None:
     assert reconstruction["query"]["id"] == env["query_id"]
     assert reconstruction["query"]["audit_event_id"] == env["audit_id"]
     assert reconstruction["freshness_receipt"]["receipt_id"] == receipt["receipt_id"]
+    assert reconstruction["query"]["answer_text"] is None
+
+    # ... until a recorded break-glass reveal, which completes the reconstruction.
+    revealed = client.post(
+        f"/api/audit/events/{env['audit_id']}/reveal",
+        json={"reason": "Compliance review of the Rail-B cutover answer"},
+        headers=auditor,
+    )
+    assert revealed.status_code == 200
+    assert revealed.json()["content_withheld"] is False
+    assert revealed.json()["payload"]["answer_text"] == env["answer"]["text"]
+    assert revealed.json()["reconstruction"]["query"]["answer_text"] == env["answer"]["text"]
 
     verify = client.get("/api/audit/verify", headers=auditor)
     assert verify.status_code == 200

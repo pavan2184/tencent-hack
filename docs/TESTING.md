@@ -180,3 +180,34 @@ initializes an MCP session, lists tools (must include `query`) and calls `whoami
 `libs/freshness/tests`, `libs/access_control/tests`; `uv sync --all-packages && uv run pytest -q
 <path>`), `lint` (ruff check + format check), `frontend` (`npm ci`, lint, typecheck, build),
 `compose` (`docker compose --env-file .env.example config -q`).
+
+## Access-control verification (12 October 2026)
+
+The library now has 174 tests, including source ceilings, stale/wrong-kind ACLs,
+unknown Slack rosters, Drive expiry/deletion/discovery, malformed store responses,
+query-time grant/group/source revocation and conflicting duplicate ids. The six
+real synthetic personas are checked against all 11 corpus documents.
+
+The full offline backend suite passes 549 tests, with 11 database tests skipped
+without `DATABASE_URL`. Core REST tests cover source restrictions after a local
+grant, byte-identical missing/denied responses, upload grant/revoke, and all five
+Tencent scenarios. The no-leak assertion checks answer text/claims/citations so
+a timestamp containing `48.6` cannot cause an unrelated failure. All 135 backend
+Python files pass Ruff lint/format checks. Existing CI already runs the library
+and app suites, so no additional CI job is needed.
+
+Run `uv run --frozen python libs/access_control/examples/revocation_demo.py` from
+`backend` for the standalone corpus demo. The PPT is validated structurally and
+rendered from the exported file for review. Live source tenants and Tencent model
+responses are outside this offline verification.
+
+### SQL verification follow-up
+
+The 11 SQL integration tests passed against a disposable local Postgres 17
+instance, including the access snapshot round-trip with Drive expiry, deleted
+subjects and discovery fields. Combined with the 549 passing offline tests,
+all 560 distinct backend tests passed. Postgres 17 was used because pulling the
+configured Postgres 16 image was blocked by registry authentication. No shared
+database or existing containers were modified. The temporary instance was
+removed after the run. The configured Postgres 16 deployment and credentialed
+source/Tencent calls were not tested by this work.

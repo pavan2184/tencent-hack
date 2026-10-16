@@ -9,13 +9,14 @@ from app.tests.conftest import run
 
 KYC = ("confluence-ops", "runbooks/kyc-refresh")
 ADMIN = {"X-Actor-Id": "root.admin"}
+OWNER = {"X-Actor-Id": "john.tan"}
 
 
 def _kyc_id(services: Any) -> str:
     return run(services.repo.get_page_by_slug(*KYC)).id
 
 
-def test_grant_create_list_revoke(seeded: Any, client: Any) -> None:
+def test_grant_create_list_revoke_does_not_expand_source_access(seeded: Any, client: Any) -> None:
     kyc_id = _kyc_id(seeded)
     assert client.get(f"/api/documents/{kyc_id}").status_code == 404  # alex: not finance-ops
 
@@ -25,14 +26,15 @@ def test_grant_create_list_revoke(seeded: Any, client: Any) -> None:
         "subject_id": "alex.tan",
         "effect": "allow",
     }
-    created = client.post("/api/access/grants", json=body, headers=ADMIN)
+    created = client.post("/api/access/grants", json=body, headers=OWNER)
     assert created.status_code == 201, created.text
     grant = created.json()
-    assert grant["granted_by"] == "root.admin"
-    assert client.post("/api/access/grants", json=body, headers=ADMIN).status_code == 409
-    assert client.get(f"/api/documents/{kyc_id}").status_code == 200
+    assert grant["granted_by"] == "john.tan"
+    assert client.post("/api/access/grants", json=body, headers=OWNER).status_code == 409
+    assert client.get(f"/api/documents/{kyc_id}").status_code == 404
+    assert client.get(f"/api/documents/{kyc_id}", headers=ADMIN).status_code == 404
 
-    listed = client.get("/api/access/grants", params={"document_id": kyc_id}, headers=ADMIN)
+    listed = client.get("/api/access/grants", params={"document_id": kyc_id}, headers=OWNER)
     assert [g["id"] for g in listed.json()["items"]] == [grant["id"]]
 
     revoked = client.delete(f"/api/access/grants/{grant['id']}", headers=ADMIN)
@@ -42,7 +44,7 @@ def test_grant_create_list_revoke(seeded: Any, client: Any) -> None:
     with_revoked = client.get(
         "/api/access/grants",
         params={"document_id": kyc_id, "include_revoked": "true"},
-        headers=ADMIN,
+        headers=OWNER,
     )
     assert len(with_revoked.json()["items"]) == 1
     actions = [e.action for e in run(seeded.repo.list_audit_events())]
@@ -61,6 +63,37 @@ def test_grant_rules(seeded: Any, client: Any) -> None:
     assert client.get("/api/access/grants").status_code in (200, 403)
     missing = client.delete(f"/api/access/grants/{uuid.uuid4()}", headers=ADMIN)
     assert missing.status_code == 404
+
+
+def test_local_upload_grant_unlocks_then_revocation_removes_access(
+    seeded: Any, client: Any
+) -> None:
+    uploaded = client.post(
+        "/api/documents/upload",
+        files={
+            "file": (
+                "grant-test.md",
+                b"# Local grant test\nPrivate uploaded evidence.\n",
+                "text/markdown",
+            )
+        },
+    )
+    assert uploaded.status_code == 201
+    doc_id = uploaded.json()["document"]["id"]
+    reader = {"X-Actor-Id": "mei.chen"}
+    assert client.get(f"/api/documents/{doc_id}", headers=reader).status_code == 404
+    grant = client.post(
+        "/api/access/grants",
+        json={
+            "document_id": doc_id,
+            "subject_type": "principal",
+            "subject_id": "mei.chen",
+        },
+    )
+    assert grant.status_code == 201
+    assert client.get(f"/api/documents/{doc_id}", headers=reader).status_code == 200
+    assert client.delete(f"/api/access/grants/{grant.json()['id']}").status_code == 200
+    assert client.get(f"/api/documents/{doc_id}", headers=reader).status_code == 404
 
 
 def test_access_request_always_202(seeded: Any, client: Any) -> None:
@@ -91,7 +124,7 @@ def test_access_request_approve_creates_grant(seeded: Any, client: Any) -> None:
     assert approved.json()["request"]["status"] == "approved"
     grant = approved.json()["grant"]
     assert grant["subject_type"] == "principal" and grant["subject_id"] == "alex.tan"
-    assert client.get(f"/api/documents/{kyc_id}").status_code == 200
+    assert client.get(f"/api/documents/{kyc_id}").status_code == 404
     again = client.post(f"/api/access/requests/{request_id}/approve", headers=ADMIN)
     assert again.status_code == 409
 

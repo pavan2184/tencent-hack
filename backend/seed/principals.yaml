@@ -59,7 +59,8 @@ principals:
       gdrive: sam.lee@example-harbor.com
       email: sam.lee@example-harbor.com
 
-  # Administrator. Allowed everywhere by role (rule R4); performs the live revocation.
+  # Administrator. Manages local grants and performs revocation. Native source access still
+  # applies; the Drive board deck explicitly includes this account as owner.
   - id: root.admin
     display_name: Root Admin
     email: admin@example-harbor.com

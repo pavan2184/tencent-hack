@@ -157,3 +157,17 @@ All are required before the demo; status is pending integration.
   unknown source 404, a stub connector 501, a non-object body 422 and a body over 1 MB 413.
 - **Source payloads** strip any config key that looks like a secret (for example
   `webhook_secret`) before returning sources over REST or MCP.
+
+## Access-control hardening (12 October 2026)
+
+Policy `ac-v2` makes native source membership a mandatory ceiling before local
+owner/admin/grant allows. The additional review and regressions cover privileged
+bypasses, incomplete ACL capture, Slack guests/unknown rosters, Drive expiry and
+discovery, wrong-account bindings, duplicate candidates and malformed authority.
+See the [library security review](ACCESS_CONTROL_SECURITY_REVIEW.md).
+
+The integrated app's five-scenario REST tests and negative read tests pass with
+the new policy. It still has synthetic persona identity, typed live-platform
+stubs and no bound live permission verifier. An unseen upstream revocation is
+not detected until authority refresh or a native read check. Reauthorising final
+citations and cached answers remains an integrating-app responsibility.

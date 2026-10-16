@@ -1,7 +1,7 @@
 """Core access-control models: principals, grants, requests, per-document context, decisions.
 
-Vocabulary is fixed by the foundation plan; values are what the app persists (``0200_access_init``)
-and what the audit log records, so renaming any member is a breaking change.
+Vocabulary is fixed by the foundation plan for persistence and audit records, so renaming any
+member is a breaking change. Production adapters are supplied by the integrating app.
 """
 
 from __future__ import annotations
@@ -82,8 +82,8 @@ class Principal(BaseModel):
     """A resolved identity at query time.
 
     ``external_identities`` maps a ``SourceKind`` value (e.g. ``"slack"``) to the principal's id
-    on that platform (e.g. ``"U_JORDAN"``); when absent the policy falls back to ``id`` (and, for
-    ``gdrive``/``email``, also ``email``).
+    on that platform (e.g. ``"U_JORDAN"``). A binding replaces the local identity. Only when
+    absent does the policy fall back to ``id`` (and, for ``gdrive``/``email``, also ``email``).
     """
 
     id: str
@@ -163,6 +163,9 @@ class AccessDecision(BaseModel):
     reason: DenyReason | None = None
     matched_rule: str
     permission_version: str | None = None
+    # When the permission snapshot behind this decision was captured, so an auditor can see how
+    # current the system's knowledge of the source's permissions was. None when no snapshot.
+    permission_captured_at: datetime | None = None
     policy_version: str
     evaluated_at: datetime
 
@@ -183,7 +186,7 @@ class FilterResult(BaseModel):
     """Output of ``AccessPolicy.filter``.
 
     ``decisions`` has exactly one entry per input document, in input order. ``allowed_ids`` is
-    the allowed subset in input order, de-duplicated (first occurrence wins).
+    the allowed subset in input order, de-duplicated. Any denial of a duplicate id removes it.
     """
 
     allowed_ids: list[str]

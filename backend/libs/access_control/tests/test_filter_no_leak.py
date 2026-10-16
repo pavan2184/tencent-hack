@@ -46,7 +46,7 @@ def test_one_decision_per_input_in_order_and_allowed_subset(policy, people, corp
     assert result.allowed_ids == allowed  # same order as the input
     assert set(result.allowed_ids) <= set(input_ids)
     assert denied.isdisjoint(result.allowed_ids)
-    assert all(d.evaluated_at == now and d.policy_version == "ac-v1" for d in result.decisions)
+    assert all(d.evaluated_at == now and d.policy_version == "ac-v2" for d in result.decisions)
 
 
 def test_expected_visibility_per_persona(policy, people, corpus, now):
@@ -58,7 +58,7 @@ def test_expected_visibility_per_persona(policy, people, corpus, now):
     assert visible("john") == [*finance[:2], "board-deck-q3", *finance[2:]]
     assert visible("jordan") == ["expense-policy", "treasury-ops-log", "PAY-142", "vendor-cutover"]
     assert visible("mei") == []
-    assert visible("root") == [d.document_id for d in corpus]
+    assert visible("root") == ["no-snapshot", "alex-upload"]
 
 
 def test_live_revocation_drops_document(policy, people, corpus, make_grant, now):
@@ -133,6 +133,7 @@ def test_denied_decisions_reveal_nothing_beyond_ids_given(policy, people, corpus
             "reason",
             "matched_rule",
             "permission_version",
+            "permission_captured_at",
             "policy_version",
             "evaluated_at",
         }

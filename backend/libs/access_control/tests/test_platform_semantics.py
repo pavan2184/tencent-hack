@@ -53,10 +53,13 @@ def test_confluence_space_view_user_via_external_identity(allowed, people, seed_
 
 def test_confluence_ancestor_restriction_is_inherited(allowed, people, seed_blocks):
     restricted_parent = {"page_id": "1000", "view_users": [], "view_groups": ["finance-ops"]}
-    page = {**seed_blocks["confluence"], "ancestors": ["999", restricted_parent]}
+    page = {**seed_blocks["confluence"], "ancestors": [{"page_id": "999"}, restricted_parent]}
     assert allowed(people["jordan"], page)
     assert not allowed(people["alex"], page)
-    unrestricted = {**seed_blocks["confluence"], "ancestors": ["999", {"page_id": "1000"}]}
+    unrestricted = {
+        **seed_blocks["confluence"],
+        "ancestors": [{"page_id": "999"}, {"page_id": "1000"}],
+    }
     assert allowed(people["alex"], unrestricted)
 
 
@@ -116,8 +119,8 @@ def test_slack_public_channel(allowed, people, seed_blocks):
         "channel_type": "public",
         "member_ids": [],
     }
-    assert allowed(people["alex"], general)  # workspace roster not captured → any principal
-    assert allowed(people["mei"], general)
+    assert not allowed(people["alex"], general)
+    assert not allowed(people["mei"], general)
     rostered = {**general, "workspace_member_ids": ["U_ALEX", "U_JOHN", "U_JORDAN"]}
     assert allowed(people["alex"], rostered)
     assert not allowed(people["mei"], rostered)

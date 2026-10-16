@@ -102,6 +102,9 @@ def seed_blocks() -> dict[str, dict[str, Any]]:
                     "role": "reader",
                     "email_or_domain": "leadership",
                     "inherited": False,
+                    "expiration_time": None,
+                    "deleted": False,
+                    "allow_file_discovery": True,
                 }
             ],
         },
