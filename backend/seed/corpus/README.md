@@ -216,6 +216,9 @@ over these files; `libs/access_control/tests/test_seed_demo.py` pins it.
 
 ## Questions to ask
 
+The Ask page offers these as one-click chips for the selected persona, from
+`frontend/lib/sampleQuestions.ts`. Update that file when a question here changes.
+
 | Ask as        | Question                                                               | What it shows                                                                |
 | ------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `john.tan`    | What is the plan for the Rail-B cutover?                               | answer drawn from emails, Jira, Slack and Drive (scenario 1)                 |
