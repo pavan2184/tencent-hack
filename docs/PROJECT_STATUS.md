@@ -275,3 +275,14 @@ For Pavan (freshness): live verification of a provider-deleted object returns `s
 (`provider_deleted`), not a tombstone. Standard evidence in that state is therefore allowed with a
 warning, which is why the deleted seed page is critical. Should a provider deletion always
 omit, whatever the class?
+
+## Ask page sample questions (16 October 2026)
+
+The Ask page shows the selected persona's demo questions as chips under the composer. The
+questions come from the seed README's "Questions to ask" table and live in
+`frontend/lib/sampleQuestions.ts`. A click fills the composer and submits it, using the current
+"Require fresh evidence" setting. The chips stay visible after an answer, so the next scripted
+question is one click away. Personas without demo questions show no chips. The composer and
+pipeline steps are unchanged. `npm run typecheck` and `npm run lint` pass. John and Mei were
+checked in the browser against the in-memory API at 1440px and 375px: switching persona swaps
+the chips, a click asks the question, and Mei's board-deck question abstains.
