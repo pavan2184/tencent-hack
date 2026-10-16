@@ -327,3 +327,25 @@ a disposable pgvector Postgres 16 container, migration `0201` included. Ruff, fr
 and lint pass. The map, the sync status at 1440 px and 375 px, the not-found request flow and the
 denial note were checked in the browser against an in-memory API. That API also showed the
 in-process sync moving the deck's sync time forward within one interval.
+
+## README rewrite (16 October 2026)
+
+`README.md` now follows the Best-README-Template structure: badges, the submission cover as the
+header, a collapsible table of contents, About (problem, four guarantees, the five scenarios,
+Built With), Getting Started (prerequisites, Docker install, in-memory run, real models), Usage
+(personas, demo walkthrough, REST and MCP examples, Make targets), Architecture (a Mermaid
+pipeline diagram, libraries, layout, docs index), Testing, Roadmap, Contributing, License,
+Contact and Acknowledgments. It uses the project name Brain Sauce throughout. Two real
+screenshots from the seeded demo stack (mock mode, as `john.tan`) live in `docs/images/`:
+`ask-answer.png` (scenario 1, 8 of 8 claims supported) and `access-map.png`.
+
+Verification: every relative link and anchor resolves (117 checked), every external link and
+badge returns 200, and the GitHub Markdown API render was checked visually (the Mermaid block
+renders). The in-memory run command was started on a spare port: 9 active personas, and
+`mei.chen`'s board deck question abstained with 1 allowed document. Offline backend suite: 762
+passed, 12 skipped.
+
+Open items: the repository has no licence (the README says so); the GitHub repository
+description still reads "Proof-carrying enterprise knowledge system"; `docs/submission/SUBMISSION.md`
+still quotes 711 offline tests; `REPO_BACKEND` is a real setting but is missing from
+`.env.example`.
