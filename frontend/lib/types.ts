@@ -273,6 +273,40 @@ export interface AccessDecisionResult {
   note: string | null;
 }
 
+/** GET /access/map: allow edges only, over the documents the caller can read. */
+export interface AccessMap {
+  policy_version: string;
+  generated_at: string;
+  principals: {
+    id: string;
+    display_name: string;
+    roles: string[];
+    groups: string[];
+  }[];
+  groups: { id: string; name: string }[];
+  sources: { id: string; name: string; kind: string }[];
+  documents: AccessMapDocument[];
+  edges: AccessMapEdge[];
+}
+
+export interface AccessMapDocument {
+  id: string;
+  title: string;
+  slug: string;
+  source_id: string;
+  source_kind: string;
+  classification: Classification;
+}
+
+export interface AccessMapEdge {
+  principal_id: string;
+  document_id: string;
+  /** The policy rule that allowed it, e.g. `R8:slack`, `R3:owner`, `R5:explicit_grant`. */
+  rule: string;
+  /** The active grants behind an `R5:explicit_grant` edge; empty otherwise. */
+  via: { grant_id: string; subject_type: SubjectType; subject_id: string }[];
+}
+
 // --- Audit ---------------------------------------------------------------
 
 export interface AuditEvent {

@@ -2,6 +2,7 @@ import { apiFetch, type ApiFetchInit } from "./apiClient";
 import type {
   AccessDecisionAction,
   AccessDecisionResult,
+  AccessMap,
   AccessRequest,
   AnswerEnvelope,
   AskRequest,
@@ -153,6 +154,10 @@ export async function revokeGrant(grantId: string): Promise<void> {
   await apiFetch<unknown>(`/access/grants/${id(grantId)}`, {
     method: "DELETE",
   });
+}
+
+export function getAccessMap(): Promise<AccessMap> {
+  return apiFetch<AccessMap>("/access/map");
 }
 
 export function listAccessRequests(): Promise<AccessRequest[]> {

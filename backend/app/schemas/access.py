@@ -1,6 +1,8 @@
-"""Grant and access-request request bodies."""
+"""Grant and access-request request bodies, and the access-map response."""
 
 from __future__ import annotations
+
+from datetime import datetime
 
 from access_control import Effect, SubjectType
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,3 +21,58 @@ class GrantCreate(BaseModel):
 
 class GrantRevoke(BaseModel):
     reason: str | None = None
+
+
+# ---------------------------------------------------------------------------- access map
+class AccessMapPrincipal(BaseModel):
+    id: str
+    display_name: str
+    roles: list[str]
+    groups: list[str]
+
+
+class AccessMapGroup(BaseModel):
+    id: str
+    name: str
+
+
+class AccessMapSource(BaseModel):
+    id: str
+    name: str
+    kind: str
+
+
+class AccessMapDocument(BaseModel):
+    id: str
+    title: str
+    slug: str
+    source_id: str
+    source_kind: str
+    classification: str
+
+
+class AccessMapGrantRef(BaseModel):
+    """The active allow grant behind an `R5:explicit_grant` edge."""
+
+    grant_id: str
+    subject_type: SubjectType
+    subject_id: str
+
+
+class AccessMapEdge(BaseModel):
+    """One ALLOW decision. Denied pairs are never serialised; a missing edge means no access."""
+
+    principal_id: str
+    document_id: str
+    rule: str
+    via: list[AccessMapGrantRef] = Field(default_factory=list)
+
+
+class AccessMap(BaseModel):
+    policy_version: str
+    generated_at: datetime
+    principals: list[AccessMapPrincipal]
+    groups: list[AccessMapGroup]
+    sources: list[AccessMapSource]
+    documents: list[AccessMapDocument]
+    edges: list[AccessMapEdge]

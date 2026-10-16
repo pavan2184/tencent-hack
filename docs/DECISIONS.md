@@ -394,3 +394,22 @@ circular arrow chips. Tokens live in `frontend/app/globals.css`: the Tailwind
 `accent-soft` are added. `accent-strong` is the AA-safe shade for small text. New
 UI should use these tokens rather than `slate-*` or `sky-*`. Status colours (amber,
 red) stay functional and are not themed away.
+
+### D-021 - Access map is scoped to the caller's own readable documents
+
+Status: Accepted
+Date: 2026-10-16
+
+`GET /api/access/map` and the `/access/map` page show who can read what, and by
+which policy rule. Only managers and admins may call it. Admins cannot bypass
+source ACLs (D-016), so the map shows only documents the caller can read. Otherwise
+the map would leak the titles of documents the caller cannot read, and it would
+break the identical-404 and no-denied-counts rules (D-008). Root Admin's map
+therefore shows only the two documents that account can read. John's shows the
+whole seeded corpus.
+
+The map returns allow decisions only; a missing edge means no access. The map runs
+the same policy `filter` as retrieval, is never cached and is audited as
+`access.map`. The frontend draws it as plain SVG with a fixed layered layout
+(groups → people → documents inside source panels). It adds no graph library and
+no lockfile change.

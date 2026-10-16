@@ -205,3 +205,17 @@ pipeline steps as its empty state, coverage stat tiles and numbered claims.
 `npm run typecheck` and `npm run lint` pass. All pages were checked visually against
 the in-memory API at 1440px and 375px. `next build` (which fetches Inter Tight from
 Google Fonts) was not run in this session.
+
+## Access map (16 October 2026)
+
+Added `GET /api/access/map` (managers and admins; D-021) and the `/access/map` page,
+linked from Access. The page is an SVG map with this layout: group cards → people →
+one line per allowed read → documents inside their source panels. Each line is styled
+by its rule family (source ACL, owner, admin, explicit grant). Selecting a person,
+group, source or document highlights its paths and labels each line with its policy
+rule (`R8:slack`, `R5 · leadership`…). Grant-based access can be revoked from the
+document panel (admin or owner), and the map refreshes at once. `.claude/launch.json`
+gains an `api-memory` entry (in-memory API on port 8000) for browser checks.
+
+Tests: `backend/app/tests/test_access_map.py` (7 tests: role gate, rules and grant
+subjects, admin source ceiling with no title leaks, revocation).

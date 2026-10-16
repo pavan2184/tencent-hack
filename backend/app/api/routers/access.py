@@ -1,4 +1,4 @@
-"""Grants and access requests."""
+"""Grants, access requests and the access map."""
 
 from __future__ import annotations
 
@@ -62,6 +62,12 @@ async def revoke_grant(
         services, principal, grant_id, reason=body.reason if body else None
     )
     return grant.model_dump(mode="json")
+
+
+@router.get("/map")
+async def access_map(services: ServicesDep, principal: CurrentPrincipal) -> dict[str, Any]:
+    access = await access_service.access_map(services, principal)
+    return access.model_dump(mode="json")
 
 
 @router.get("/requests")
